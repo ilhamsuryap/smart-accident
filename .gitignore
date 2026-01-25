@@ -1,0 +1,28 @@
+# Virtual Environment
+venv/
+env/
+
+# Django
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+media/
+staticfiles/
+
+# Database
+db.sqlite3  # abaikan jika suatu saat pakai sqlite
+
+# Environment variables
+.env
+
+# Logs
+*.log
+
+# VS Code / IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
