@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+
+{% block title %}Peta Interaktif - Smart Accident{% endblock %}
+
+{% block extra_css %}
+<style>
+    #mapContainer {
+        height: calc(100vh - 180px);
+        border-radius: 6px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .map-legend {
+        background: white;
+        border-radius: 4px;
+        padding: 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    
+    .legend-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 2px;
+        margin-right: 10px;
+    }
+    
+    .legend-text {
+        font-size: 0.9rem;
+    }
+    
+    .marker-cluster {
+        background-clip: padding-box;
+        border-radius: 20px;
+    }
+    
+    .leaflet-popup-content-wrapper {
+        border-radius: 4px;
+    }
+    
+    .popup-info {
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="w-full">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <div>
+            <h1 class="text-3xl font-bold">Peta Kerawanan Kecelakaan</h1>
+        </div>
+        <form method="get" class="flex gap-2">
+            <select name="tahun" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200" onchange="this.form.submit()">
+                <option value="">-- Pilih Tahun --</option>
+                {% for tahun_opt in tahun_options %}
+                    <option value="{{ tahun_opt }}" {% if request.GET.tahun|add:"0" == tahun_opt %}selected{% endif %}>
+                        {{ tahun_opt }}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+    
+    <!-- Map Container -->
+    <div id="mapContainer"></div>
+    
+    <!-- Legend -->
+    <!-- <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-6">
+        <div class="map-legend">
+            <h6 class="mb-3 font-semibold"><i class="fas fa-square-full"></i> Kategori Z-Score Kerawanan</h6>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #d32f2f;"></div>
+                <div class="legend-text">Sangat Tinggi (Z > 1.5)</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #f57c00;"></div>
+                <div class="legend-text">Tinggi (0.5 < Z ≤ 1.5)</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #fbc02d;"></div>
+                <div class="legend-text">Sedang (-0.5 < Z ≤ 0.5)</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #7cb342;"></div>
+                <div class="legend-text">Rendah (-1.5 < Z ≤ -0.5)</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #388e3c;"></div>
+                <div class="legend-text">Sangat Rendah (Z ≤ -1.5)</div>
+            </div>
+        </div>
+        
+        <div class="map-legend">
+            <h6 class="mb-3 font-semibold"><i class="fas fa-circle"></i> Jenis Marker</h6>
+            <div class="legend-item">
+                <i class="fas fa-road" style="color: #2c3e50; font-size: 1.2rem; margin-right: 10px;"></i>
+                <div class="legend-text">Segmen Jalan</div>
+            </div>
+            <div class="legend-item">
+                <i class="fas fa-map-pin" style="color: #d32f2f; font-size: 1.2rem; margin-right: 10px;"></i>
+                <div class="legend-text">Titik Kecelakaan</div>
+            </div>
+        </div>
+        
+        <div class="map-legend md:col-span-2">
+            <h6 class="mb-3 font-semibold"><i class="fas fa-chart-pie"></i> Statistik</h6>
+            <div id="statistikContainer">
+                <p class="text-gray-500">Memuat statistik...</p>
+            </div>
+        </div>
+    </div> -->
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
+<script>
+    const tahun = "{{ tahun }}" || new Date().getFullYear();
+    let map;
+    let segmenLayer, kecelakaanLayer;
+    
+    // Initialize Map
+    function initMap() {
+        map = L.map('mapContainer').setView([-2.5, 120], 5);
+        
+        // Tile Layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+        
+        // Load Data
+        loadSegmenData();
+        loadKecelakaanData();
+        loadStatistik();
+    }
+    
+    // Load Segmen GeoJSON
+    function loadSegmenData() {
+        const url = `/api/segmen/geojson/?tahun=${tahun}`;
+        
+        axios.get(url)
+            .then(response => {
+                if (segmenLayer) {
+                    map.removeLayer(segmenLayer);
+                }
+                
+                segmenLayer = L.geoJSON(response.data, {
+                    style: function(feature) {
+                        return {
+                            color: feature.properties.color,
+                            weight: 3,
+                            opacity: 0.8,
+                            dashArray: '5, 5'
+                        };
+                    },
+                    onEachFeature: function(feature, layer) {
+                        const props = feature.properties;
+                        const popup = `
+                            <div class="popup-info">
+                                <strong>${props.ruas_nama}</strong><br>
+                                Segmen: ${props.km_awal.toFixed(3)} - ${props.km_akhir.toFixed(3)} km<br>
+                                Kategori: ${props.kategori.replace(/_/g, ' ').toUpperCase()}<br>
+                                Z-Score: ${props.zscore.toFixed(3)}<br>
+                                <a href="${props.url}" class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm mt-2 inline-block">Detail</a>
+                            </div>
+                        `;
+                        layer.bindPopup(popup);
+                    }
+                }).addTo(map);
+            })
+            .catch(error => console.error('Error loading segmen:', error));
+    }
+    
+    // Load Kecelakaan GeoJSON
+    function loadKecelakaanData() {
+        const url = `/api/kecelakaan/geojson/?tahun=${tahun}`;
+        
+        axios.get(url)
+            .then(response => {
+                if (kecelakaanLayer) {
+                    map.removeLayer(kecelakaanLayer);
+                }
+                
+                kecelakaanLayer = L.geoJSON(response.data, {
+                    pointToLayer: function(feature, latlng) {
+                        return L.circleMarker(latlng, {
+                            radius: 6,
+                            fillColor: '#d32f2f',
+                            color: '#fff',
+                            weight: 2,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        });
+                    },
+                    onEachFeature: function(feature, layer) {
+                        const props = feature.properties;
+                        const popup = `
+                            <div class="popup-info">
+                                <strong>${props.lokasi}</strong><br>
+                                Tanggal: ${props.tanggal}<br>
+                                Waktu: ${props.waktu}<br>
+                                <hr>
+                                <strong>Korban:</strong><br>
+                                Meninggal: ${props.korban_meninggal}<br>
+                                Luka Berat: ${props.korban_luka_berat}<br>
+                                Luka Ringan: ${props.korban_luka_ringan}<br>
+                                <strong>Total: ${props.total_korban}</strong><br>
+                                <strong>Kerugian: Rp ${props.kerugian.toLocaleString('id-ID')}</strong><br>
+                                <a href="${props.url}" class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm mt-2 inline-block">Detail</a>
+                            </div>
+                        `;
+                        layer.bindPopup(popup);
+                    }
+                }).addTo(map);
+            })
+            .catch(error => console.error('Error loading kecelakaan:', error));
+    }
+    
+    // Load Statistik
+    function loadStatistik() {
+        const url = `/api/analisis/statistik/?tahun=${tahun}`;
+        
+        axios.get(url)
+            .then(response => {
+                const data = response.data;
+                const html = `
+                    <table class="w-full text-sm border-collapse">
+                        <tr class="border-b border-gray-200">
+                            <td class="px-2 py-1"><span style="color: #d32f2f;">■</span> Sangat Tinggi</td>
+                            <td class="px-2 py-1 text-right font-semibold">${data.kategori.sangat_tinggi}</td>
+                        </tr>
+                        <tr class="border-b border-gray-200">
+                            <td class="px-2 py-1"><span style="color: #f57c00;">■</span> Tinggi</td>
+                            <td class="px-2 py-1 text-right font-semibold">${data.kategori.tinggi}</td>
+                        </tr>
+                        <tr class="border-b border-gray-200">
+                            <td class="px-2 py-1"><span style="color: #fbc02d;">■</span> Sedang</td>
+                            <td class="px-2 py-1 text-right font-semibold">${data.kategori.sedang}</td>
+                        </tr>
+                        <tr class="border-b border-gray-200">
+                            <td class="px-2 py-1"><span style="color: #7cb342;">■</span> Rendah</td>
+                            <td class="px-2 py-1 text-right font-semibold">${data.kategori.rendah}</td>
+                        </tr>
+                        <tr class="border-b border-gray-200">
+                            <td class="px-2 py-1"><span style="color: #388e3c;">■</span> Sangat Rendah</td>
+                            <td class="px-2 py-1 text-right font-semibold">${data.kategori.sangat_rendah}</td>
+                        </tr>
+                        <tr class="bg-gray-100">
+                            <td class="px-2 py-1 font-semibold">Total Segmen</td>
+                            <td class="px-2 py-1 text-right font-semibold">${data.total_segmen}</td>
+                        </tr>
+                    </table>
+                `;
+                document.getElementById('statistikContainer').innerHTML = html;
+            })
+            .catch(error => console.error('Error loading statistik:', error));
+    }
+    
+    // Init on page load
+    document.addEventListener('DOMContentLoaded', initMap);
+</script>
+{% endblock %}

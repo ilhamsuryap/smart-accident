@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}Detail Segmen - Smart Accident{% endblock %}
+
+{% block content %}
+<div class="w-full">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <div>
+            <h1 class="text-3xl font-bold">
+                <i class="fas fa-map-marked"></i> Detail Segmen Jalan
+            </h1>
+            <p class="text-gray-500 text-sm">{{ segmen.ruas_jalan.nama_ruas }} - Km {{ segmen.km_awal }}-{{ segmen.km_akhir }}</p>
+        </div>
+        <a href="{% url 'analisis' %}?tahun={{ tahun }}" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+            <i class="fas fa-arrow-left"></i> Kembali
+        </a>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div class="lg:col-span-1">
+            <!-- Info Segmen -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+                <div class="bg-gray-100 px-6 py-4 border-b border-gray-200">
+                    <h5 class="font-semibold">Informasi Segmen</h5>
+                </div>
+                <div class="p-6">
+                    <div class="mb-4">
+                        <strong>Ruas Jalan:</strong><br>
+                        <a href="{% url 'ruas_jalan_detail' segmen.ruas_jalan.id %}" class="text-blue-600 hover:underline">
+                            {{ segmen.ruas_jalan.nama_ruas }}
+                        </a>
+                    </div>
+                    <div class="mb-4">
+                        <strong>Jenis Jalan:</strong><br>
+                        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">{{ segmen.ruas_jalan.get_jenis_jalan_display }}</span>
+                    </div>
+                    <div class="mb-4">
+                        <strong>Segmen (km):</strong><br>
+                        {{ segmen.km_awal }} - {{ segmen.km_akhir }}
+                    </div>
+                    <div>
+                        <strong>Panjang:</strong><br>
+                        {{ segmen.panjang_segmen }} km
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Analisis Z-Score -->
+            {% if analisis %}
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="text-white px-6 py-4" style="background-color: {{ analisis.get_kategori_display_color|default:'#888' }};">
+                    <h5 class="font-semibold">Analisis Z-Score {{ tahun }}</h5>
+                </div>
+                <div class="p-6 text-center">
+                    <div class="text-4xl font-bold mb-3" style="color: {{ analisis.get_kategori_display_color|default:'#888' }};">
+                        {{ analisis.nilai_zscore }}
+                    </div>
+                    <p class="font-semibold">
+                        {{ analisis.get_kategori_display }}
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="lg:col-span-3">
+            <!-- Daftar Kecelakaan di Segmen -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="bg-gray-100 px-6 py-4 border-b border-gray-200">
+                    <h5 class="font-semibold">
+                        <i class="fas fa-exclamation-triangle"></i> Kecelakaan di Segmen Ini ({{ tahun }})
+                    </h5>
+                </div>
+                <div class="p-6">
+                    {% if kecelakaan %}
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead class="bg-gray-100 border-b border-gray-200">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left font-semibold">Tanggal & Waktu</th>
+                                        <th class="px-4 py-3 text-left font-semibold">Lokasi</th>
+                                        <th class="px-4 py-3 text-center font-semibold">Meninggal</th>
+                                        <th class="px-4 py-3 text-center font-semibold">Luka Berat</th>
+                                        <th class="px-4 py-3 text-center font-semibold">Luka Ringan</th>
+                                        <th class="px-4 py-3 text-center font-semibold">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for k in kecelakaan %}
+                                    <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                        <td class="px-4 py-3">
+                                            <small>{{ k.tanggal|date:"d/m/Y" }} {{ k.waktu|time:"H:i" }}</small>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            {{ k.desa }}, {{ k.kecamatan }}
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            {% if k.korban_meninggal > 0 %}
+                                                <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium">{{ k.korban_meninggal }}</span>
+                                            {% else %}
+                                                <span class="text-gray-400">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            {% if k.korban_luka_berat > 0 %}
+                                                <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">{{ k.korban_luka_berat }}</span>
+                                            {% else %}
+                                                <span class="text-gray-400">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            {% if k.korban_luka_ringan > 0 %}
+                                                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">{{ k.korban_luka_ringan }}</span>
+                                            {% else %}
+                                                <span class="text-gray-400">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            <a href="{% url 'kecelakaan_detail' k.id %}" 
+                                               class="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-sm">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Summary Stats -->
+                        <div class="p-4 bg-blue-50 text-blue-800 rounded-lg mt-6">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <strong>Total Kecelakaan:</strong> {{ kecelakaan|length }}
+                                </div>
+                                <div>
+                                    <strong>Total Meninggal:</strong> 
+                                    <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium inline-block">
+                                        {% for k in kecelakaan %}
+                                            {% if forloop.first %}{{ k.kecelakaan.aggregate|add:0 }}{% endif %}
+                                        {% endfor %}
+                                        {{ kecelakaan|dictsort:"korban_meninggal"|join:"" }}
+                                    </span>
+                                </div>
+                                <div>
+                                    <strong>Total Luka:</strong>
+                                    {% with total_luka=kecelakaan|length %}
+                                        <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium inline-block">0</span>
+                                    {% endwith %}
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="p-4 bg-blue-50 text-blue-800 rounded-lg">
+                            <i class="fas fa-info-circle"></i> Tidak ada data kecelakaan di segmen ini pada tahun {{ tahun }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

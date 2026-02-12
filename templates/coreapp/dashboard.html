@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Smart Accident{% endblock %}
+
+{% block content %}
+<div class="w-full">
+    <div class="mb-6">
+        <div class="col-12">
+            <h1 class="text-3xl font-bold mb-2">
+                <i class="fas fa-chart-line"></i> Dashboard
+            </h1>
+            <p class="text-gray-500">Selamat datang di Sistem Pemetaan dan Analisis Kerawanan Kecelakaan Lalu Lintas</p>
+        </div>
+    </div>
+    
+    <!-- Statistik Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="stat-card stat-card-danger">
+            <h6><i class="fas fa-exclamation-triangle"></i> Total Kecelakaan</h6>
+            <div class="value">{{ total_kecelakaan }}</div>
+            <small>Sepanjang waktu</small>
+        </div>
+        
+        <div class="stat-card stat-card-warning">
+            <h6><i class="fas fa-users"></i> Total Korban</h6>
+            <div class="value">{{ total_korban }}</div>
+            <small>Keseluruhan</small>
+        </div>
+        
+        <div class="stat-card stat-card-info">
+            <h6><i class="fas fa-road"></i> Total Ruas Jalan</h6>
+            <div class="value">{{ total_ruas }}</div>
+            <small>Terdata</small>
+        </div>
+        
+        <div class="stat-card stat-card-success">
+            <h6><i class="fas fa-map-marked"></i> Total Segmen</h6>
+            <div class="value">{{ total_segmen }}</div>
+            <small>Teridentifikasi</small>
+        </div>
+    </div>
+    
+    <!-- Kecelakaan Tahun Ini -->
+    <div class="mb-6">
+        <div class="w-full">
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="bg-white border-b border-gray-300 p-5">
+                    <h5 class="mb-0 text-lg font-semibold">
+                        <i class="fas fa-chart-area"></i> Kecelakaan Tahun Ini
+                    </h5>
+                </div>
+                <div class="p-5">
+                    <div class="p-4 rounded-lg bg-blue-100 text-blue-800" role="alert">
+                        <strong><i class="fas fa-info-circle"></i> Total Kecelakaan Tahun Ini:</strong>
+                        <span class="text-2xl font-bold block mt-2">{{ kecelakaan_tahun_ini }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Ruas/Segmen dengan Kecelakaan Terbanyak -->
+    <div>
+        <div class="w-full">
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="bg-white border-b border-gray-300 p-5">
+                    <h5 class="mb-0 text-lg font-semibold">
+                        <i class="fas fa-triangle-exclamation"></i> 5 Segmen dengan Kecelakaan Terbanyak
+                    </h5>
+                </div>
+                <div class="p-5">
+                    {% if top_segmen %}
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left font-semibold">Ruas Jalan</th>
+                                        <th class="px-4 py-2 text-left font-semibold">Segmen (km)</th>
+                                        <th class="px-4 py-2 text-center font-semibold">Jumlah Kecelakaan</th>
+                                        <th class="px-4 py-2 text-center font-semibold">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for segmen in top_segmen %}
+                                    <tr class="border-b hover:bg-gray-50">
+                                        <td class="px-4 py-3">
+                                            <a href="{% url 'ruas_jalan_detail' segmen.ruas_jalan.id %}" class="text-blue-600 hover:text-blue-800">
+                                                {{ segmen.ruas_jalan.nama_ruas }}
+                                            </a>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            {{ segmen.km_awal }} - {{ segmen.km_akhir }} km
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            <span class="bg-red-600 text-white px-3 py-1 rounded text-sm font-semibold">{{ segmen.jumlah_kecelakaan }}</span>
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            <a href="{% url 'segmen_kecelakaan_detail' segmen.id %}" 
+                                               class="px-4 py-2 border border-blue-600 text-blue-600 rounded text-sm hover:bg-blue-50">
+                                                <i class="fas fa-eye"></i> Lihat Detail
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="p-4 rounded-lg bg-blue-100 text-blue-800">
+                            <i class="fas fa-info-circle"></i> Belum ada data kecelakaan
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+{% endblock %}

@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if title %}{{ title }}{% else %}Detail Ruas Jalan{% endif %} - Smart Accident{% endblock %}
+
+{% block content %}
+<div class="w-full">
+    <div class="mb-6">
+        <div class="flex justify-between items-start">
+            <div>
+                <h1 class="text-3xl font-bold">
+                    <i class="fas fa-road"></i> {{ ruas.nama_ruas }}
+                </h1>
+                <p class="text-gray-500 text-sm">Detail Ruas Jalan</p>
+            </div>
+            {% if is_admin %}
+            <div class="flex gap-2">
+                <a href="{% url 'ruas_jalan_update' ruas.id %}" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
+                    <i class="fas fa-edit"></i> Edit
+                </a>
+                <a href="{% url 'ruas_jalan_list' %}" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                    <i class="fas fa-arrow-left"></i> Kembali
+                </a>
+            </div>
+            {% else %}
+            <div>
+                <a href="{% url 'ruas_jalan_list' %}" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                    <i class="fas fa-arrow-left"></i> Kembali
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Informasi Ruas Jalan -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="bg-gray-100 px-6 py-4 border-b border-gray-200">
+                <h5 class="font-semibold">Informasi Umum</h5>
+            </div>
+            <div class="p-6">
+                <div class="mb-4">
+                    <div class="flex justify-between mb-2">
+                        <div><strong>Nama Ruas:</strong></div>
+                        <div>{{ ruas.nama_ruas }}</div>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <div class="flex justify-between mb-2">
+                        <div><strong>Jenis Jalan:</strong></div>
+                        <div>
+                            <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">{{ ruas.get_jenis_jalan_display }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <div class="flex justify-between mb-2">
+                        <div><strong>Wilayah:</strong></div>
+                        <div>{{ ruas.wilayah }}</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between">
+                        <div><strong>Panjang:</strong></div>
+                        <div>{{ ruas.panjang_km }} km</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="bg-gray-100 px-6 py-4 border-b border-gray-200">
+                <h5 class="font-semibold">Statistik</h5>
+            </div>
+            <div class="p-6">
+                <div class="mb-4">
+                    <div class="flex justify-between mb-2">
+                        <div><strong>Total Segmen:</strong></div>
+                        <div>
+                            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">{{ segmen.count }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <div class="flex justify-between mb-2">
+                        <div><strong>Dibuat:</strong></div>
+                        <div>{{ ruas.created_at|date:"d/m/Y H:i" }}</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between">
+                        <div><strong>Update Terakhir:</strong></div>
+                        <div>{{ ruas.updated_at|date:"d/m/Y H:i" }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Daftar Segmen -->
+    <div>
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="bg-gray-100 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h5 class="font-semibold">
+                    <i class="fas fa-map-marked"></i> Segmen Jalan
+                </h5>
+                {% if is_admin %}
+                <!-- <a href="{% url 'generate_segmen' ruas.id %}" class="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+                    <i class="fas fa-bolt"></i> Generate Segmen Otomatis
+                </a> -->
+                {% endif %}
+            </div>
+            <div class="p-6">
+                {% if segmen %}
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-100 border-b border-gray-200">
+                                <tr>
+                                    <th class="px-4 py-3 text-left font-semibold">Segmen</th>
+                                    <th class="px-4 py-3 text-left font-semibold">Km Awal</th>
+                                    <th class="px-4 py-3 text-left font-semibold">Km Akhir</th>
+                                    <th class="px-4 py-3 text-left font-semibold">Panjang Segmen</th>
+                                    <th class="px-4 py-3 text-center font-semibold">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for seg in segmen %}
+                                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                    <td class="px-4 py-3">
+                                        <a href="{% url 'segmen_kecelakaan_detail' seg.id %}" class="text-blue-600 hover:underline">
+                                            Segmen {{ seg.km_awal }}-{{ seg.km_akhir }}
+                                        </a>
+                                    </td>
+                                    <td class="px-4 py-3">{{ seg.km_awal }}</td>
+                                    <td class="px-4 py-3">{{ seg.km_akhir }}</td>
+                                    <td class="px-4 py-3">{{ seg.panjang_segmen }} km</td>
+                                    <td class="px-4 py-3 text-center">
+                                        <a href="{% url 'segmen_kecelakaan_detail' seg.id %}" 
+                                           class="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-sm">
+                                            <i class="fas fa-eye"></i> Detail
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="p-4 bg-blue-50 text-blue-800 rounded-lg">
+                        <i class="fas fa-info-circle"></i> Belum ada segmen jalan. 
+                        {% if is_admin %}
+                        <a href="{% url 'generate_segmen' ruas.id %}" class="text-blue-600 hover:underline">Generate sekarang</a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
