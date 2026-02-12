@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+
+{% block title %}Detail Kecelakaan - Smart Accident{% endblock %}
+
+{% block content %}
+<div class="w-full">
+    <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <h1 class="text-3xl font-bold">
+                <i class="fas fa-exclamation-triangle"></i> Detail Kecelakaan
+            </h1>
+        </div>
+        <div>
+            <a href="{% url 'kecelakaan_list' %}" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                <i class="fas fa-arrow-left"></i> Kembali
+            </a>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-4">
+                <div class="bg-gray-100 border-b border-gray-300 p-4">
+                    <h5 class="font-semibold">Informasi Waktu & Lokasi</h5>
+                </div>
+                <div class="p-5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <strong>Tanggal:</strong><br>
+                            {{ kecelakaan.tanggal|date:"d/m/Y" }}
+                        </div>
+                        <div>
+                            <strong>Waktu:</strong><br>
+                            {{ kecelakaan.waktu|time:"H:i" }}
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <strong>Latitude:</strong><br>
+                            {{ kecelakaan.latitude }}
+                        </div>
+                        <div>
+                            <strong>Longitude:</strong><br>
+                            {{ kecelakaan.longitude }}
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <strong>Lokasi Administratif:</strong><br>
+                        {{ kecelakaan.desa }}, {{ kecelakaan.kecamatan }}<br>
+                        {{ kecelakaan.kabupaten_kota }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-4">
+                <div class="bg-gray-100 border-b border-gray-300 p-4">
+                    <h5 class="font-semibold">Data Korban & Kerugian</h5>
+                </div>
+                <div class="p-5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <div class="mb-4">
+                                <strong>Jumlah Kecelakaan:</strong><br>
+                                <span class="bg-gray-600 text-white px-3 py-1 rounded text-sm font-semibold inline-block mt-1">{{ kecelakaan.jumlah_kecelakaan }}</span>
+                            </div>
+                            <div class="mb-4">
+                                <strong>Korban Meninggal:</strong><br>
+                                <span class="bg-red-600 text-white px-3 py-1 rounded text-sm font-semibold inline-block mt-1">{{ kecelakaan.korban_meninggal }}</span>
+                            </div>
+                            <div class="mb-4">
+                                <strong>Korban Luka Berat:</strong><br>
+                                <span class="bg-yellow-600 text-white px-3 py-1 rounded text-sm font-semibold inline-block mt-1">{{ kecelakaan.korban_luka_berat }}</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="mb-4">
+                                <strong>Korban Luka Ringan:</strong><br>
+                                <span class="bg-blue-600 text-white px-3 py-1 rounded text-sm font-semibold inline-block mt-1">{{ kecelakaan.korban_luka_ringan }}</span>
+                            </div>
+                            <div class="mb-4">
+                                <strong>Total Korban:</strong><br>
+                                <span class="bg-gray-800 text-white px-3 py-1 rounded text-sm font-semibold inline-block mt-1">{{ kecelakaan.total_korban }}</span>
+                            </div>
+                            <div class="mb-4">
+                                <strong>Kerugian Materi:</strong><br>
+                                <span class="text-lg font-bold text-green-600 mt-1 block">Rp {{ kecelakaan.kerugian_materi|floatformat:0 }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% if kecelakaan.keterangan %}
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="bg-gray-100 border-b border-gray-300 p-4">
+                    <h5 class="font-semibold">Keterangan</h5>
+                </div>
+                <div class="p-5">
+                    {{ kecelakaan.keterangan|linebreaks }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div>
+            {% if kecelakaan.segmen_jalan %}
+            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-4">
+                <div class="bg-gray-100 border-b border-gray-300 p-4">
+                    <h5 class="font-semibold">Segmen Jalan Terkait</h5>
+                </div>
+                <div class="p-5">
+                    <div class="mb-4">
+                        <strong>Ruas Jalan:</strong><br>
+                        <a href="{% url 'ruas_jalan_detail' kecelakaan.segmen_jalan.ruas_jalan.id %}" class="text-blue-600 hover:text-blue-800">
+                            {{ kecelakaan.segmen_jalan.ruas_jalan.nama_ruas }}
+                        </a>
+                    </div>
+                    <div>
+                        <strong>Segmen:</strong><br>
+                        <a href="{% url 'segmen_kecelakaan_detail' kecelakaan.segmen_jalan.id %}" class="text-blue-600 hover:text-blue-800">
+                            Km {{ kecelakaan.segmen_jalan.km_awal }} - {{ kecelakaan.segmen_jalan.km_akhir }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-4">
+                <div class="bg-gray-100 border-b border-gray-300 p-4">
+                    <h5 class="font-semibold">Metadata</h5>
+                </div>
+                <div class="p-5">
+                    <div class="mb-3">
+                        <small><strong>Dibuat:</strong><br>{{ kecelakaan.created_at|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    <div>
+                        <small><strong>Update Terakhir:</strong><br>{{ kecelakaan.updated_at|date:"d/m/Y H:i" }}</small>
+                    </div>
+                </div>
+            </div>
+            
+            {% if is_admin %}
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="bg-gray-100 border-b border-gray-300 p-4">
+                    <h5 class="font-semibold">Aksi Admin</h5>
+                </div>
+                <div class="p-5 space-y-2">
+                    <a href="{% url 'kecelakaan_update' kecelakaan.id %}" class="block px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 text-center">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                    <a href="{% url 'kecelakaan_delete' kecelakaan.id %}" class="block px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-center">
+                        <i class="fas fa-trash"></i> Hapus
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,403 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Smart Accident{% endblock %}
+
+{% block content %}
+<div class="w-full">
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold">{{ title }}</h1>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-4">
+                <div class="bg-white border-b border-gray-300 p-4">
+                    <h5 class="font-semibold">Peta Lokasi Ruas Jalan</h5>
+                </div>
+                <div class="p-0">
+                    <div id="map" style="height: 500px; width: 100%; border-radius: 4px;"></div>
+                </div>
+                <div class="bg-gray-50 border-t border-gray-300 p-4">
+                    <small class="text-gray-600">
+                        <i class="fas fa-info-circle"></i> 
+                        Klik pada peta untuk menandai titik awal (marker merah) dan titik akhir (marker biru). 
+                        Garis hitam akan menghubungkan kedua titik.
+                    </small>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="bg-white border-b border-gray-300 p-4">
+                    <h5 class="font-semibold">Informasi Titik</h5>
+                </div>
+                <div class="p-5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="font-semibold block mb-2">Titik Awal</label>
+                            <div class="border border-gray-300 rounded p-3 bg-gray-50">
+                                <small class="text-gray-600 block">Latitude: <span id="display-lat-awal">-</span></small>
+                                <small class="text-gray-600 block">Longitude: <span id="display-lon-awal">-</span></small>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="font-semibold block mb-2">Titik Akhir</label>
+                            <div class="border border-gray-300 rounded p-3 bg-gray-50">
+                                <small class="text-gray-600 block">Latitude: <span id="display-lat-akhir">-</span></small>
+                                <small class="text-gray-600 block">Longitude: <span id="display-lon-akhir">-</span></small>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="px-3 py-1.5 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-sm" id="btn-reset-map">
+                        <i class="fas fa-redo"></i> Reset Peta
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div>
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="bg-white border-b border-gray-300 p-4">
+                    <h5 class="font-semibold">Data Ruas Jalan</h5>
+                </div>
+                <div class="p-5">
+                    <form method="post" novalidate id="ruasJalanForm">
+                        {% csrf_token %}
+                        
+                        <!-- Nama Ruas -->
+                        <div class="mb-4">
+                            {{ form.nama_ruas.label_tag }}
+                            {% if form.nama_ruas.errors %}
+                                {{ form.nama_ruas }}
+                                <div class="text-red-600 text-sm mt-1">
+                                    {% for error in form.nama_ruas.errors %}
+                                        {{ error }}<br>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.nama_ruas }}
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Jenis Jalan -->
+                        <div class="mb-4">
+                            {{ form.jenis_jalan.label_tag }}
+                            {% if form.jenis_jalan.errors %}
+                                {{ form.jenis_jalan }}
+                                <div class="text-red-600 text-sm mt-1">
+                                    {% for error in form.jenis_jalan.errors %}
+                                        {{ error }}<br>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.jenis_jalan }}
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Wilayah -->
+                        <div class="mb-4">
+                            {{ form.wilayah.label_tag }}
+                            {% if form.wilayah.errors %}
+                                {{ form.wilayah }}
+                                <div class="text-red-600 text-sm mt-1">
+                                    {% for error in form.wilayah.errors %}
+                                        {{ error }}<br>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.wilayah }}
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Panjang KM -->
+                        <div class="mb-4">
+                            {{ form.panjang_km.label_tag }}
+                            {% if form.panjang_km.errors %}
+                                {{ form.panjang_km }}
+                                <div class="text-red-600 text-sm mt-1">
+                                    {% for error in form.panjang_km.errors %}
+                                        {{ error }}<br>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.panjang_km }}
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Hidden fields untuk lat/lon -->
+                        {{ form.lat_awal }}
+                        {{ form.lon_awal }}
+                        {{ form.lat_akhir }}
+                        {{ form.lon_akhir }}
+                        
+                        <!-- Informasi Koordinat (Read-only) -->
+                        <div class="mb-4">
+                            <label class="block text-gray-700 font-semibold mb-2">Koordinat Awal</label>
+                            <div class="mb-2 flex gap-2">
+                                <span class="bg-gray-200 px-3 py-2 rounded text-sm font-semibold">Lat</span>
+                                <input type="text" class="flex-1 px-3 py-2 border border-gray-300 rounded bg-gray-50" id="display-lat-awal-input" readonly>
+                            </div>
+                            <div class="flex gap-2">
+                                <span class="bg-gray-200 px-3 py-2 rounded text-sm font-semibold">Lon</span>
+                                <input type="text" class="flex-1 px-3 py-2 border border-gray-300 rounded bg-gray-50" id="display-lon-awal-input" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="block text-gray-700 font-semibold mb-2">Koordinat Akhir</label>
+                            <div class="mb-2 flex gap-2">
+                                <span class="bg-gray-200 px-3 py-2 rounded text-sm font-semibold">Lat</span>
+                                <input type="text" class="flex-1 px-3 py-2 border border-gray-300 rounded bg-gray-50" id="display-lat-akhir-input" readonly>
+                            </div>
+                            <div class="flex gap-2">
+                                <span class="bg-gray-200 px-3 py-2 rounded text-sm font-semibold">Lon</span>
+                                <input type="text" class="flex-1 px-3 py-2 border border-gray-300 rounded bg-gray-50" id="display-lon-akhir-input" readonly>
+                            </div>
+                        </div>
+                        
+                        <!-- Button Aksi -->
+                        <div class="flex gap-2">
+                            <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold">
+                                <i class="fas fa-save"></i> Simpan
+                            </button>
+                            <a href="{% url 'ruas_jalan_list' %}" class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-semibold text-center">
+                                <i class="fas fa-times"></i> Batal
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+        @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200;
+    }
+    
+    label {
+        @apply block text-gray-700 font-semibold mb-2;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inisialisasi Map
+    const map = L.map('map').setView([-7.6, 111.4], 10); 
+    // Tambah tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        // attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
+    
+    // Marker untuk titik awal dan akhir
+    let markerAwal = null;
+    let markerAkhir = null;
+    let polyline = null;
+    
+    // Ambil nilai dari form jika ada
+    const latAwalInput = document.getElementById('id_lat_awal');
+    const lonAwalInput = document.getElementById('id_lon_awal');
+    const latAkhirInput = document.getElementById('id_lat_akhir');
+    const lonAkhirInput = document.getElementById('id_lon_akhir');
+    
+    // Fungsi untuk update display
+    function updateDisplay() {
+        const latAwal = latAwalInput.value;
+        const lonAwal = lonAwalInput.value;
+        const latAkhir = latAkhirInput.value;
+        const lonAkhir = lonAkhirInput.value;
+        
+        document.getElementById('display-lat-awal').textContent = latAwal || '-';
+        document.getElementById('display-lon-awal').textContent = lonAwal || '-';
+        document.getElementById('display-lat-akhir').textContent = latAkhir || '-';
+        document.getElementById('display-lon-akhir').textContent = lonAkhir || '-';
+        
+        document.getElementById('display-lat-awal-input').value = latAwal || '';
+        document.getElementById('display-lon-awal-input').value = lonAwal || '';
+        document.getElementById('display-lat-akhir-input').value = latAkhir || '';
+        document.getElementById('display-lon-akhir-input').value = lonAkhir || '';
+    }
+    
+    // Fungsi untuk menghitung jarak antara dua titik (Haversine formula)
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371; // Radius bumi dalam km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = 
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+    
+    // Fungsi untuk update panjang km
+    function updatePanjangKm() {
+        const latAwal = parseFloat(latAwalInput.value);
+        const lonAwal = parseFloat(lonAwalInput.value);
+        const latAkhir = parseFloat(latAkhirInput.value);
+        const lonAkhir = parseFloat(lonAkhirInput.value);
+        
+        if (!isNaN(latAwal) && !isNaN(lonAwal) && !isNaN(latAkhir) && !isNaN(lonAkhir)) {
+            const jarak = calculateDistance(latAwal, lonAwal, latAkhir, lonAkhir);
+            document.getElementById('id_panjang_km').value = jarak.toFixed(2);
+        }
+    }
+    
+    // Fungsi untuk draw polyline
+    function drawLine() {
+        if (polyline) {
+            map.removeLayer(polyline);
+        }
+        
+        const latAwal = parseFloat(latAwalInput.value);
+        const lonAwal = parseFloat(lonAwalInput.value);
+        const latAkhir = parseFloat(latAkhirInput.value);
+        const lonAkhir = parseFloat(lonAkhirInput.value);
+        
+        if (!isNaN(latAwal) && !isNaN(lonAwal) && !isNaN(latAkhir) && !isNaN(lonAkhir)) {
+            const route = L.Routing.control({
+                waypoints: [
+                    L.latLng(latAwal, lonAwal),
+                    L.latLng(latAkhir, lonAkhir)
+                ],
+                routeWhileDragging: false,
+                show: false,
+                addWaypoints: false,
+                lineOptions: {
+                    styles: [{color: '#000', opacity: 0.8, weight: 3}]
+                },
+                createMarker: function() { return null; } // Jangan buat marker dari routing
+            }).addTo(map);
+            
+            // Fallback: jika routing tidak available, buat garis lurus
+            if (!L.Routing.control) {
+                polyline = L.polyline([
+                    [latAwal, lonAwal],
+                    [latAkhir, lonAkhir]
+                ], {
+                    color: '#000',
+                    weight: 3,
+                    opacity: 0.8,
+                    dashArray: '5, 5'
+                }).addTo(map);
+            }
+            
+            // Update panjang km secara otomatis
+            updatePanjangKm();
+        }
+    }
+    
+    // Fungsi untuk add/update marker
+    function addMarker(lat, lon, type) {
+        if (type === 'awal') {
+            if (markerAwal) {
+                map.removeLayer(markerAwal);
+            }
+            markerAwal = L.marker([lat, lon], {
+                icon: L.icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                    shadowSize: [41, 41]
+                }),
+                title: 'Titik Awal'
+            }).addTo(map).bindPopup('Titik Awal<br>Lat: ' + lat.toFixed(6) + '<br>Lon: ' + lon.toFixed(6));
+            
+            latAwalInput.value = lat.toFixed(6);
+            lonAwalInput.value = lon.toFixed(6);
+        } else {
+            if (markerAkhir) {
+                map.removeLayer(markerAkhir);
+            }
+            markerAkhir = L.marker([lat, lon], {
+                icon: L.icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                    shadowSize: [41, 41]
+                }),
+                title: 'Titik Akhir'
+            }).addTo(map).bindPopup('Titik Akhir<br>Lat: ' + lat.toFixed(6) + '<br>Lon: ' + lon.toFixed(6));
+            
+            latAkhirInput.value = lat.toFixed(6);
+            lonAkhirInput.value = lon.toFixed(6);
+        }
+        
+        updateDisplay();
+        drawLine();
+    }
+    
+    // Tambah marker dari form jika ada
+    if (latAwalInput.value && lonAwalInput.value) {
+        addMarker(parseFloat(latAwalInput.value), parseFloat(lonAwalInput.value), 'awal');
+    }
+    if (latAkhirInput.value && lonAkhirInput.value) {
+        addMarker(parseFloat(latAkhirInput.value), parseFloat(lonAkhirInput.value), 'akhir');
+    }
+    
+    // Click handler untuk map
+    let clickCount = 0;
+    map.on('click', function(e) {
+        const lat = e.latlng.lat;
+        const lon = e.latlng.lng;
+        
+        // Toggle antara awal dan akhir
+        if (clickCount % 2 === 0) {
+            addMarker(lat, lon, 'awal');
+            map.setView([lat, lon], map.getZoom());
+        } else {
+            addMarker(lat, lon, 'akhir');
+        }
+        
+        clickCount++;
+    });
+    
+    // Reset button
+    document.getElementById('btn-reset-map').addEventListener('click', function() {
+        if (markerAwal) map.removeLayer(markerAwal);
+        if (markerAkhir) map.removeLayer(markerAkhir);
+        if (polyline) map.removeLayer(polyline);
+        
+        markerAwal = null;
+        markerAkhir = null;
+        polyline = null;
+        clickCount = 0;
+        
+        latAwalInput.value = '';
+        lonAwalInput.value = '';
+        latAkhirInput.value = '';
+        lonAkhirInput.value = '';
+        
+        updateDisplay();
+        map.setView([-7.6, 111.4], 10);
+    });
+    
+    // Update display on load
+    updateDisplay();
+    
+    // Validasi sebelum submit
+    document.getElementById('ruasJalanForm').addEventListener('submit', function(e) {
+        if (!latAwalInput.value || !lonAwalInput.value || !latAkhirInput.value || !lonAkhirInput.value) {
+            e.preventDefault();
+            alert('Silahkan tentukan titik awal dan akhir pada peta');
+            return false;
+        }
+    });
+});
+</script>
+
+<!-- Tambah Leaflet Routing Machine untuk routing lebih akurat -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+<script src="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+{% endblock %}

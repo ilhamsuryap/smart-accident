@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}Hapus Ruas Jalan - Smart Accident{% endblock %}
+
+{% block content %}
+<div class="w-full">
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold"><i class="fas fa-trash"></i> Konfirmasi Penghapusan</h1>
+    </div>
+    
+    <div class="max-w-xl mx-auto">
+        <div class="bg-white rounded-lg shadow-md border-2 border-red-600 overflow-hidden">
+            <div class="bg-red-600 text-white p-4">
+                <h5 class="font-semibold">Hapus Ruas Jalan</h5>
+            </div>
+            <div class="p-6">
+                <div class="p-4 rounded-lg bg-yellow-100 text-yellow-800 mb-4">
+                    <i class="fas fa-exclamation-triangle"></i> <strong>Perhatian!</strong> 
+                    Tindakan ini tidak dapat dibatalkan.
+                </div>
+                
+                <p class="mb-4">Anda yakin ingin menghapus ruas jalan <strong>"{{ ruas.nama_ruas }}"</strong>?</p>
+                
+                <p class="text-gray-600 text-sm">
+                    Semua data segmen dan kecelakaan yang terkait akan ikut dihapus.
+                </p>
+            </div>
+            <div class="bg-gray-50 p-4 flex gap-3">
+                <form method="post" class="flex gap-2">
+                    {% csrf_token %}
+                    <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                        <i class="fas fa-trash"></i> Hapus
+                    </button>
+                    <a href="{% url 'ruas_jalan_list' %}" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                        <i class="fas fa-times"></i> Batal
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

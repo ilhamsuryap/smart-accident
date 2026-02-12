@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}Daftar Kecelakaan - Smart Accident{% endblock %}
+
+{% block content %}
+<div class="w-full">
+    <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <h1 class="text-3xl font-bold">Daftar Kecelakaan</h1>
+        </div>
+        {% if is_admin %}
+        <div>
+            <a href="{% url 'kecelakaan_create' %}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                <i class="fas fa-plus"></i> Tambah Data Kecelakaan
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Filter & Search -->
+    <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="md:col-span-2">
+            <form method="get" class="flex gap-2">
+                <input type="text" name="search" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200" 
+                       placeholder="Cari lokasi kecelakaan..." value="{{ request.GET.search }}">
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    <i class="fas fa-search"></i> Cari
+                </button>
+            </form>
+        </div>
+        <div>
+            <form method="get" class="flex gap-2">
+                <select name="tahun" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600" onchange="this.form.submit()">
+                    <option value="">-- Semua Tahun --</option>
+                    {% for tahun_opt in tahun_options %}
+                        <option value="{{ tahun_opt }}" {% if request.GET.tahun|add:"0" == tahun_opt %}selected{% endif %}>
+                            {{ tahun_opt }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Daftar Kecelakaan -->
+    <div class="w-full">
+        {% if kecelakaan %}
+            <div class="overflow-x-auto bg-white rounded-lg shadow-md">
+                <table class="w-full">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-semibold">Tanggal & Waktu</th>
+                            <th class="px-4 py-3 text-left font-semibold">Lokasi</th>
+                            <th class="px-4 py-3 text-center font-semibold">Korban Meninggal</th>
+                            <th class="px-4 py-3 text-center font-semibold">Luka Berat</th>
+                            <th class="px-4 py-3 text-center font-semibold">Luka Ringan</th>
+                            <th class="px-4 py-3 text-center font-semibold">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for k in kecelakaan %}
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-4 py-3">
+                                <small>{{ k.tanggal|date:"d/m/Y" }} {{ k.waktu|time:"H:i" }}</small>
+                            </td>
+                            <td class="px-4 py-3">
+                                <strong>{{ k.desa }}, {{ k.kecamatan }}</strong><br>
+                                <small class="text-gray-500">{{ k.kabupaten_kota }}</small>
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                {% if k.korban_meninggal > 0 %}
+                                    <span class="bg-red-600 text-white px-2 py-1 rounded text-xs font-semibold">{{ k.korban_meninggal }}</span>
+                                {% else %}
+                                    <span class="text-gray-500">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                {% if k.korban_luka_berat > 0 %}
+                                    <span class="bg-yellow-600 text-white px-2 py-1 rounded text-xs font-semibold">{{ k.korban_luka_berat }}</span>
+                                {% else %}
+                                    <span class="text-gray-500">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                {% if k.korban_luka_ringan > 0 %}
+                                    <span class="bg-blue-600 text-white px-2 py-1 rounded text-xs font-semibold">{{ k.korban_luka_ringan }}</span>
+                                {% else %}
+                                    <span class="text-gray-500">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <div class="flex gap-1 justify-center">
+                                    <a href="{% url 'kecelakaan_detail' k.id %}" class="px-3 py-1 border border-blue-600 text-blue-600 rounded hover:bg-blue-50 text-sm" title="Lihat Detail">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if is_admin %}
+                                    <a href="{% url 'kecelakaan_update' k.id %}" class="px-3 py-1 border border-yellow-600 text-yellow-600 rounded hover:bg-yellow-50 text-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'kecelakaan_delete' k.id %}" class="px-3 py-1 border border-red-600 text-red-600 rounded hover:bg-red-50 text-sm" title="Hapus">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="p-4 rounded-lg bg-blue-100 text-blue-800">
+                <i class="fas fa-info-circle"></i> Belum ada data kecelakaan
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

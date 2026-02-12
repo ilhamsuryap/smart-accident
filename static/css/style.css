@@ -1,0 +1,512 @@
+/* ================================================
+   Smart Accident - Custom Styles
+   ================================================ */
+
+:root {
+    --primary-color: #2c3e50;
+    --secondary-color: #34495e;
+    --danger-color: #d32f2f;
+    --warning-color: #f57c00;
+    --success-color: #388e3c;
+    --info-color: #1976d2;
+    --light-color: #f5f5f5;
+    --dark-color: #333333;
+    --border-color: #ddd;
+}
+
+/* ================================================
+   General Styles
+   ================================================ */
+
+body {
+    background-color: var(--light-color);
+    font-family: 'Poppins', sans-serif;
+    color: var(--dark-color);
+}
+
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: var(--secondary-color);
+    text-decoration: underline;
+}
+
+/* ================================================
+   Typography
+   ================================================ */
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.text-muted {
+    color: #999 !important;
+}
+
+/* ================================================
+   Cards & Containers
+   ================================================ */
+
+.card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+    margin-bottom: 20px;
+}
+
+.card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    background-color: #f9f9f9;
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.card-header.bg-light {
+    background-color: #f9f9f9 !important;
+}
+
+/* ================================================
+   Badges & Labels
+   ================================================ */
+
+.badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.badge-danger {
+    background-color: var(--danger-color) !important;
+    color: white;
+}
+
+.badge-warning {
+    background-color: var(--warning-color) !important;
+    color: white;
+}
+
+.badge-success {
+    background-color: var(--success-color) !important;
+    color: white;
+}
+
+.badge-info {
+    background-color: var(--info-color) !important;
+    color: white;
+}
+
+/* ================================================
+   Buttons
+   ================================================ */
+
+.btn {
+    border-radius: 6px;
+    font-weight: 600;
+    padding: 8px 16px;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--secondary-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(44, 62, 80, 0.3);
+}
+
+.btn-outline-primary {
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c62828;
+    color: white;
+}
+
+.btn-success {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #2e7d32;
+    color: white;
+}
+
+.btn-warning {
+    background-color: var(--warning-color);
+    color: white;
+}
+
+.btn-warning:hover {
+    background-color: #e65100;
+    color: white;
+}
+
+/* ================================================
+   Forms
+   ================================================ */
+
+.form-control,
+.form-select,
+textarea {
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus,
+.form-select:focus,
+textarea:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(44, 62, 80, 0.25);
+}
+
+.form-label {
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: 8px;
+}
+
+/* ================================================
+   Tables
+   ================================================ */
+
+.table {
+    border-collapse: collapse;
+}
+
+.table thead th {
+    background-color: #f9f9f9;
+    color: var(--primary-color);
+    font-weight: 600;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.table tbody tr:hover {
+    background-color: #f9f9f9;
+}
+
+.table-sm {
+    font-size: 0.9rem;
+}
+
+/* ================================================
+   Alerts
+   ================================================ */
+
+.alert {
+    border-radius: 6px;
+    border: none;
+    padding: 12px 20px;
+}
+
+.alert-danger {
+    background-color: #ffebee;
+    color: var(--danger-color);
+}
+
+.alert-warning {
+    background-color: #fff3e0;
+    color: var(--warning-color);
+}
+
+.alert-success {
+    background-color: #f1f8e9;
+    color: var(--success-color);
+}
+
+.alert-info {
+    background-color: #e3f2fd;
+    color: var(--info-color);
+}
+
+/* ================================================
+   Statistics Cards
+   ================================================ */
+
+.stat-card {
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card.danger {
+    background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
+}
+
+.stat-card.warning {
+    background: linear-gradient(135deg, #f57c00 0%, #e65100 100%);
+}
+
+.stat-card.success {
+    background: linear-gradient(135deg, #388e3c 0%, #2e7d32 100%);
+}
+
+.stat-card.info {
+    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+}
+
+.stat-card h6 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    opacity: 0.9;
+}
+
+.stat-card .value {
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+/* ================================================
+   Navbar
+   ================================================ */
+
+.navbar {
+    background-color: var(--primary-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.3rem;
+}
+
+/* ================================================
+   Sidebar
+   ================================================ */
+
+.sidebar {
+    background-color: white;
+    border-right: 1px solid var(--border-color);
+    padding: 20px 0;
+}
+
+.sidebar .nav-link {
+    color: var(--dark-color);
+    padding: 10px 20px;
+    border-left: 3px solid transparent;
+    margin-bottom: 5px;
+    transition: all 0.3s ease;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+    background-color: #f0f0f0;
+    border-left-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+/* ================================================
+   Maps
+   ================================================ */
+
+#mapContainer {
+    height: calc(100vh - 200px);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.leaflet-container {
+    border-radius: 8px;
+}
+
+.leaflet-popup-content-wrapper {
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.leaflet-popup-content {
+    font-size: 0.9rem;
+}
+
+.map-legend {
+    background: white;
+    border-radius: 6px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    margin-right: 10px;
+}
+
+/* ================================================
+   Footer
+   ================================================ */
+
+.footer {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 20px 0;
+    text-align: center;
+    margin-top: 40px;
+}
+
+.footer p {
+    margin: 5px 0;
+}
+
+/* ================================================
+   Utilities
+   ================================================ */
+
+.text-center {
+    text-align: center;
+}
+
+.text-end {
+    text-align: right;
+}
+
+.gap-2 {
+    gap: 10px;
+}
+
+.mb-0 {
+    margin-bottom: 0 !important;
+}
+
+.mt-3 {
+    margin-top: 20px !important;
+}
+
+/* ================================================
+   Loading Spinner
+   ================================================ */
+
+.spinner {
+    border: 4px solid var(--light-color);
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ================================================
+   Responsive
+   ================================================ */
+
+@media (max-width: 768px) {
+    .sidebar {
+        min-height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        padding: 10px 0;
+    }
+    
+    .sidebar .nav-link {
+        padding: 8px 15px;
+        font-size: 0.9rem;
+    }
+    
+    #mapContainer {
+        height: 500px;
+    }
+    
+    .stat-card {
+        margin-bottom: 15px;
+    }
+    
+    .stat-card .value {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .btn {
+        padding: 6px 12px;
+        font-size: 0.9rem;
+    }
+    
+    .table {
+        font-size: 0.85rem;
+    }
+    
+    .card {
+        margin-bottom: 15px;
+    }
+    
+    .alert {
+        padding: 10px 15px;
+        font-size: 0.9rem;
+    }
+}
+
+/* ================================================
+   Print Styles
+   ================================================ */
+
+@media print {
+    .navbar, .sidebar, .footer, .btn, .no-print {
+        display: none;
+    }
+    
+    .main-content {
+        margin: 0;
+        padding: 0;
+    }
+    
+    .card {
+        page-break-inside: avoid;
+    }
+}
