@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrasi - Smart Accident</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-500 via-purple-600 to-purple-800 min-h-screen flex items-center justify-center py-5">
+    <div class="w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden">
+        <div class="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-10 px-5 text-center">
+            <h1 class="text-3xl font-bold mb-2"><i class="fas fa-map-location-dot"></i> Smart Accident</h1>
+            <p class="opacity-90">Daftar Akun Baru</p>
+        </div>
+        
+        <div class="p-10">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="mb-4 p-3 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}" role="alert">
+                        {{ message }}
+                        <button type="button" class="float-right text-lg leading-none" onclick="this.parentElement.remove()">×</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <form method="post" novalidate class="space-y-4">
+                {% csrf_token %}
+                
+                <div>
+                    <label for="id_username" class="block text-gray-700 font-semibold mb-2">Username</label>
+                    <input type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 {% if form.username.errors %}border-red-500{% endif %}" 
+                           id="id_username" name="username" placeholder="Pilih username" required>
+                    {% if form.username.errors %}
+                        <div class="text-red-600 text-sm mt-1">{{ form.username.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="id_email" class="block text-gray-700 font-semibold mb-2">Email</label>
+                    <input type="email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 {% if form.email.errors %}border-red-500{% endif %}" 
+                           id="id_email" name="email" placeholder="Masukkan email" required>
+                    {% if form.email.errors %}
+                        <div class="text-red-600 text-sm mt-1">{{ form.email.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="id_first_name" class="block text-gray-700 font-semibold mb-2">Nama Depan</label>
+                    <input type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200" id="id_first_name" 
+                           name="first_name" placeholder="Nama depan (opsional)">
+                </div>
+                
+                <div>
+                    <label for="id_last_name" class="block text-gray-700 font-semibold mb-2">Nama Belakang</label>
+                    <input type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200" id="id_last_name" 
+                           name="last_name" placeholder="Nama belakang (opsional)">
+                </div>
+                
+                <div>
+                    <label for="id_password1" class="block text-gray-700 font-semibold mb-2">Password</label>
+                    <input type="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 {% if form.password1.errors %}border-red-500{% endif %}" 
+                           id="id_password1" name="password1" placeholder="Masukkan password" required>
+                    {% if form.password1.errors %}
+                        <div class="text-red-600 text-sm mt-1">
+                            {% for error in form.password1.errors %}
+                                <small>{{ error }}</small><br>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <div class="text-xs text-gray-600 mt-1">Password minimal 8 karakter dan tidak boleh hanya angka</div>
+                </div>
+                
+                <div>
+                    <label for="id_password2" class="block text-gray-700 font-semibold mb-2">Konfirmasi Password</label>
+                    <input type="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 {% if form.password2.errors %}border-red-500{% endif %}" 
+                           id="id_password2" name="password2" placeholder="Ulangi password" required>
+                    {% if form.password2.errors %}
+                        <div class="text-red-600 text-sm mt-1">{{ form.password2.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <button type="submit" class="w-full bg-gradient-to-r from-purple-500 to-purple-700 text-white font-bold py-3 rounded-lg hover:from-purple-600 hover:to-purple-800 transform hover:scale-105 transition duration-200 mt-6">
+                    <i class="fas fa-user-plus"></i> Daftar
+                </button>
+            </form>
+        </div>
+        
+        <div class="text-center py-5 px-5 border-t border-gray-200 text-sm">
+            Sudah punya akun? <a href="{% url 'login' %}" class="text-purple-600 font-semibold hover:text-purple-800">Login di sini</a>
+        </div>
+    </div>
+</body>
+</html>

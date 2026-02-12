@@ -1,0 +1,316 @@
+{% extends 'base.html' %}
+
+{% block title %}Analisis Z-Score - Smart Accident{% endblock %}
+
+{% block content %}
+<div class="w-full">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <div>
+            <h1 class="text-3xl font-bold"><i class="fas fa-chart-bar"></i> Analisis Tingkat Kerawanan</h1>
+        </div>
+        <form method="get" class="flex gap-2">
+            <select name="tahun" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200" onchange="this.form.submit()">
+                <option value="">-- Pilih Tahun --</option>
+                {% for tahun_opt in tahun_options %}
+                    <option value="{{ tahun_opt }}" {% if request.GET.tahun|add:"0" == tahun_opt %}selected{% endif %}>
+                        {{ tahun_opt }}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+    
+    {% if is_admin %}
+    <div class="mb-4">
+        <form method="post" class="inline">
+            {% csrf_token %}
+            <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                <i class="fas fa-calculator"></i> Hitung Ulang Analisis Tahun {{ tahun }}
+            </button>
+        </form>
+    </div>
+    {% endif %}
+    
+    <!-- Ringkasan Statistik -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div style="background-color: #d32f2f;" class="text-white px-6 py-4">
+                <h6 class="text-sm font-semibold">Sangat Tinggi</h6>
+            </div>
+            <div class="p-6 text-center">
+                <div class="text-3xl font-bold">{{ statistik.sangat_tinggi.count }}</div>
+                <small class="text-gray-500">Segmen</small>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div style="background-color: #f57c00;" class="text-white px-6 py-4">
+                <h6 class="text-sm font-semibold">Tinggi</h6>
+            </div>
+            <div class="p-6 text-center">
+                <div class="text-3xl font-bold">{{ statistik.tinggi.count }}</div>
+                <small class="text-gray-500">Segmen</small>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div style="background-color: #fbc02d;" class="px-6 py-4">
+                <h6 class="text-sm font-semibold" style="color: #333;">Sedang</h6>
+            </div>
+            <div class="p-6 text-center">
+                <div class="text-3xl font-bold">{{ statistik.sedang.count }}</div>
+                <small class="text-gray-500">Segmen</small>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div style="background-color: #7cb342;" class="text-white px-6 py-4">
+                <h6 class="text-sm font-semibold">Rendah & Sangat Rendah</h6>
+            </div>
+            <div class="p-6 text-center">
+                <div class="text-3xl font-bold">{{ statistik.rendah.count|add:statistik.sangat_rendah.count }}</div>
+                <small class="text-gray-500">Segmen</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Kategori Sangat Tinggi -->
+    <div class="mb-6">
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div style="background-color: #d32f2f;" class="text-white px-6 py-4">
+                <h5 class="font-semibold">
+                    <i class="fas fa-triangle-exclamation"></i> Kategori Sangat Tinggi
+                </h5>
+            </div>
+            <div class="p-6">
+                {% if statistik.sangat_tinggi %}
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-100 border-b border-gray-200">
+                                <tr>
+                                    <th class="px-4 py-3 text-left font-semibold">Ruas Jalan</th>
+                                    <th class="px-4 py-3 text-left font-semibold">Segmen (km)</th>
+                                    <th class="px-4 py-3 text-center font-semibold">Z-Score</th>
+                                    <th class="px-4 py-3 text-center font-semibold">Kecelakaan</th>
+                                    <th class="px-4 py-3 text-center font-semibold">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in statistik.sangat_tinggi %}
+                                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                    <td class="px-4 py-3">
+                                        <a href="{% url 'ruas_jalan_detail' item.segmen_jalan.ruas_jalan.id %}" class="text-blue-600 hover:underline">
+                                            {{ item.segmen_jalan.ruas_jalan.nama_ruas }}
+                                        </a>
+                                    </td>
+                                    <td class="px-4 py-3">{{ item.segmen_jalan.km_awal }} - {{ item.segmen_jalan.km_akhir }} km</td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium">{{ item.nilai_zscore }}</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="px-3 py-1 bg-gray-800 text-white rounded-full text-sm font-medium">{{ item.segmen_jalan.kecelakaan.count }}</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-center">
+                                        <a href="{% url 'segmen_kecelakaan_detail' item.segmen_jalan.id %}" 
+                                           class="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-sm">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-gray-500">Tidak ada segmen kategori sangat tinggi</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Kategori Tinggi -->
+    <div class="mb-6">
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div style="background-color: #f57c00;" class="text-white px-6 py-4">
+                <h5 class="font-semibold">
+                    <i class="fas fa-exclamation-circle"></i> Kategori Tinggi
+                </h5>
+            </div>
+            <div class="p-6">
+                {% if statistik.tinggi %}
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-100 border-b border-gray-200">
+                                <tr>
+                                    <th class="px-4 py-3 text-left font-semibold">Ruas Jalan</th>
+                                    <th class="px-4 py-3 text-left font-semibold">Segmen (km)</th>
+                                    <th class="px-4 py-3 text-center font-semibold">Z-Score</th>
+                                    <th class="px-4 py-3 text-center font-semibold">Kecelakaan</th>
+                                    <th class="px-4 py-3 text-center font-semibold">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in statistik.tinggi %}
+                                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                    <td class="px-4 py-3">
+                                        <a href="{% url 'ruas_jalan_detail' item.segmen_jalan.ruas_jalan.id %}" class="text-blue-600 hover:underline">
+                                            {{ item.segmen_jalan.ruas_jalan.nama_ruas }}
+                                        </a>
+                                    </td>
+                                    <td class="px-4 py-3">{{ item.segmen_jalan.km_awal }} - {{ item.segmen_jalan.km_akhir }} km</td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="px-3 py-1 rounded-full text-sm font-medium text-white" style="background-color: #f57c00;">{{ item.nilai_zscore }}</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="px-3 py-1 bg-gray-800 text-white rounded-full text-sm font-medium">{{ item.segmen_jalan.kecelakaan.count }}</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-center">
+                                        <a href="{% url 'segmen_kecelakaan_detail' item.segmen_jalan.id %}" 
+                                           class="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-sm">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-gray-500">Tidak ada segmen kategori tinggi</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Kategori Sedang -->
+    <div class="mb-6">
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div style="background-color: #fbc02d;" class="px-6 py-4">
+                <h5 class="font-semibold" style="color: #333;">
+                    <i class="fas fa-info-circle"></i> Kategori Sedang
+                </h5>
+            </div>
+            <div class="p-6">
+                {% if statistik.sedang %}
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-100 border-b border-gray-200">
+                                <tr>
+                                    <th class="px-4 py-3 text-left font-semibold">Ruas Jalan</th>
+                                    <th class="px-4 py-3 text-left font-semibold">Segmen (km)</th>
+                                    <th class="px-4 py-3 text-center font-semibold">Z-Score</th>
+                                    <th class="px-4 py-3 text-center font-semibold">Kecelakaan</th>
+                                    <th class="px-4 py-3 text-center font-semibold">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in statistik.sedang %}
+                                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                    <td class="px-4 py-3">
+                                        <a href="{% url 'ruas_jalan_detail' item.segmen_jalan.ruas_jalan.id %}" class="text-blue-600 hover:underline">
+                                            {{ item.segmen_jalan.ruas_jalan.nama_ruas }}
+                                        </a>
+                                    </td>
+                                    <td class="px-4 py-3">{{ item.segmen_jalan.km_awal }} - {{ item.segmen_jalan.km_akhir }} km</td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="px-3 py-1 rounded-full text-sm font-medium" style="background-color: #fbc02d; color: #333;">{{ item.nilai_zscore }}</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="px-3 py-1 bg-gray-800 text-white rounded-full text-sm font-medium">{{ item.segmen_jalan.kecelakaan.count }}</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-center">
+                                        <a href="{% url 'segmen_kecelakaan_detail' item.segmen_jalan.id %}" 
+                                           class="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-sm">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-gray-500">Tidak ada segmen kategori sedang</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Kategori Rendah & Sangat Rendah -->
+    <div>
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div style="background-color: #7cb342;" class="text-white px-6 py-4">
+                <h5 class="font-semibold">
+                    <i class="fas fa-check-circle"></i> Kategori Rendah & Sangat Rendah
+                </h5>
+            </div>
+            <div class="p-6">
+                {% if statistik.rendah|add:statistik.sangat_rendah %}
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-100 border-b border-gray-200">
+                                <tr>
+                                    <th class="px-4 py-3 text-left font-semibold">Ruas Jalan</th>
+                                    <th class="px-4 py-3 text-left font-semibold">Segmen (km)</th>
+                                    <th class="px-4 py-3 text-center font-semibold">Z-Score</th>
+                                    <th class="px-4 py-3 text-center font-semibold">Kategori</th>
+                                    <th class="px-4 py-3 text-center font-semibold">Kecelakaan</th>
+                                    <th class="px-4 py-3 text-center font-semibold">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in statistik.rendah %}
+                                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                    <td class="px-4 py-3">
+                                        <a href="{% url 'ruas_jalan_detail' item.segmen_jalan.ruas_jalan.id %}" class="text-blue-600 hover:underline">
+                                            {{ item.segmen_jalan.ruas_jalan.nama_ruas }}
+                                        </a>
+                                    </td>
+                                    <td class="px-4 py-3">{{ item.segmen_jalan.km_awal }} - {{ item.segmen_jalan.km_akhir }} km</td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="px-3 py-1 rounded-full text-sm font-medium text-white" style="background-color: #7cb342;">{{ item.nilai_zscore }}</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-center">Rendah</td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="px-3 py-1 bg-gray-800 text-white rounded-full text-sm font-medium">{{ item.segmen_jalan.kecelakaan.count }}</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-center">
+                                        <a href="{% url 'segmen_kecelakaan_detail' item.segmen_jalan.id %}" 
+                                           class="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-sm">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                
+                                {% for item in statistik.sangat_rendah %}
+                                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                    <td class="px-4 py-3">
+                                        <a href="{% url 'ruas_jalan_detail' item.segmen_jalan.ruas_jalan.id %}" class="text-blue-600 hover:underline">
+                                            {{ item.segmen_jalan.ruas_jalan.nama_ruas }}
+                                        </a>
+                                    </td>
+                                    <td class="px-4 py-3">{{ item.segmen_jalan.km_awal }} - {{ item.segmen_jalan.km_akhir }} km</td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="px-3 py-1 rounded-full text-sm font-medium text-white" style="background-color: #388e3c;">{{ item.nilai_zscore }}</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-center">Sangat Rendah</td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="px-3 py-1 bg-gray-800 text-white rounded-full text-sm font-medium">{{ item.segmen_jalan.kecelakaan.count }}</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-center">
+                                        <a href="{% url 'segmen_kecelakaan_detail' item.segmen_jalan.id %}" 
+                                           class="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-sm">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-gray-500">Tidak ada segmen kategori rendah atau sangat rendah</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

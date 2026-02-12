@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Smart Accident{% endblock %}
+
+{% block content %}
+<div class="w-full">
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold">{{ title }}</h1>
+    </div>
+    
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="p-6">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <h5 class="mb-4 text-lg font-semibold">Informasi Waktu & Lokasi</h5>
+                            
+                            <div class="mb-4">
+                                {{ form.tanggal.label_tag }}
+                                {{ form.tanggal }}
+                                {% if form.tanggal.errors %}
+                                    <div class="text-red-600 text-sm mt-1">{{ form.tanggal.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-4">
+                                {{ form.waktu.label_tag }}
+                                {{ form.waktu }}
+                                {% if form.waktu.errors %}
+                                    <div class="text-red-600 text-sm mt-1">{{ form.waktu.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-4">
+                                {{ form.latitude.label_tag }}
+                                {{ form.latitude }}
+                                <small class="text-gray-600 text-xs block mt-1">Misal: -6.123456</small>
+                                {% if form.latitude.errors %}
+                                    <div class="text-red-600 text-sm mt-1">{{ form.latitude.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-4">
+                                {{ form.longitude.label_tag }}
+                                {{ form.longitude }}
+                                <small class="text-gray-600 text-xs block mt-1">Misal: 106.123456</small>
+                                {% if form.longitude.errors %}
+                                    <div class="text-red-600 text-sm mt-1">{{ form.longitude.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h5 class="mb-4 text-lg font-semibold">Lokasi Administratif</h5>
+                            
+                            <div class="mb-4">
+                                {{ form.desa.label_tag }}
+                                {{ form.desa }}
+                                {% if form.desa.errors %}
+                                    <div class="text-red-600 text-sm mt-1">{{ form.desa.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-4">
+                                {{ form.kecamatan.label_tag }}
+                                {{ form.kecamatan }}
+                                {% if form.kecamatan.errors %}
+                                    <div class="text-red-600 text-sm mt-1">{{ form.kecamatan.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-4">
+                                {{ form.kabupaten_kota.label_tag }}
+                                {{ form.kabupaten_kota }}
+                                {% if form.kabupaten_kota.errors %}
+                                    <div class="text-red-600 text-sm mt-1">{{ form.kabupaten_kota.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-6">
+                    
+                    <div>
+                        <h5 class="mb-4 text-lg font-semibold">Data Kecelakaan</h5>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <div class="mb-4">
+                                    {{ form.jumlah_kecelakaan.label_tag }}
+                                    {{ form.jumlah_kecelakaan }}
+                                    {% if form.jumlah_kecelakaan.errors %}
+                                        <div class="text-red-600 text-sm mt-1">{{ form.jumlah_kecelakaan.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-4">
+                                    {{ form.korban_meninggal.label_tag }}
+                                    {{ form.korban_meninggal }}
+                                    {% if form.korban_meninggal.errors %}
+                                        <div class="text-red-600 text-sm mt-1">{{ form.korban_meninggal.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="mb-4">
+                                    {{ form.korban_luka_berat.label_tag }}
+                                    {{ form.korban_luka_berat }}
+                                    {% if form.korban_luka_berat.errors %}
+                                        <div class="text-red-600 text-sm mt-1">{{ form.korban_luka_berat.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-4">
+                                    {{ form.korban_luka_ringan.label_tag }}
+                                    {{ form.korban_luka_ringan }}
+                                    {% if form.korban_luka_ringan.errors %}
+                                        <div class="text-red-600 text-sm mt-1">{{ form.korban_luka_ringan.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <div class="mb-4">
+                                    {{ form.kerugian_materi.label_tag }}
+                                    {{ form.kerugian_materi }}
+                                    <small class="text-gray-600 text-xs block mt-1">Dalam Rupiah</small>
+                                    {% if form.kerugian_materi.errors %}
+                                        <div class="text-red-600 text-sm mt-1">{{ form.kerugian_materi.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            {{ form.keterangan.label_tag }}
+                            {{ form.keterangan }}
+                            {% if form.keterangan.errors %}
+                                <div class="text-red-600 text-sm mt-1">{{ form.keterangan.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="flex gap-3">
+                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                <i class="fas fa-save"></i> Simpan
+                            </button>
+                            <a href="{% url 'kecelakaan_list' %}" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                                <i class="fas fa-times"></i> Batal
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    input[type="time"],
+    select,
+    textarea {
+        @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200;
+    }
+    
+    label {
+        @apply block text-gray-700 font-semibold mb-2;
+    }
+</style>
+
+{% endblock %}

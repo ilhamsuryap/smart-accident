@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Smart Accident - Sistem Pemetaan Kerawanan Kecelakaan{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+    
+    <!-- Google Fonts - Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    
+    <style>
+        * {
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .sidebar-link {
+            @apply text-gray-700 py-2.5 px-5 border-l-4 border-transparent mb-1 transition-all duration-300 hover:bg-gray-100 hover:border-l-blue-600 hover:text-blue-600;
+        }
+        
+        .sidebar-link.active {
+            @apply bg-gray-100 border-l-blue-600 text-blue-600;
+        }
+        
+        .stat-card {
+            @apply text-center p-5 rounded-lg text-white;
+        }
+        
+        .stat-card-danger {
+            @apply bg-gradient-to-br from-red-600 to-red-800;
+        }
+        
+        .stat-card-warning {
+            @apply bg-gradient-to-br from-orange-600 to-orange-800;
+        }
+        
+        .stat-card-info {
+            @apply bg-gradient-to-br from-blue-600 to-blue-800;
+        }
+        
+        .stat-card-success {
+            @apply bg-gradient-to-br from-green-600 to-green-800;
+        }
+        
+        .stat-card h6 {
+            @apply text-sm uppercase mb-2.5 opacity-90;
+        }
+        
+        .stat-card .value {
+            @apply text-2xl font-bold;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-gray-100">
+    <!-- Navbar -->
+    <nav class="bg-blue-600 shadow-md">
+        <div class="w-full px-4 py-4">
+            <div class="flex items-center justify-between">
+                <a href="{% url 'dashboard' %}" class="font-bold text-xl text-white">
+                    <i class="fas fa-map-location-dot"></i> Smart Accident
+                </a>
+                <button id="navToggle" type="button" class="text-white md:hidden">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div id="navMenu" class="hidden md:flex items-center gap-6">
+                    <ul class="flex items-center gap-4">
+                        {% if user.is_authenticated %}
+                            <li class="relative group">
+                                <button class="text-white flex items-center gap-2 hover:text-gray-200">
+                                    <i class="fas fa-user"></i> {{ user.first_name|default:user.username }}
+                                    <i class="fas fa-chevron-down text-sm"></i>
+                                </button>
+                                <div class="absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded-lg shadow-lg hidden group-hover:block z-50">
+                                    {% if user.is_staff %}
+                                        <a href="{% url 'admin:index' %}" class="block px-4 py-2 hover:bg-gray-100">Admin Panel</a>
+                                        <hr>
+                                    {% endif %}
+                                    <a href="{% url 'logout' %}" class="block px-4 py-2 hover:bg-gray-100">
+                                        <i class="fas fa-sign-out-alt"></i> Logout
+                                    </a>
+                                </div>
+                            </li>
+                        {% else %}
+                            <li><a href="{% url 'login' %}" class="text-white hover:text-gray-200">Login</a></li>
+                            <li><a href="{% url 'register' %}" class="text-white hover:text-gray-200">Register</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    {% if user.is_authenticated %}
+    <div class="flex h-full">
+        <!-- Sidebar -->
+        <div class="w-full md:w-64 bg-white border-r border-gray-300 md:min-h-screen pt-5">
+            <nav class="flex flex-col space-y-1">
+                <a class="sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" 
+                   href="{% url 'dashboard' %}">
+                    <i class="fas fa-chart-line"></i> Dashboard
+                </a>
+                <a class="sidebar-link {% if 'ruas_jalan' in request.resolver_match.url_name %}active{% endif %}" 
+                   href="{% url 'ruas_jalan_list' %}">
+                    <i class="fas fa-road"></i> Ruas Jalan
+                </a>
+                <a class="sidebar-link {% if 'kecelakaan' in request.resolver_match.url_name %}active{% endif %}" 
+                   href="{% url 'kecelakaan_list' %}">
+                    <i class="fas fa-exclamation-triangle"></i> Data Kecelakaan
+                </a>
+                <a class="sidebar-link {% if 'map' in request.resolver_match.url_name %}active{% endif %}" 
+                   href="{% url 'map' %}">
+                    <i class="fas fa-map"></i> Peta 
+                </a>
+            </nav>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="flex-1 p-5 md:p-6 bg-gray-100">
+            {% if messages %}
+                <div class="mb-6 space-y-3">
+                    {% for message in messages %}
+                        <div class="flex items-center gap-3 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}" role="alert">
+                            <i class="fas fa-{% if message.tags == 'success' %}check-circle{% else %}exclamation-circle{% endif %}"></i>
+                            <span class="flex-1">{{ message }}</span>
+                            <button type="button" class="text-lg leading-none" onclick="this.parentElement.remove()">×</button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+    {% else %}
+        <div class="container mx-auto mt-20 px-4">
+            {% if messages %}
+                <div class="mb-6 space-y-3">
+                    {% for message in messages %}
+                        <div class="flex items-center gap-3 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}" role="alert">
+                            <i class="fas fa-{% if message.tags == 'success' %}check-circle{% else %}exclamation-circle{% endif %}"></i>
+                            <span class="flex-1">{{ message }}</span>
+                            <button type="button" class="text-lg leading-none" onclick="this.parentElement.remove()">×</button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+    
+    <!-- Footer -->
+    <footer class="bg-blue-600 text-white py-5 text-center mt-10">
+        <div class="w-full">
+            <!-- <p>&copy; 2025 Smart Accident - Sistem Pemetaan dan Analisis Kerawanan Kecelakaan Lalu Lintas</p>
+            <p>Powered by Django & Leaflet.js</p> -->
+        </div>
+    </footer>
+    
+    <!-- Leaflet JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    
+    <!-- Mobile Menu Toggle -->
+    <script>
+        document.getElementById('navToggle').addEventListener('click', function() {
+            const navMenu = document.getElementById('navMenu');
+            navMenu.classList.toggle('hidden');
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
