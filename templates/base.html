@@ -95,7 +95,7 @@
     
     {% block extra_css %}{% endblock %}
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 overflow-x-hidden">
     <!-- Navbar -->
     <nav class="bg-blue shadow-md">
         <div class="w-full px-4 py-4">
@@ -132,36 +132,149 @@
         </div>
     </nav>
     
-    {% if user.is_authenticated %}
-    <div class="flex h-full">
-        <!-- Sidebar -->
-        <div class="w-full md:w-64 bg-white border-r border-gray-300 md:min-h-screen pt-5">
-            <nav class="flex flex-col space-y-1">
-                <a class="sidebar-link font-semibold {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" 
-                   href="{% url 'dashboard' %}">
-                    <i class="fas fa-chart-line"></i> Dashboard
-                </a>
-                <a class="sidebar-link font-semibold {% if 'ruas_jalan' in request.resolver_match.url_name %}active{% endif %}" 
+   {% if user.is_authenticated %}
+<div class="flex min-h-screen overflow-hidden">
+{% with current=request.resolver_match.url_name %}
+
+<!-- Sidebar -->
+<div class="w-full md:w-64 bg-white border-r border-gray-300 md:min-h-screen pt-5">
+    <nav class="flex flex-col space-y-1 px-4">
+
+        <!-- Dashboard -->
+        <a class="sidebar-link {% if current == 'dashboard' %}active{% endif %}" 
+           href="{% url 'dashboard' %}">
+            <i class="fas fa-chart-line mr-2"></i> Dashboard
+        </a>
+
+        <!-- ================= PEMETAAN ================= -->
+        <div>
+            <button type="button" onclick="toggleDropdown()" 
+                class="w-full flex justify-between items-center sidebar-link
+                {% if current == 'ruas_jalan_list' or current == 'kecelakaan_list' or current == 'map' %}
+                    active
+                {% endif %}">
+                <span>
+                    <i class="fas fa-map-marked-alt mr-2"></i> Pemetaan
+                </span>
+                <i class="fas fa-chevron-down text-sm"></i>
+            </button>
+
+            <div id="pemetaanDropdown"
+                class="ml-6 mt-1 flex flex-col space-y-1
+                {% if current == 'ruas_jalan_list' or current == 'kecelakaan_list' or current == 'map' %}
+                    block
+                {% else %}
+                    hidden
+                {% endif %}">
+
+                <a class="sidebar-link text-sm {% if current == 'ruas_jalan_list' %}active{% endif %}" 
                    href="{% url 'ruas_jalan_list' %}">
-                    <i class="fas fa-road"></i> Ruas Jalan
+                    <i class="fas fa-road mr-2"></i> Ruas Jalan
                 </a>
-                <a class="sidebar-link font-semibold {% if 'kecelakaan' in request.resolver_match.url_name %}active{% endif %}" 
+
+                <a class="sidebar-link text-sm {% if current == 'kecelakaan_list' %}active{% endif %}" 
                    href="{% url 'kecelakaan_list' %}">
-                    <i class="fas fa-exclamation-triangle"></i> Data Kecelakaan
+                    <i class="fas fa-exclamation-triangle mr-2"></i> Data Kecelakaan
                 </a>
-                <a class="sidebar-link font-semibold {% if 'map' in request.resolver_match.url_name %}active{% endif %}" 
+
+                <a class="sidebar-link text-sm {% if current == 'map' %}active{% endif %}" 
                    href="{% url 'map' %}">
-                    <i class="fas fa-map"></i> Peta 
+                    <i class="fas fa-map mr-2"></i> Peta
                 </a>
-                <a class="sidebar-link font-semibold {% if 'logout' in request.resolver_match.url_name %}active{% endif %}" 
-                   href="{% url 'logout' %}">
-                      <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
-            </nav>
+            </div>
         </div>
-        
+
+        <!-- ================= KMEANS ================= -->
+        <div>
+            <button type="button" onclick="toggleKmeans()" 
+                class="w-full flex justify-between items-center sidebar-link
+                {% if 'kmeans' in current %} active {% endif %}">
+                <span>
+                    <i class="fas fa-project-diagram mr-2"></i> Cluster K-Means
+                </span>
+                <i class="fas fa-chevron-down text-sm"></i>
+            </button>
+
+            <div id="kmeansDropdown"
+                class="ml-6 mt-1 flex flex-col space-y-1
+                {% if 'kmeans' in current %} block {% else %} hidden {% endif %}">
+
+                <a class="sidebar-link text-sm {% if current == 'kmeans_data' %}active{% endif %}" 
+                   href="{% url 'kmeans_data' %}">
+                    <i class="fas fa-database mr-2"></i> Data
+                </a>
+
+                <a class="sidebar-link text-sm {% if current == 'kmeans_proses' %}active{% endif %}" 
+                   href="{% url 'kmeans_proses' %}">
+                    <i class="fas fa-cogs mr-2"></i> Proses
+                </a>
+
+                <a class="sidebar-link text-sm {% if current == 'kmeans_hasil' %}active{% endif %}" 
+                   href="{% url 'kmeans_hasil' %}">
+                    <i class="fas fa-chart-bar mr-2"></i> Hasil
+                </a>
+            </div>
+        </div>
+
+        <!-- ================= AHC ================= -->
+        <div>
+            <button type="button" onclick="toggleAhc()" 
+                class="w-full flex justify-between items-center sidebar-link
+                {% if 'ahc' in current %} active {% endif %}">
+                <span>
+                    <i class="fas fa-sitemap mr-2"></i> Cluster AHC
+                </span>
+                <i class="fas fa-chevron-down text-sm"></i>
+            </button>
+
+            <div id="ahcDropdown"
+                class="ml-6 mt-1 flex flex-col space-y-1
+                {% if 'ahc' in current %} block {% else %} hidden {% endif %}">
+
+                <a class="sidebar-link text-sm {% if current == 'ahc_data' %}active{% endif %}" 
+                   href="{% url 'ahc_data' %}">
+                    <i class="fas fa-database mr-2"></i> Data
+                </a>
+
+                <a class="sidebar-link text-sm {% if current == 'ahc_proses' %}active{% endif %}" 
+                   href="{% url 'ahc_proses' %}">
+                    <i class="fas fa-cogs mr-2"></i> Proses
+                </a>
+
+                <a class="sidebar-link text-sm {% if current == 'ahc_hasil' %}active{% endif %}" 
+                   href="{% url 'ahc_hasil' %}">
+                    <i class="fas fa-chart-bar mr-2"></i> Hasil
+                </a>
+            </div>
+        </div>
+
+        <!-- Logout -->
+        <a class="sidebar-link mt-4" href="{% url 'logout' %}">
+            <i class="fas fa-sign-out-alt mr-2"></i> Logout
+        </a>
+
+    </nav>
+</div>
+
+{% endwith %}
+
+    <!-- Script Dropdown -->
+    <script>
+        function toggleDropdown() {
+            const dropdown = document.getElementById("pemetaanDropdown");
+            dropdown.classList.toggle("hidden");
+        }
+        function toggleKmeans() {
+            document.getElementById("kmeansDropdown").classList.toggle("hidden");
+        }
+
+        function toggleAhc() {
+            document.getElementById("ahcDropdown").classList.toggle("hidden");
+        }
+    </script>
+            
         <!-- Main Content -->
-        <div class="flex-1 p-5 md:p-6 bg-gray-100">
+        <div class="flex-1 p-5 md:p-6 bg-gray-100 overflow-x-hidden">
             {% if messages %}
                 <div class="mb-6 space-y-3">
                     {% for message in messages %}
