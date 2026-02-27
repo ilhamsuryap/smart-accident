@@ -127,6 +127,33 @@
                    href="{% url 'map' %}">
                     <i class="fas fa-map"></i> Peta 
                 </a>
+                <!-- Cluster K-Means Dropdown -->
+                <div x-data="{ open: false }">
+                    <button @click="open = !open"
+                        class="sidebar-link w-full text-left flex items-center justify-between">
+                        <span><i class="fas fa-diagram-project"></i> Cluster K-Means</span>
+                        <i class="fas fa-chevron-down text-sm"></i>
+                    </button>
+
+                    <div x-show="open" x-transition class="ml-6 flex flex-col">
+                        
+                    <a class="sidebar-link {% if request.resolver_match.url_name == 'cluster_data' %}active{% endif %}" 
+                    href="{% url 'cluster_data' %}">
+                        <i class="fas fa-database"></i> Data Kecelakaan
+                    </a>
+
+                    <a class="sidebar-link {% if request.resolver_match.url_name == 'preprocessing' %}active{% endif %}" 
+                    href="{% url 'preprocessing' %}">
+                        <i class="fas fa-gears"></i> Proses Clustering
+                    </a>
+
+                    <a class="sidebar-link {% if request.resolver_match.url_name == 'hasil_cluster' %}active{% endif %}" 
+                    href="{% url 'hasil_cluster' %}">
+                        <i class="fas fa-chart-pie"></i> Hasil Analisis
+                    </a>
+
+                    </div>
+                </div>
             </nav>
         </div>
         
@@ -181,6 +208,8 @@
             navMenu.classList.toggle('hidden');
         });
     </script>
+    
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     
     {% block extra_js %}{% endblock %}
 </body>

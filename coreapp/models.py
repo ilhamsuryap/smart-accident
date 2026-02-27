@@ -333,3 +333,24 @@ class AnalisisZScore(models.Model):
             'sangat_rendah': '#388e3c',  # Hijau
         }
         return colors.get(self.kategori, '#999999')
+    
+    #=========================K-Means Location Models=========================
+class Kota(models.Model):
+    nama = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.nama
+
+class Kecamatan(models.Model):
+    kota = models.ForeignKey(Kota, on_delete=models.CASCADE)
+    nama = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.nama
+
+class Kelurahan(models.Model):
+    kecamatan = models.ForeignKey(Kecamatan, on_delete=models.CASCADE)
+    nama = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.nama
