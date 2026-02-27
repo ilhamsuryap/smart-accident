@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="w-full">
+
+<!-- ================= HEADER ================= -->
+<div class="mb-8">
+
+    <!-- Judul -->
+    <div>
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">
+            Manajemen Data Kecelakaan
+        </h1>
+    </div>
+
+    <!-- Tombol Tambah Data di kanan bawah -->
+    <div class="flex justify-end">
+        <a href="#"
+           class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition">
+            Tambah Data
+        </a>
+    </div>
+
+</div>
+
+    <!-- ================= STAT CARDS ================= -->
+    <!-- Semua nilai default 0 karena belum ada data -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+
+        <div class="bg-white rounded-xl shadow p-6 text-center">
+            <p class="text-gray-500 text-sm uppercase">Meninggal Dunia</p>
+            <p class="text-2xl font-bold text-gray-800 mt-2">0</p>
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-6 text-center">
+            <p class="text-gray-500 text-sm uppercase">Luka Berat</p>
+            <p class="text-2xl font-bold text-gray-800 mt-2">0</p>
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-6 text-center">
+            <p class="text-gray-500 text-sm uppercase">Luka Ringan</p>
+            <p class="text-2xl font-bold text-gray-800 mt-2">0</p>
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-6 text-center">
+            <p class="text-gray-500 text-sm uppercase">Total Kerugian</p>
+            <p class="text-2xl font-bold text-gray-800 mt-2">Rp 0</p>
+        </div>
+
+    </div>
+
+    <!-- ================= TABLE CARD ================= -->
+    <div class="bg-white rounded-xl shadow">
+
+        <!-- Filter -->
+        <div class="flex justify-between items-center p-4 border-b">
+
+            <div class="relative w-64">
+                <input type="text"
+                       placeholder="Cari berdasarkan tanggal"
+                       class="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div class="flex space-x-2">
+                <select class="border rounded-lg px-3 py-2 text-sm">
+                        <option value="">Pilih Tahun</option>
+                        <option value="2020">2020</option>
+                        <option value="2021">2021</option>
+                        <option value="2022">2022</option>
+                        <option value="2023">2023</option>
+                        <option value="2024">2024</option>
+                        <option value="2025">2025</option>
+                </select>
+                <select class="border rounded-lg px-3 py-2 text-sm">
+                        <option value="">Pilih Bulan</option>
+                        <option value="Januari">Januari</option>
+                        <option value="Februari">Februari</option>
+                        <option value="Maret">Maret</option>
+                        <option value="April">April</option>
+                        <option value="Mei">Mei</option>
+                        <option value="Juni">Juni</option>
+                        <option value="Juli">Juli</option>
+                        <option value="Agustus">Agustus</option>
+                        <option value="September">September</option>
+                        <option value="Oktober">Oktober</option>
+                        <option value="November">November</option>
+                        <option value="Desember">Desember</option>
+                </select>
+            </div>
+
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm text-left">
+                <thead class="bg-gray-50 border-b">
+                    <tr>
+                        <th class="px-6 py-3">No</th>
+                        <th class="px-6 py-3">Tanggal & Waktu</th>
+                        <th class="px-6 py-3">Lokasi Kejadian</th>
+                        <th class="px-6 py-3">Penyebab</th>
+                        <th class="px-6 py-3">Korban (MD/LB/LR)</th>
+                        <th class="px-6 py-3">Kerugian</th>
+                        <th class="px-6 py-3 text-center">Aksi</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr>
+                        <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                            Belum ada data kecelakaan
+                        </td>
+                    </tr>
+                </tbody>
+
+            </table>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
