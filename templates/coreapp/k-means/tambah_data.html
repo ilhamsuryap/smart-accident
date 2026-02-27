@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+    body {
+        background-color: #f1f3f6;
+    }
+
+    /* Judul halaman */
+    .page-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #3a3a3a;
+    }
+
+    .page-subtitle {
+        font-size: 14px;
+        color: #8a8a8a;
+        margin-bottom: 30px;
+    }
+
+    /* Card utama */
+    .form-card {
+        background: #ffffff;
+        border-radius: 14px;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+        max-width: 1100px;
+        margin: 0 auto 60px auto;
+        overflow: hidden;
+    }
+
+    /* Header section */
+    .section-header {
+        background: #e3edf6;
+        padding: 16px 24px;
+        font-weight: 600;
+        font-size: 14px;
+        color: #3a3a3a;
+    }
+
+    .section-body {
+        padding: 28px 28px 32px 28px;
+    }
+
+    label {
+        font-size: 13px;
+        font-weight: 500;
+        color: #444;
+        margin-bottom: 6px;
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: 10px;
+        font-size: 14px;
+        padding: 8px 12px;
+        border: 1px solid #b5b5b5;
+    }
+
+    /* Card kecil untuk tanggal & waktu */
+    .input-card {
+        background: #e9f0f6;
+        border-radius: 12px;
+        padding: 12px 16px;
+        margin-bottom: 12px;
+    }
+
+    /* Card korban */
+    .korban-card {
+        background: #e9f0f6;
+        border-radius: 12px;
+        padding: 16px;
+        margin-top: 8px;
+    }
+
+    .korban-card small {
+        font-size: 12px;
+        font-weight: 600;
+        color: #333;
+        display: block;
+        margin-bottom: 6px;
+        text-align: center;
+    }
+
+    /* Tombol */
+    .btn-primary-custom {
+        background: #144fd6;
+        border-radius: 10px;
+        padding: 8px 22px;
+        font-size: 14px;
+        border: none;
+        color: #fff;
+    }
+</style>
+
+<!-- JUDUL -->
+<div class="container mb-4">
+    <h2 class="page-title">Form Tambah Data Kecelakaan</h2>
+    <p class="page-subtitle">Isi lengkap data kecelakaan</p>
+</div>
+
+<div class="form-card">
+    <form method="POST" action="{% url 'tambah_data' %}">
+        {% csrf_token %}
+
+        <div class="row g-0">
+            <!-- INFORMASI WAKTU & KORBAN -->
+            <div class="col-md-6 border-end">
+                <div class="section-header">Informasi Waktu & Korban</div>
+                <div class="section-body">
+
+                    <!-- Card Tanggal & Waktu sejajar -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="input-card">
+                                <label>Tanggal Kejadian</label>
+                                <input type="date" name="tanggal" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="input-card">
+                                <label>Waktu Kejadian</label>
+                                <input type="time" name="waktu" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Korban -->
+                    <label>Korban Kejadian</label>
+                    <div class="korban-card">
+                        <div class="row g-3">
+                            <div class="col-4 text-center">
+                                <small>Meninggal Dunia (MD)</small>
+                                <input type="number" name="meninggal" class="form-control text-center" value="0">
+                            </div>
+                            <div class="col-4 text-center">
+                                <small>Luka Berat (LB)</small>
+                                <input type="number" name="luka_berat" class="form-control text-center" value="0">
+                            </div>
+                            <div class="col-4 text-center">
+                                <small>Luka Ringan (LR)</small>
+                                <input type="number" name="luka_ringan" class="form-control text-center" value="0">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- DETAIL LOKASI & KERUGIAN -->
+            <div class="col-md-6">
+                <div class="section-header">Detail Lokasi & Kerugian</div>
+                <div class="section-body">
+
+                    <!-- Kerugian -->
+                    <div class="mb-3">
+                        <label>Kerugian Materi</label>
+                        <input type="number" name="kerugian" class="form-control" placeholder="Rp 0">
+                    </div>
+
+                    <!-- Kota & Kecamatan -->
+                    <div class="row mb-3">
+                        <!-- Kota/Kabupaten -->
+                        <div class="col-md-6 mb-3">
+                            <div class="input-card">
+                                <label>Kota/Kabupaten</label>
+                                <select name="kota" id="id_kota" class="form-select">
+                                    <option value="">Pilih Kota</option>
+                                    {% for kota in kota_list %}
+                                        <option value="{{ kota.id }}">{{ kota.nama }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Kecamatan -->
+                        <div class="col-md-6 mb-3">
+                            <div class="input-card">
+                                <label>Kecamatan</label>
+                                <select name="kecamatan" id="id_kecamatan" class="form-select">
+                                    <option value="">Pilih Kecamatan</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kelurahan/Desa -->
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-3">
+                            <div class="input-card">
+                                <label>Kelurahan/Desa</label>
+                                <select name="kelurahan" id="id_kelurahan" class="form-select">
+                                    <option value="">Pilih Kelurahan</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6"></div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- TOMBOL -->
+        <div class="p-4 text-end">
+            <a href="{% url 'cluster_data' %}" class="btn btn-light me-2">Batal</a>
+            <button type="submit" class="btn btn-primary-custom">Simpan Data</button>
+        </div>
+    </form>
+</div>
+
+<!-- JQuery & AJAX -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Saat pilih Kota
+    $('#id_kota').change(function() {
+        var kotaId = $(this).val();
+        if(kotaId){
+            $.ajax({
+                url:"{% url 'ajax_load_kecamatan' %}",
+                data:{'kota_id': kotaId},
+                success:function(data){
+                    $('#id_kecamatan').html('<option value="">Pilih Kecamatan</option>');
+                    $.each(data.kecamatan, function(i, kec){
+                        $('#id_kecamatan').append('<option value="'+kec.id+'">'+kec.nama+'</option>');
+                    });
+                    $('#id_kelurahan').html('<option value="">Pilih Kelurahan</option>');
+                }
+            });
+        } else {
+            $('#id_kecamatan').html('<option value="">Pilih Kecamatan</option>');
+            $('#id_kelurahan').html('<option value="">Pilih Kelurahan</option>');
+        }
+    });
+
+    // Saat pilih Kecamatan
+    $('#id_kecamatan').change(function() {
+        var kecId = $(this).val();
+        if(kecId){
+            $.ajax({
+                url:"{% url 'ajax_load_kelurahan' %}",
+                data:{'kecamatan_id': kecId},
+                success:function(data){
+                    $('#id_kelurahan').html('<option value="">Pilih Kelurahan</option>');
+                    $.each(data.kelurahan, function(i, kel){
+                        $('#id_kelurahan').append('<option value="'+kel.id+'">'+kel.nama+'</option>');
+                    });
+                }
+            });
+        } else {
+            $('#id_kelurahan').html('<option value="">Pilih Kelurahan</option>');
+        }
+    });
+
+});
+</script>
+
+{% endblock %}

@@ -51,6 +51,17 @@ urlpatterns = [
     path('proses-ahc/', views.proses_ahc, name='proses_ahc'),
 
     
+    # Cluster K-Means
+    path('k-means/data_cluster/', views.cluster_data, name='cluster_data'),
+    path('k-means/tambah/', views.tambah_data, name='tambah_data'),
+    path('k-means/hasil/', views.hasil_cluster, name='hasil_cluster'),
+    path('k-means/preprocessing/', views.preprocessing, name='preprocessing'),
+    path('k-means/hasil/', views.proses_cluster, name='hasil'),
+    path('tambah-data/', views.tambah_data, name='tambah_data'),
+    path('ajax/load-kecamatan/', views.load_kecamatan, name='ajax_load_kecamatan'),
+    path('ajax/load-kelurahan/', views.load_kelurahan, name='ajax_load_kelurahan'),
+
+
     # API
     path('api/segmen/geojson/', views.api_segmen_geojson, name='api_segmen_geojson'),
     path('api/kecelakaan/geojson/', views.api_kecelakaan_geojson, name='api_kecelakaan_geojson'),
