@@ -38,26 +38,26 @@ urlpatterns = [
     path('kmeans/hasil/', views.kmeans_hasil, name='kmeans_hasil'),
 
 # ================= AHC =================
-    path('ahc/data/', views.ahc_data, name='ahc_data'),
-    path('ahc/proses/', views.ahc_proses, name='ahc_proses'),
-    path('ahc/hasil/', views.ahc_hasil, name='ahc_hasil'),
-    path('hasil-ahc/', views.hasil_ahc, name='hasil_ahc'),
+   
 
     # AHC URLS
     path('ahc/data/', views.ahc_data, name='ahc_data'),
     path('ahc/proses/', views.ahc_proses, name='ahc_proses'),
     path('ahc/preprocessing/', views.preprocessing_data, name='preprocessing_data'),
     path('ahc/hasil/', views.ahc_hasil, name='ahc_hasil'),
+    path('hasil-ahc/', views.hasil_ahc, name='hasil_ahc'),
     path('proses-ahc/', views.proses_ahc, name='proses_ahc'),
 
     
     # Cluster K-Means
     path('k-means/data_cluster/', views.cluster_data, name='cluster_data'),
     path('k-means/tambah/', views.tambah_data, name='tambah_data'),
-    path('k-means/hasil/', views.hasil_cluster, name='hasil_cluster'),
+    # path('k-means/hasil/', views.hasil_cluster, name='hasil_cluster'),
     path('k-means/preprocessing/', views.preprocessing, name='preprocessing'),
-    path('k-means/hasil/', views.proses_cluster, name='hasil'),
-    path('tambah-data/', views.tambah_data, name='tambah_data'),
+    path('k-means/hasil/', views.hasil, name='hasil'),
+    path('k-means/reset/', views.reset_k_means, name='reset_k_means'),
+
+    # path('tambah-data/', views.tambah_data, name='tambah_data'),
     path('ajax/load-kecamatan/', views.load_kecamatan, name='ajax_load_kecamatan'),
     path('ajax/load-kelurahan/', views.load_kelurahan, name='ajax_load_kelurahan'),
 
