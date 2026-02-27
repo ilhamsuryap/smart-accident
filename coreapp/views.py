@@ -30,6 +30,7 @@ from sklearn.cluster import KMeans
 from django.conf import settings
 from django.shortcuts import render, redirect   
 from io import StringIO
+from django.shortcuts import redirect
 
 
 
@@ -533,6 +534,8 @@ def cluster_data(request):
     return render(request, 'coreapp/k-means/data_cluster.html', context)
 
 
+
+
 # ================================
 # PREPROCESSING DATA
 # ================================
@@ -546,6 +549,201 @@ def preprocessing(request):
     # =========================
     # 1️⃣ PROSES UPLOAD (POST)
     # =========================
+    if request.method == "POST":
+        file = request.FILES.get('file')
+
+        if file:
+            # 🔥 RESET SEMUA SESSION LAMA (lebih lengkap)
+            for key in [
+                'hasil_cluster',
+                'summary_cluster',
+                'jumlah_cluster',
+                'jumlah_data',
+                'silhouette_score',
+                'X_scaled',
+                'summary_df',
+                'jumlah_data_asli'
+            ]:
+                request.session.pop(key, None)
+
+            # ✅ Simpan nama file aktif
+            request.session['uploaded_file_name'] = file.name
+        if file:
+            df = pd.read_excel(file)
+
+            df.replace('-', np.nan, inplace=True)
+
+            numeric_cols = ['Umur', 'Jumlah Kejadian']
+            numeric_cols = [c for c in numeric_cols if c in df.columns]
+
+            for col in numeric_cols:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+
+            # Handle 'Jumlah Kejadian' - if column doesn't exist, create it with default value 1
+            if 'Jumlah Kejadian' in df.columns:
+                df['Jumlah Kejadian'] = df['Jumlah Kejadian'].fillna(1)
+            else:
+                df['Jumlah Kejadian'] = 1
+
+            if 'Umur' in df.columns:
+                df = df[df['Umur'] > 0]
+
+            # 4️⃣ Konversi jam ke kategori waktu
+            def konversi_waktu(jam):
+                try:
+                    if isinstance(jam, str) and ':' in jam:
+                        jam = int(jam.split(':')[0])
+                    else:
+                        jam = int(jam)
+                except:
+                    return "Tidak Diketahui"
+
+                if 0 <= jam < 6:
+                    return "Dini Hari"
+                elif 6 <= jam < 12:
+                    return "Pagi Hari"
+                elif 12 <= jam < 18:
+                    return "Siang Hari"
+                elif 18 <= jam < 24:
+                    return "Malam Hari"
+                else:
+                    return "Tidak Diketahui"
+
+            if 'Jam' in df.columns:
+                df['Waktu Kejadian'] = df['Jam'].apply(konversi_waktu)
+            else:
+                df['Waktu Kejadian'] = 'Tidak Diketahui'
+
+            # 5️⃣ Dummy kendaraan (PERBAIKAN)
+            kendaraan_cols = ['Motor', 'Mobil', 'Truk/Bus']
+
+            for k in kendaraan_cols:
+                df[k] = 0
+
+            if 'Jenis Kendaraan' in df.columns:
+                jenis = df['Jenis Kendaraan'].astype(str).str.lower()
+
+                df.loc[jenis.str.contains('motor', na=False), 'Motor'] = df['Jumlah Kejadian']
+                df.loc[jenis.str.contains('mobil', na=False), 'Mobil'] = df['Jumlah Kejadian']
+                df.loc[jenis.str.contains('truk|bus', na=False), 'Truk/Bus'] = df['Jumlah Kejadian']
+
+            # 6️⃣ Faktor penyebab
+            if 'Penyebab' in df.columns:
+                df['Penyebab_clean'] = df['Penyebab'].str.strip().str.lower()
+            else:
+                df['Penyebab_clean'] = ''
+
+            df['Faktor Pengemudi'] = df['Jumlah Kejadian']
+            df['Faktor Jalan'] = 0
+            df['Faktor Kendaraan'] = 0
+            df['Faktor Lingkungan'] = 0
+
+            # 7️⃣ Dummy waktu
+            waktu_cols = ['Dini Hari', 'Pagi Hari', 'Siang Hari', 'Malam Hari']
+            for w in waktu_cols:
+                df[w] = (df['Waktu Kejadian'] == w).astype(int) * df['Jumlah Kejadian']
+
+            # 8️⃣ Group by umur dengan semua fitur
+            summary_cols = (
+                ['Jumlah Kejadian']
+                + kendaraan_cols
+                + ['Faktor Pengemudi', 'Faktor Jalan', 'Faktor Kendaraan', 'Faktor Lingkungan']
+                + waktu_cols
+            )
+
+            if 'Umur' in df.columns:
+                summary_df = df.groupby('Umur')[summary_cols].sum().reset_index()
+            else:
+                summary_df = df[summary_cols].sum().to_frame().T
+
+            summary_df = summary_df.round().astype(int)
+
+            # Simpan ke session
+            request.session['summary_df'] = summary_df.to_dict(orient='records')
+            request.session.modified = True
+
+            context['preview'] = summary_df.to_dict(orient='records')
+
+    # =========================
+    # 2️⃣ AMBIL DATA DARI SESSION
+    # =========================
+    summary_json = request.session.get('summary_df')
+
+    if summary_json:
+        # Handle both JSON string and list formats
+        if isinstance(summary_json, list):
+            df = pd.DataFrame(summary_json)
+        else:
+            try:
+                df = pd.read_json(StringIO(summary_json), orient='records')
+            except Exception:
+                df = pd.DataFrame(summary_json)
+        context['preview'] = df.to_dict(orient='records')
+
+    # 💾 LOAD HASIL CLUSTER DARI SESSION (JIKA ADA)
+    hasil_cluster_session = request.session.get('hasil_cluster')
+    k_session = request.session.get('k')
+    
+    if hasil_cluster_session and k_session:
+        context['hasil_cluster'] = hasil_cluster_session
+        context['k'] = k_session
+
+    # =========================
+    # 3️⃣ PROSES CLUSTERING (GET ?k=)
+    # =========================
+    if df is not None and 'k' in request.GET:
+
+        try:
+            k = int(request.GET.get('k', 3))
+        except ValueError:
+            k = 3
+
+        k = max(1, min(k, 3))
+
+        X = df.select_dtypes(include=['number'])
+
+        if not X.empty and len(X) >= k:
+
+            scaler = StandardScaler()
+            X_scaled = scaler.fit_transform(X)
+
+            model = KMeans(n_clusters=k, random_state=42, n_init=10)
+            model.fit(X_scaled)
+
+            df_cluster = df.copy()
+            df_cluster['Cluster'] = model.labels_ + 1  # Cluster mulai dari 1, 2, 3
+
+            hasil_cluster = df_cluster.to_dict(orient='records')
+            
+            # 💾 SIMPAN KE SESSION UNTUK HALAMAN HASIL
+            request.session['hasil_cluster'] = hasil_cluster
+            request.session['k'] = k
+            request.session.modified = True
+            
+            context['hasil_cluster'] = hasil_cluster
+            context['k'] = k
+
+    return render(request, 'coreapp/k-means/preprocessing.html', context)
+
+
+@login_required(login_url='login')
+def reset_k_means(request):
+    keys_to_clear = [
+        'hasil_cluster',
+        'summary_cluster',
+        'jumlah_cluster',
+        'jumlah_data',
+        'silhouette_score',
+        'X_scaled',
+        'summary_df',
+        'uploaded_file_name',
+        'jumlah_data_asli'
+    ]
+    for key in keys_to_clear:
+        request.session.pop(key, None)
+
+    return redirect('preprocessing')
+
 
 # ===============================
 # KMEANS VIEWS
@@ -601,15 +799,10 @@ def ahc_hasil(request):
 def preprocessing_data(request):
     context = {}
 
-
     if request.method == "POST":
         file = request.FILES.get('file')
 
         if file:
-
-            df = pd.read_excel(file)
-
-
             # 🔥 RESET SEMUA SESSION LAMA
             for key in ['hasil_cluster', 'summary_cluster', 'jumlah_cluster', 'jumlah_data', 'silhouette_score']:
                 request.session.pop(key, None)
@@ -626,7 +819,6 @@ def preprocessing_data(request):
             request.session['jumlah_data_asli'] = len(df)
 
             # 2️⃣ Handle missing value
-
             df.replace('-', np.nan, inplace=True)
 
             numeric_cols = ['Umur', 'Jumlah Kejadian']
@@ -635,64 +827,104 @@ def preprocessing_data(request):
             for col in numeric_cols:
                 df[col] = pd.to_numeric(df[col], errors='coerce')
 
+            if 'Jumlah Kejadian' in df.columns:
+                df['Jumlah Kejadian'] = df['Jumlah Kejadian'].fillna(1)
+            else:
+                df['Jumlah Kejadian'] = 1
 
-            df['Jumlah Kejadian'] = df.get('Jumlah Kejadian', 1).fillna(1)
-
+            # 3️⃣ Hapus umur <= 0
             if 'Umur' in df.columns:
                 df = df[df['Umur'] > 0]
 
-            # Contoh summary
-            if 'Umur' in df.columns:
-                summary_df = df.groupby('Umur')['Jumlah Kejadian'].sum().reset_index()
-            else:
-                summary_df = df[['Jumlah Kejadian']]
+            # 4️⃣ Konversi jam ke kategori waktu
+            def konversi_waktu(jam):
+                try:
+                    if isinstance(jam, str) and ':' in jam:
+                        jam = int(jam.split(':')[0])
+                    else:
+                        jam = int(jam)
+                except:
+                    return "Tidak Diketahui"
 
-            # Simpan ke session
-            request.session['summary_df'] = summary_df.to_json(orient='records')
+                if 0 <= jam < 6:
+                    return "Dini Hari"
+                elif 6 <= jam < 12:
+                    return "Pagi Hari"
+                elif 12 <= jam < 18:
+                    return "Siang Hari"
+                elif 18 <= jam < 24:
+                    return "Malam Hari"
+                else:
+                    return "Tidak Diketahui"
+
+            if 'Jam' in df.columns:
+                df['Waktu Kejadian'] = df['Jam'].apply(konversi_waktu)
+            else:
+                df['Waktu Kejadian'] = 'Tidak Diketahui'
+
+            # 5️⃣ Dummy kendaraan
+            kendaraan_cols = ['Motor', 'Mobil', 'Truk/Bus']
+
+            if 'Jenis Kendaraan' in df.columns:
+                for k in kendaraan_cols:
+                    df[k] = (
+                        df['Jenis Kendaraan']
+                        .str.strip()
+                        .str.lower()
+                        .eq(k.lower())
+                        .astype(int)
+                        * df['Jumlah Kejadian']
+                    )
+            else:
+                for k in kendaraan_cols:
+                    df[k] = 0
+
+            # 6️⃣ Faktor penyebab
+            if 'Penyebab' in df.columns:
+                df['Penyebab_clean'] = df['Penyebab'].str.strip().str.lower()
+            else:
+                df['Penyebab_clean'] = ''
+
+            df['Faktor Pengemudi'] = df['Jumlah Kejadian']
+            df['Faktor Jalan'] = 0
+            df['Faktor Kendaraan'] = 0
+            df['Faktor Lingkungan'] = 0
+
+            # 7️⃣ Dummy waktu
+            waktu_cols = ['Dini Hari', 'Pagi Hari', 'Siang Hari', 'Malam Hari']
+            for w in waktu_cols:
+                df[w] = (df['Waktu Kejadian'] == w).astype(int) * df['Jumlah Kejadian']
+
+            # 8️⃣ Group by umur
+            summary_cols = (
+                ['Jumlah Kejadian']
+                + kendaraan_cols
+                + ['Faktor Pengemudi', 'Faktor Jalan', 'Faktor Kendaraan', 'Faktor Lingkungan']
+                + waktu_cols
+            )
+
+            if 'Umur' in df.columns:
+                summary_df = df.groupby('Umur')[summary_cols].sum().reset_index()
+            else:
+                summary_df = df[summary_cols].sum().to_frame().T
+
+            summary_df = summary_df.round().astype(int)
+
+            # 9️⃣ Scaling
+            fitur_clustering = summary_df.copy()
+            scaler = StandardScaler()
+            X_scaled = scaler.fit_transform(fitur_clustering)
+
+            # 🔟 Simpan ke session
+            request.session['hasil_cluster'] = df_cluster.to_dict(orient='records')
+            request.session['k'] = k
             request.session.modified = True
 
             context['preview'] = summary_df.to_dict(orient='records')
-
-    # =========================
-    # 2️⃣ AMBIL DATA DARI SESSION
-    # =========================
-    summary_json = request.session.get('summary_df')
-
-    if summary_json:
-        df = pd.read_json(StringIO(summary_json), orient='records')
-        context['preview'] = df.to_dict(orient='records')
-
-    # =========================
-    # 3️⃣ PROSES CLUSTERING (GET ?k=)
-    # =========================
-    if df is not None and 'k' in request.GET:
-
-        try:
-            k = int(request.GET.get('k', 3))
-        except ValueError:
-            k = 3
-
-        k = max(1, min(k, 3))
-
-        X = df.select_dtypes(include=['number'])
-
-        if not X.empty and len(X) >= k:
-
-            scaler = StandardScaler()
-            X_scaled = scaler.fit_transform(X)
-
-            model = KMeans(n_clusters=k, random_state=42, n_init=10)
-            model.fit(X_scaled)
-
-            df_cluster = df.copy()
-            df_cluster['Cluster'] = model.labels_
-
-            hasil_cluster = df_cluster.to_dict(orient='records')
-            context['hasil_cluster'] = hasil_cluster
-            context['k'] = k
+            context['jumlah_data'] = len(summary_df)
+            context['jumlah_data_asli'] = request.session.get('jumlah_data_asli')
 
     return render(request, 'coreapp/k-means/preprocessing.html', context)
-    
 
 # ==========================================
 # PROSES K-MEANS CLUSTERING
@@ -718,8 +950,14 @@ def proses_cluster(request):
         print("Session summary_df kosong")
         return redirect('preprocessing')
 
-    # Load dataframe
-    df = pd.read_json(StringIO(summary_json), orient='records')
+    # Load dataframe - handle both JSON string and list formats
+    if isinstance(summary_json, list):
+        df = pd.DataFrame(summary_json)
+    else:
+        try:
+            df = pd.read_json(StringIO(summary_json), orient='records')
+        except Exception:
+            df = pd.DataFrame(summary_json)
 
     if df.empty:
         print("DataFrame kosong")
@@ -748,7 +986,7 @@ def proses_cluster(request):
 
         # KMeans
         model = KMeans(n_clusters=k, random_state=42, n_init=10)
-        df['Cluster'] = model.fit_predict(X_scaled)
+        df['Cluster'] = model.fit_predict(X_scaled) + 1  # Cluster mulai dari 1, 2, 3
 
     except Exception as e:
         print("ERROR SAAT CLUSTERING:", e)
@@ -772,65 +1010,37 @@ def proses_cluster(request):
 
     df['Kategori_Cluster'] = df['Cluster'].map(label_map)
 
+    # SIMPAN HASIL CLUSTER KE SESSION (INI KUNCI)
+    request.session['hasil_cluster'] = df.to_dict(orient='records')
+    request.session['k'] = k
+    request.session.modified = True
+
     return render(request, 'coreapp/k-means/preprocessing.html', {
         'hasil_cluster': df.to_dict(orient='records'),
         'k': k
     })
 
-@login_required(login_url='login')
-def proses_kmeans(request):
-
-    if request.method != "GET":
-        return redirect("preprocessing")
-
-    # Ambil hasil preprocessing dari session
-    data = request.session.get("processed_data")
-
-    if not data:
-        return redirect("preprocessing")
-
-    df = pd.DataFrame(data)
-
-    # Pastikan semua numerik
-    df = df.apply(pd.to_numeric, errors='coerce').fillna(0)
-
-    # Ambil fitur (kecuali Umur jika mau dipisah)
-    fitur = df.drop(columns=["Umur"], errors="ignore")
-
-    # K-Means dengan 3 cluster
-    kmeans = KMeans(n_clusters=3, random_state=42)
-    df["Cluster"] = kmeans.fit_predict(fitur)
-
-    # Simpan ke session jika perlu
-    request.session["hasil_kmeans"] = df.to_dict(orient="records")
-
-    context = {
-        "hasil": df.to_dict(orient="records"),
-        "jumlah_cluster": 3
-    }
-
-    return render(request, "kmeans/hasil.html", context)
 
 @login_required(login_url='login')
 def hasil(request):
 
-    data = request.session.get("summary_df")
+    data = request.session.get("hasil_cluster")
 
     if not data:
         return redirect("preprocessing")
 
-    df = pd.read_json(StringIO(data), orient='records')
-
-    # Ambil fitur numerik kecuali Umur
-    fitur = df.select_dtypes(include=['number']).drop(columns=['Umur'], errors='ignore')
-
-    # KMeans 3 cluster
-    model = KMeans(n_clusters=3, random_state=42, n_init=10)
-    df['Cluster'] = model.fit_predict(fitur) + 1   # mulai dari 1
+    # data sudah HASIL CLUSTER, bukan summary
+    if isinstance(data, list):
+        df = pd.DataFrame(data)
+    else:
+        try:
+            df = pd.read_json(StringIO(data), orient='records')
+        except Exception:
+            df = pd.DataFrame(data)
 
     context = {
         "hasil_cluster": df.to_dict(orient='records'),
-        "k": 3
+        "k": request.session.get("k")
     }
 
     return render(request, "coreapp/k-means/hasil.html", context)
