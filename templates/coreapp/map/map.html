@@ -7,42 +7,42 @@
     #mapContainer {
         height: calc(100vh - 180px);
         border-radius: 6px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
-    
+
     .map-legend {
         background: white;
         border-radius: 4px;
         padding: 15px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
-    
+
     .legend-item {
         display: flex;
         align-items: center;
         margin-bottom: 8px;
     }
-    
+
     .legend-color {
         width: 20px;
         height: 20px;
         border-radius: 2px;
         margin-right: 10px;
     }
-    
+
     .legend-text {
         font-size: 0.9rem;
     }
-    
+
     .marker-cluster {
         background-clip: padding-box;
         border-radius: 20px;
     }
-    
+
     .leaflet-popup-content-wrapper {
         border-radius: 4px;
     }
-    
+
     .popup-info {
         font-size: 0.9rem;
     }
@@ -56,20 +56,26 @@
             <h1 class="text-3xl font-bold">Peta Kerawanan Kecelakaan</h1>
         </div>
         <form method="get" class="flex gap-2">
-            <select name="tahun" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200" onchange="this.form.submit()">
+            <select name="tahun"
+                class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
+                onchange="this.form.submit()">
                 <option value="">-- Pilih Tahun --</option>
                 {% for tahun_opt in tahun_options %}
-                    <option value="{{ tahun_opt }}" {% if request.GET.tahun|add:"0" == tahun_opt %}selected{% endif %}>
-                        {{ tahun_opt }}
-                    </option>
+                <option value="{{ tahun_opt }}"
+                    {% if request.GET.tahun == tahun_opt|stringformat:"s" %}
+                    selected
+                    {% endif %}
+                    >
+                    {{ tahun_opt }}
+                </option>
                 {% endfor %}
             </select>
         </form>
     </div>
-    
+
     <!-- Map Container -->
     <div id="mapContainer"></div>
-    
+
     <!-- Legend -->
     <!-- <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-6">
         <div class="map-legend">
@@ -125,35 +131,34 @@
     const tahun = "{{ tahun }}" || new Date().getFullYear();
     let map;
     let segmenLayer, kecelakaanLayer;
-    
+
     // Initialize Map
     function initMap() {
-        map = L.map('mapContainer').setView([-2.5, 120], 5);
-        
+        map = L.map('mapContainer', { attributionControl: false }).setView([-7.6298, 111.5239], 13);
+
         // Tile Layer
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
             maxZoom: 19
         }).addTo(map);
-        
+
         // Load Data
         loadSegmenData();
         loadKecelakaanData();
         loadStatistik();
     }
-    
+
     // Load Segmen GeoJSON
     function loadSegmenData() {
         const url = `/api/segmen/geojson/?tahun=${tahun}`;
-        
+
         axios.get(url)
             .then(response => {
                 if (segmenLayer) {
                     map.removeLayer(segmenLayer);
                 }
-                
+
                 segmenLayer = L.geoJSON(response.data, {
-                    style: function(feature) {
+                    style: function (feature) {
                         return {
                             color: feature.properties.color,
                             weight: 3,
@@ -161,7 +166,7 @@
                             dashArray: '5, 5'
                         };
                     },
-                    onEachFeature: function(feature, layer) {
+                    onEachFeature: function (feature, layer) {
                         const props = feature.properties;
                         const popup = `
                             <div class="popup-info">
@@ -178,19 +183,19 @@
             })
             .catch(error => console.error('Error loading segmen:', error));
     }
-    
+
     // Load Kecelakaan GeoJSON
     function loadKecelakaanData() {
         const url = `/api/kecelakaan/geojson/?tahun=${tahun}`;
-        
+
         axios.get(url)
             .then(response => {
                 if (kecelakaanLayer) {
                     map.removeLayer(kecelakaanLayer);
                 }
-                
+
                 kecelakaanLayer = L.geoJSON(response.data, {
-                    pointToLayer: function(feature, latlng) {
+                    pointToLayer: function (feature, latlng) {
                         return L.circleMarker(latlng, {
                             radius: 6,
                             fillColor: '#d32f2f',
@@ -200,7 +205,7 @@
                             fillOpacity: 0.8
                         });
                     },
-                    onEachFeature: function(feature, layer) {
+                    onEachFeature: function (feature, layer) {
                         const props = feature.properties;
                         const popup = `
                             <div class="popup-info">
@@ -223,11 +228,11 @@
             })
             .catch(error => console.error('Error loading kecelakaan:', error));
     }
-    
+
     // Load Statistik
     function loadStatistik() {
         const url = `/api/analisis/statistik/?tahun=${tahun}`;
-        
+
         axios.get(url)
             .then(response => {
                 const data = response.data;
@@ -263,7 +268,7 @@
             })
             .catch(error => console.error('Error loading statistik:', error));
     }
-    
+
     // Init on page load
     document.addEventListener('DOMContentLoaded', initMap);
 </script>

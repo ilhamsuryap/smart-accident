@@ -50,7 +50,7 @@ class KecelakaanAdmin(admin.ModelAdmin):
             'fields': ('latitude', 'longitude', 'desa', 'kecamatan', 'kabupaten_kota', 'segmen_jalan')
         }),
         ('Data Korban', {
-            'fields': ('jumlah_kecelakaan', 'korban_meninggal', 'korban_luka_berat', 'korban_luka_ringan', 'total_korban')
+            'fields': ('korban_meninggal', 'korban_luka_berat', 'korban_luka_ringan', 'total_korban')
         }),
         ('Kerugian & Keterangan', {
             'fields': ('kerugian_materi', 'keterangan')

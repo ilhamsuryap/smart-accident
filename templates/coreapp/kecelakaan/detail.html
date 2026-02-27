@@ -2,160 +2,657 @@
 
 {% block title %}Detail Kecelakaan - Smart Accident{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* ===== PAGE HEADER ===== */
+    .detail-page-header {
+        background: linear-gradient(135deg, #1152D4 0%, #2563eb 50%, #3b82f6 100%);
+        border-radius: 16px;
+        padding: 28px 32px;
+        margin-bottom: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 10px 40px rgba(17, 82, 212, 0.25);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .detail-page-header::before {
+        content: '';
+        position: absolute;
+        top: -40px;
+        right: -40px;
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.07);
+    }
+
+    .detail-page-header::after {
+        content: '';
+        position: absolute;
+        bottom: -60px;
+        right: 80px;
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .detail-page-header h1 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #fff;
+        margin: 0;
+        letter-spacing: -0.5px;
+    }
+
+    .detail-page-header p {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.875rem;
+        margin-top: 4px;
+    }
+
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(8px);
+        color: #fff;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        border: 1.5px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.25s ease;
+        text-decoration: none;
+        white-space: nowrap;
+        position: relative;
+        z-index: 1;
+    }
+
+    .btn-back:hover {
+        background: rgba(255, 255, 255, 0.28);
+        transform: translateX(-3px);
+        border-color: rgba(255, 255, 255, 0.55);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    /* ===== SECTION CARD ===== */
+    .detail-card {
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07);
+        overflow: hidden;
+        margin-bottom: 20px;
+        border: 1px solid #f0f4ff;
+        transition: box-shadow 0.25s ease;
+    }
+
+    .detail-card:hover {
+        box-shadow: 0 6px 28px rgba(17, 82, 212, 0.12);
+    }
+
+    .detail-card-header {
+        background: linear-gradient(90deg, #f8faff 0%, #eef3ff 100%);
+        border-bottom: 1.5px solid #e4ecff;
+        padding: 16px 22px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .detail-card-header .card-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        background: linear-gradient(135deg, #1152D4, #3b82f6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 0.8rem;
+        box-shadow: 0 3px 10px rgba(17, 82, 212, 0.3);
+    }
+
+    .detail-card-header h5 {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .detail-card-body {
+        padding: 22px 24px;
+    }
+
+    /* ===== INFO ROW ===== */
+    .info-row {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding: 14px 0;
+        border-bottom: 1px dashed #e9edf7;
+    }
+
+    .info-row:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .info-row:first-child {
+        padding-top: 0;
+    }
+
+    .info-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .info-label i {
+        color: #1152D4;
+        font-size: 0.7rem;
+    }
+
+    .info-value {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-top: 2px;
+    }
+
+    /* ===== STAT BADGE CARDS (korban) ===== */
+    .victim-stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+
+    .victim-stat-card {
+        border-radius: 12px;
+        padding: 16px 18px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .victim-stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .victim-stat-card .stat-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+
+    .victim-stat-card .stat-num {
+        font-size: 1.7rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .victim-stat-card .stat-lbl {
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        opacity: 0.75;
+        margin-top: 2px;
+    }
+
+    /* Meninggal */
+    .stat-meninggal {
+        background: linear-gradient(135deg, #fff1f1 0%, #ffe4e4 100%);
+        border: 1.5px solid #fecaca;
+        color: #be123c;
+    }
+
+    .stat-meninggal .stat-icon {
+        background: rgba(190, 18, 60, 0.12);
+        color: #be123c;
+    }
+
+    /* Luka Berat */
+    .stat-luka-berat {
+        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+        border: 1.5px solid #fde68a;
+        color: #b45309;
+    }
+
+    .stat-luka-berat .stat-icon {
+        background: rgba(180, 83, 9, 0.12);
+        color: #b45309;
+    }
+
+    /* Luka Ringan */
+    .stat-luka-ringan {
+        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        border: 1.5px solid #bfdbfe;
+        color: #1652c9;
+    }
+
+    .stat-luka-ringan .stat-icon {
+        background: rgba(22, 82, 201, 0.12);
+        color: #1652c9;
+    }
+
+    /* Total */
+    .stat-total {
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        border: 1.5px solid #bbf7d0;
+        color: #166534;
+    }
+
+    .stat-total .stat-icon {
+        background: rgba(22, 101, 52, 0.12);
+        color: #166534;
+    }
+
+    /* Kerugian - full width */
+    .stat-kerugian {
+        background: linear-gradient(135deg, #faf5ff 0%, #ede9fe 100%);
+        border: 1.5px solid #ddd6fe;
+        color: #6b21a8;
+        grid-column: 1 / -1;
+    }
+
+    .stat-kerugian .stat-icon {
+        background: rgba(107, 33, 168, 0.12);
+        color: #6b21a8;
+    }
+
+    .stat-kerugian .stat-num {
+        font-size: 1.35rem;
+    }
+
+    /* ===== KETERANGAN BOX ===== */
+    .keterangan-box {
+        background: #f8faff;
+        border-left: 4px solid #1152D4;
+        border-radius: 0 10px 10px 0;
+        padding: 16px 18px;
+        color: #334155;
+        font-size: 0.9rem;
+        line-height: 1.7;
+    }
+
+    /* ===== METADATA ===== */
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 0;
+        border-bottom: 1px dashed #e9edf7;
+    }
+
+    .meta-item:last-child {
+        border-bottom: none;
+    }
+
+    .meta-item-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: #eff3ff;
+        color: #1152D4;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        flex-shrink: 0;
+    }
+
+    .meta-item-text .meta-label {
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #94a3b8;
+    }
+
+    .meta-item-text .meta-val {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #334155;
+    }
+
+    /* ===== LINK SEGMEN ===== */
+    .segmen-link {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        border-radius: 10px;
+        background: #f8faff;
+        border: 1.5px solid #e4ecff;
+        color: #1152D4;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        margin-bottom: 10px;
+    }
+
+    .segmen-link:last-child {
+        margin-bottom: 0;
+    }
+
+    .segmen-link:hover {
+        background: #eff3ff;
+        border-color: #1152D4;
+        transform: translateX(3px);
+    }
+
+    .segmen-link .link-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #1152D4, #3b82f6);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        flex-shrink: 0;
+    }
+
+    /* ===== ADMIN ACTION BUTTONS ===== */
+    .btn-admin {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 12px 18px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.875rem;
+        text-decoration: none;
+        transition: all 0.22s ease;
+        margin-bottom: 10px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-admin:last-child {
+        margin-bottom: 0;
+    }
+
+    .btn-edit {
+        background: linear-gradient(135deg, #eab308, #f59e0b);
+        color: #fff;
+        box-shadow: 0 4px 14px rgba(234, 179, 8, 0.3);
+    }
+
+    .btn-edit:hover {
+        background: linear-gradient(135deg, #ca8a04, #d97706);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(234, 179, 8, 0.4);
+    }
+
+    .btn-delete {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: #fff;
+        box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-delete:hover {
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+    }
+
+    /* ===== INFO GRID ===== */
+    .info-grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 24px;
+    }
+
+    @media (max-width: 640px) {
+        .info-grid-2 {
+            grid-template-columns: 1fr;
+        }
+
+        .victim-stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .stat-kerugian {
+            grid-column: 1;
+        }
+
+        .detail-page-header {
+            flex-direction: column;
+            gap: 16px;
+            align-items: flex-start;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="w-full">
-    <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+
+    <!-- ===== PAGE HEADER ===== -->
+    <div class="detail-page-header">
         <div>
-            <h1 class="text-3xl font-bold">
-                <i class="fas fa-exclamation-triangle"></i> Detail Kecelakaan
-            </h1>
+            <h1><i class="fas fa-car-crash mr-2" style="font-size:1.4rem;opacity:0.9;"></i> Detail Kecelakaan</h1>
+            <p>Informasi lengkap data kejadian kecelakaan lalu lintas</p>
         </div>
-        <div>
-            <a href="{% url 'kecelakaan_list' %}" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
-                <i class="fas fa-arrow-left"></i> Kembali
-            </a>
-        </div>
+        <a href="{% url 'kecelakaan_list' %}" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Kembali ke Daftar
+        </a>
     </div>
-    
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-2">
-            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-4">
-                <div class="bg-gray-100 border-b border-gray-300 p-4">
-                    <h5 class="font-semibold">Informasi Waktu & Lokasi</h5>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+        <!-- ===== KOLOM KIRI (2/3) ===== -->
+        <div class="lg:col-span-2 flex flex-col gap-5">
+
+            <!-- Card: Waktu & Lokasi -->
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <div class="card-icon"><i class="fas fa-map-marker-alt"></i></div>
+                    <h5>Informasi Waktu &amp; Lokasi</h5>
                 </div>
-                <div class="p-5">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <strong>Tanggal:</strong><br>
-                            {{ kecelakaan.tanggal|date:"d/m/Y" }}
+                <div class="detail-card-body">
+                    <div class="info-grid-2">
+                        <div class="info-row">
+                            <span class="info-label"><i class="fas fa-calendar-alt"></i> Tanggal Kejadian</span>
+                            <span class="info-value">{{ kecelakaan.tanggal|date:"d/m/Y" }}</span>
                         </div>
-                        <div>
-                            <strong>Waktu:</strong><br>
-                            {{ kecelakaan.waktu|time:"H:i" }}
+                        <div class="info-row">
+                            <span class="info-label"><i class="fas fa-clock"></i> Waktu Kejadian</span>
+                            <span class="info-value">{{ kecelakaan.waktu|time:"H:i" }} WIB</span>
                         </div>
                     </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <strong>Latitude:</strong><br>
-                            {{ kecelakaan.latitude }}
+                    <div class="info-grid-2">
+                        <div class="info-row">
+                            <span class="info-label"><i class="fas fa-globe"></i> Latitude</span>
+                            <span class="info-value" style="font-family:monospace;font-size:0.9rem;">
+                                {{ kecelakaan.latitude }}</span>
                         </div>
-                        <div>
-                            <strong>Longitude:</strong><br>
-                            {{ kecelakaan.longitude }}
+                        <div class="info-row">
+                            <span class="info-label"><i class="fas fa-globe"></i> Longitude</span>
+                            <span class="info-value" style="font-family:monospace;font-size:0.9rem;">
+                                {{ kecelakaan.longitude }}</span>
                         </div>
                     </div>
-                    
-                    <div>
-                        <strong>Lokasi Administratif:</strong><br>
-                        {{ kecelakaan.desa }}, {{ kecelakaan.kecamatan }}<br>
-                        {{ kecelakaan.kabupaten_kota }}
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-4">
-                <div class="bg-gray-100 border-b border-gray-300 p-4">
-                    <h5 class="font-semibold">Data Korban & Kerugian</h5>
-                </div>
-                <div class="p-5">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <div class="mb-4">
-                                <strong>Jumlah Kecelakaan:</strong><br>
-                                <span class="bg-gray-600 text-white px-3 py-1 rounded text-sm font-semibold inline-block mt-1">{{ kecelakaan.jumlah_kecelakaan }}</span>
-                            </div>
-                            <div class="mb-4">
-                                <strong>Korban Meninggal:</strong><br>
-                                <span class="bg-red-600 text-white px-3 py-1 rounded text-sm font-semibold inline-block mt-1">{{ kecelakaan.korban_meninggal }}</span>
-                            </div>
-                            <div class="mb-4">
-                                <strong>Korban Luka Berat:</strong><br>
-                                <span class="bg-yellow-600 text-white px-3 py-1 rounded text-sm font-semibold inline-block mt-1">{{ kecelakaan.korban_luka_berat }}</span>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="mb-4">
-                                <strong>Korban Luka Ringan:</strong><br>
-                                <span class="bg-blue-600 text-white px-3 py-1 rounded text-sm font-semibold inline-block mt-1">{{ kecelakaan.korban_luka_ringan }}</span>
-                            </div>
-                            <div class="mb-4">
-                                <strong>Total Korban:</strong><br>
-                                <span class="bg-gray-800 text-white px-3 py-1 rounded text-sm font-semibold inline-block mt-1">{{ kecelakaan.total_korban }}</span>
-                            </div>
-                            <div class="mb-4">
-                                <strong>Kerugian Materi:</strong><br>
-                                <span class="text-lg font-bold text-green-600 mt-1 block">Rp {{ kecelakaan.kerugian_materi|floatformat:0 }}</span>
-                            </div>
-                        </div>
+                    <div class="info-row">
+                        <span class="info-label"><i class="fas fa-map-signs"></i> Lokasi Administratif</span>
+                        <span class="info-value">
+                            {{ kecelakaan.desa }}, {{ kecelakaan.kecamatan }}<br>
+                            <span style="color:#64748b;font-weight:500;">{{ kecelakaan.kabupaten_kota }}</span>
+                        </span>
                     </div>
                 </div>
             </div>
-            
+
+            <!-- Card: Korban & Kerugian -->
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <div class="card-icon"><i class="fas fa-users"></i></div>
+                    <h5>Data Korban &amp; Kerugian</h5>
+                </div>
+                <div class="detail-card-body">
+                    <div class="victim-stats-grid">
+                        <!-- Meninggal -->
+                        <div class="victim-stat-card stat-meninggal">
+                            <div class="stat-icon"><i class="fas fa-skull"></i></div>
+                            <div>
+                                <div class="stat-num">{{ kecelakaan.korban_meninggal }}</div>
+                                <div class="stat-lbl">Korban Meninggal</div>
+                            </div>
+                        </div>
+                        <!-- Luka Berat -->
+                        <div class="victim-stat-card stat-luka-berat">
+                            <div class="stat-icon"><i class="fas fa-ambulance"></i></div>
+                            <div>
+                                <div class="stat-num">{{ kecelakaan.korban_luka_berat }}</div>
+                                <div class="stat-lbl">Luka Berat</div>
+                            </div>
+                        </div>
+                        <!-- Luka Ringan -->
+                        <div class="victim-stat-card stat-luka-ringan">
+                            <div class="stat-icon"><i class="fas fa-band-aid"></i></div>
+                            <div>
+                                <div class="stat-num">{{ kecelakaan.korban_luka_ringan }}</div>
+                                <div class="stat-lbl">Luka Ringan</div>
+                            </div>
+                        </div>
+                        <!-- Total -->
+                        <div class="victim-stat-card stat-total">
+                            <div class="stat-icon"><i class="fas fa-user-injured"></i></div>
+                            <div>
+                                <div class="stat-num">{{ kecelakaan.total_korban }}</div>
+                                <div class="stat-lbl">Total Korban</div>
+                            </div>
+                        </div>
+                        <!-- Kerugian Materi (full width) -->
+                        <div class="victim-stat-card stat-kerugian">
+                            <div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div>
+                            <div>
+                                <div class="stat-lbl">Kerugian Materi</div>
+                                <div class="stat-num">Rp {{ kecelakaan.kerugian_materi|floatformat:0 }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card: Keterangan (conditional) -->
             {% if kecelakaan.keterangan %}
-            <div class="bg-white rounded-lg shadow-md overflow-hidden">
-                <div class="bg-gray-100 border-b border-gray-300 p-4">
-                    <h5 class="font-semibold">Keterangan</h5>
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <div class="card-icon"><i class="fas fa-file-alt"></i></div>
+                    <h5>Keterangan</h5>
                 </div>
-                <div class="p-5">
-                    {{ kecelakaan.keterangan|linebreaks }}
+                <div class="detail-card-body">
+                    <div class="keterangan-box">
+                        {{ kecelakaan.keterangan|linebreaks }}
+                    </div>
                 </div>
             </div>
             {% endif %}
+
         </div>
-        
-        <div>
+
+        <!-- ===== KOLOM KANAN (1/3) ===== -->
+        <div class="flex flex-col gap-5">
+
+            <!-- Segmen Jalan Terkait -->
             {% if kecelakaan.segmen_jalan %}
-            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-4">
-                <div class="bg-gray-100 border-b border-gray-300 p-4">
-                    <h5 class="font-semibold">Segmen Jalan Terkait</h5>
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <div class="card-icon"><i class="fas fa-road"></i></div>
+                    <h5>Segmen Jalan Terkait</h5>
                 </div>
-                <div class="p-5">
-                    <div class="mb-4">
-                        <strong>Ruas Jalan:</strong><br>
-                        <a href="{% url 'ruas_jalan_detail' kecelakaan.segmen_jalan.ruas_jalan.id %}" class="text-blue-600 hover:text-blue-800">
-                            {{ kecelakaan.segmen_jalan.ruas_jalan.nama_ruas }}
-                        </a>
-                    </div>
-                    <div>
-                        <strong>Segmen:</strong><br>
-                        <a href="{% url 'segmen_kecelakaan_detail' kecelakaan.segmen_jalan.id %}" class="text-blue-600 hover:text-blue-800">
-                            Km {{ kecelakaan.segmen_jalan.km_awal }} - {{ kecelakaan.segmen_jalan.km_akhir }}
-                        </a>
-                    </div>
+                <div class="detail-card-body">
+                    <a href="{% url 'ruas_jalan_detail' kecelakaan.segmen_jalan.ruas_jalan.id %}" class="segmen-link">
+                        <div class="link-icon"><i class="fas fa-road"></i></div>
+                        <div>
+                            <div
+                                style="font-size:0.7rem;color:#64748b;text-transform:uppercase;letter-spacing:.5px;font-weight:600;">
+                                Ruas Jalan</div>
+                            <div>{{ kecelakaan.segmen_jalan.ruas_jalan.nama_ruas }}</div>
+                        </div>
+                        <i class="fas fa-chevron-right ml-auto" style="font-size:0.75rem;opacity:0.5;"></i>
+                    </a>
+                    <a href="{% url 'segmen_kecelakaan_detail' kecelakaan.segmen_jalan.id %}" class="segmen-link">
+                        <div class="link-icon"><i class="fas fa-map-pin"></i></div>
+                        <div>
+                            <div
+                                style="font-size:0.7rem;color:#64748b;text-transform:uppercase;letter-spacing:.5px;font-weight:600;">
+                                Segmen</div>
+                            <div>Km {{ kecelakaan.segmen_jalan.km_awal }} &ndash; {{ kecelakaan.segmen_jalan.km_akhir }}
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right ml-auto" style="font-size:0.75rem;opacity:0.5;"></i>
+                    </a>
                 </div>
             </div>
             {% endif %}
-            
-            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-4">
-                <div class="bg-gray-100 border-b border-gray-300 p-4">
-                    <h5 class="font-semibold">Metadata</h5>
+
+            <!-- Metadata -->
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <div class="card-icon"><i class="fas fa-info-circle"></i></div>
+                    <h5>Metadata</h5>
                 </div>
-                <div class="p-5">
-                    <div class="mb-3">
-                        <small><strong>Dibuat:</strong><br>{{ kecelakaan.created_at|date:"d/m/Y H:i" }}</small>
+                <div class="detail-card-body">
+                    <div class="meta-item">
+                        <div class="meta-item-icon"><i class="fas fa-plus-circle"></i></div>
+                        <div class="meta-item-text">
+                            <div class="meta-label">Dibuat Pada</div>
+                            <div class="meta-val">{{ kecelakaan.created_at|date:"d/m/Y H:i" }}</div>
+                        </div>
                     </div>
-                    <div>
-                        <small><strong>Update Terakhir:</strong><br>{{ kecelakaan.updated_at|date:"d/m/Y H:i" }}</small>
+                    <div class="meta-item">
+                        <div class="meta-item-icon"><i class="fas fa-edit"></i></div>
+                        <div class="meta-item-text">
+                            <div class="meta-label">Update Terakhir</div>
+                            <div class="meta-val">{{ kecelakaan.updated_at|date:"d/m/Y H:i" }}</div>
+                        </div>
                     </div>
                 </div>
             </div>
-            
+
+            <!-- Aksi Admin -->
             {% if is_admin %}
-            <div class="bg-white rounded-lg shadow-md overflow-hidden">
-                <div class="bg-gray-100 border-b border-gray-300 p-4">
-                    <h5 class="font-semibold">Aksi Admin</h5>
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <div class="card-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706);"><i
+                            class="fas fa-shield-alt"></i></div>
+                    <h5>Aksi Admin</h5>
                 </div>
-                <div class="p-5 space-y-2">
-                    <a href="{% url 'kecelakaan_update' kecelakaan.id %}" class="block px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 text-center">
-                        <i class="fas fa-edit"></i> Edit
+                <div class="detail-card-body">
+                    <a href="{% url 'kecelakaan_update' kecelakaan.id %}" class="btn-admin btn-edit">
+                        <i class="fas fa-edit"></i> Edit Data
                     </a>
-                    <a href="{% url 'kecelakaan_delete' kecelakaan.id %}" class="block px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-center">
-                        <i class="fas fa-trash"></i> Hapus
+                    <a href="{% url 'kecelakaan_delete' kecelakaan.id %}" class="btn-admin btn-delete">
+                        <i class="fas fa-trash-alt"></i> Hapus Data
                     </a>
                 </div>
             </div>
             {% endif %}
+
         </div>
     </div>
 </div>

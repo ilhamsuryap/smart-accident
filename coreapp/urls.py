@@ -31,6 +31,25 @@ urlpatterns = [
     
     # Map
     path('peta/', views.map_view, name='map'),
+
+    # ================= KMEANS =================
+    path('kmeans/data/', views.kmeans_data, name='kmeans_data'),
+    path('kmeans/proses/', views.kmeans_proses, name='kmeans_proses'),
+    path('kmeans/hasil/', views.kmeans_hasil, name='kmeans_hasil'),
+
+# ================= AHC =================
+    path('ahc/data/', views.ahc_data, name='ahc_data'),
+    path('ahc/proses/', views.ahc_proses, name='ahc_proses'),
+    path('ahc/hasil/', views.ahc_hasil, name='ahc_hasil'),
+    path('hasil-ahc/', views.hasil_ahc, name='hasil_ahc'),
+
+    # AHC URLS
+    path('ahc/data/', views.ahc_data, name='ahc_data'),
+    path('ahc/proses/', views.ahc_proses, name='ahc_proses'),
+    path('ahc/preprocessing/', views.preprocessing_data, name='preprocessing_data'),
+    path('ahc/hasil/', views.ahc_hasil, name='ahc_hasil'),
+    path('proses-ahc/', views.proses_ahc, name='proses_ahc'),
+
     
     # Cluster K-Means
     path('k-means/data_cluster/', views.cluster_data, name='cluster_data'),

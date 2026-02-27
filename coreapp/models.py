@@ -19,7 +19,7 @@ class RuasJalan(models.Model):
     )
     
     id = models.AutoField(primary_key=True)
-    nama_ruas = models.CharField(max_length=100)
+    nama_ruas = models.CharField(max_length=45)
     jenis_jalan = models.CharField(max_length=20, choices=JENIS_JALAN_CHOICES)
     wilayah = models.CharField(max_length=100)
     panjang_km = models.DecimalField(max_digits=10, decimal_places=3, validators=[MinValueValidator(0)])
@@ -97,16 +97,9 @@ class Kecelakaan(models.Model):
     id = models.AutoField(primary_key=True)
     tanggal = models.DateField()
     waktu = models.TimeField()
-    latitude = models.DecimalField(max_digits=9, decimal_places=6)
-    longitude = models.DecimalField(max_digits=9, decimal_places=6)
-    segmen_jalan = models.ForeignKey(
-        SegmenJalan, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True,
-        related_name='kecelakaan'
-    )
-    jumlah_kecelakaan = models.IntegerField(default=1, validators=[MinValueValidator(1)])
+    latitude = models.DecimalField(max_digits=30, decimal_places=20)
+    longitude = models.DecimalField(max_digits=30, decimal_places=20)
+    segmen_jalan = models.ForeignKey(SegmenJalan, on_delete=models.SET_NULL, null=True, blank=True,related_name='kecelakaan')
     korban_meninggal = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     korban_luka_berat = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     korban_luka_ringan = models.IntegerField(default=0, validators=[MinValueValidator(0)])
@@ -218,17 +211,21 @@ class RekapSegmen(models.Model):
                 tanggal__year=tahun
             ).aggregate(
                 jumlah=Count('id'),
-                total_korban=Sum('jumlah_kecelakaan'),
                 meninggal=Sum('korban_meninggal'),
                 luka_berat=Sum('korban_luka_berat'),
                 luka_ringan=Sum('korban_luka_ringan'),
                 kerugian=Sum('kerugian_materi')
             )
             
+            # Hitung total korban dari penjumlahan meninggal + luka_berat + luka_ringan
+            total_korban = (kecelakaan_data['meninggal'] or 0) + \
+                          (kecelakaan_data['luka_berat'] or 0) + \
+                          (kecelakaan_data['luka_ringan'] or 0)
+            
             RekapSegmen.objects.create(
                 segmen_jalan=segmen,
                 jumlah_kecelakaan=kecelakaan_data['jumlah'] or 0,
-                total_korban=kecelakaan_data['total_korban'] or 0,
+                total_korban=total_korban,
                 total_meninggal=kecelakaan_data['meninggal'] or 0,
                 total_luka_berat=kecelakaan_data['luka_berat'] or 0,
                 total_luka_ringan=kecelakaan_data['luka_ringan'] or 0,
