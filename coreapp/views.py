@@ -781,7 +781,30 @@ def ahc_data(request):
 # ================================
 @login_required(login_url='login')
 def ahc_proses(request):
-    return render(request, 'coreapp/ahc/proses.html')
+    context = {}
+
+    # Ambil data preprocessing dari session
+    summary_df = request.session.get('summary_df')
+    jumlah_data_asli = request.session.get('jumlah_data_asli')
+
+    # Ambil hasil clustering dari session
+    hasil_cluster = request.session.get('hasil_cluster')
+    summary_cluster = request.session.get('summary_cluster')
+    jumlah_cluster = request.session.get('jumlah_cluster')
+
+    # Jika sudah ada preprocessing
+    if summary_df:
+        context['preview'] = summary_df
+        context['jumlah_data'] = len(summary_df)
+        context['jumlah_data_asli'] = jumlah_data_asli
+
+    # Jika sudah ada clustering
+    if hasil_cluster:
+        context['hasil_cluster'] = hasil_cluster
+        context['summary_cluster'] = summary_cluster
+        context['jumlah_cluster'] = jumlah_cluster
+
+    return render(request, 'coreapp/ahc/proses.html', context)
 
 
 # ================================
@@ -803,9 +826,21 @@ def preprocessing_data(request):
         file = request.FILES.get('file')
 
         if file:
-            # 🔥 RESET SEMUA SESSION LAMA
-            for key in ['hasil_cluster', 'summary_cluster', 'jumlah_cluster', 'jumlah_data', 'silhouette_score']:
+            # 🔥 RESET SEMUA SESSION LAMA (lebih lengkap)
+            for key in [
+                'hasil_cluster',
+                'summary_cluster',
+                'jumlah_cluster',
+                'jumlah_data',
+                'silhouette_score',
+                'X_scaled',
+                'summary_df',
+                'jumlah_data_asli'
+            ]:
                 request.session.pop(key, None)
+
+            # ✅ Simpan nama file aktif
+            request.session['uploaded_file_name'] = file.name
 
             # 1️⃣ Baca file
             df = pd.read_excel(file)
@@ -1192,7 +1227,7 @@ def load_kelurahan(request):
     context['jumlah_data'] = len(summary_df)
     context['jumlah_data_asli'] = request.session.get('jumlah_data_asli')
 
-    return render(request, 'coreapp/ahc/proses.html', context)
+        return render(request, 'coreapp/ahc/proses.html', context)
 
 
 # ================================
@@ -1286,7 +1321,7 @@ def proses_ahc(request):
 # ================================
 
 @login_required(login_url='login')
-def hasil_ahc(request):
+def ahc_hasil(request):
     hasil_cluster = request.session.get('hasil_cluster', [])
     summary_cluster = request.session.get('summary_cluster', [])
     jumlah_cluster = request.session.get('jumlah_cluster')
