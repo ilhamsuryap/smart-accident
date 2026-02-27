@@ -46,6 +46,7 @@ urlpatterns = [
     path('ahc/hasil/', views.ahc_hasil, name='ahc_hasil'),
     path('proses-ahc/', views.proses_ahc, name='proses_ahc'),
     path('ahc/reset/', views.reset_ahc, name='reset_ahc'),
+  
 
     
     # Cluster K-Means
