@@ -1,8 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.http import require_POST
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.contrib import messages
+from django.http import JsonResponse
 from django.views.generic import (
     ListView, DetailView, CreateView, UpdateView, DeleteView
 )
@@ -13,9 +15,23 @@ from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from sklearn.discriminant_analysis import StandardScaler
+from .models import Kecelakaan
+from .models import Kota, Kecamatan, Kelurahan
 from rest_framework import status
 import json
 import math
+import numpy as np
+import os
+import pandas as pd
+from sklearn.cluster import KMeans
+
+from django.conf import settings
+from django.shortcuts import render, redirect   
+from io import StringIO
+
+
+
 
 from .models import RuasJalan, SegmenJalan, Kecelakaan, RekapSegmen, AnalisisZScore
 from .forms import (
@@ -494,3 +510,292 @@ def segmen_kecelakaan_detail(request, segmen_id):
     }
     
     return render(request, 'coreapp/analisis/segmen_detail.html', context)
+
+# Cluster K-Means Views
+@login_required(login_url='login')
+def cluster_data(request):
+    data = Kecelakaan.objects.all()[:50]
+
+    context = {
+        'kecelakaan': data
+    }
+
+    return render(request, 'coreapp/k-means/data_cluster.html', context)
+
+
+# ================================
+# PREPROCESSING DATA
+# ================================
+@login_required(login_url='login')
+def preprocessing(request):
+
+    context = {}
+    df = None
+    hasil_cluster = None
+
+    # =========================
+    # 1️⃣ PROSES UPLOAD (POST)
+    # =========================
+    if request.method == "POST":
+        file = request.FILES.get('file')
+
+        if file:
+            df = pd.read_excel(file)
+
+            df.replace('-', np.nan, inplace=True)
+
+            numeric_cols = ['Umur', 'Jumlah Kejadian']
+            numeric_cols = [c for c in numeric_cols if c in df.columns]
+
+            for col in numeric_cols:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+
+            df['Jumlah Kejadian'] = df.get('Jumlah Kejadian', 1).fillna(1)
+
+            if 'Umur' in df.columns:
+                df = df[df['Umur'] > 0]
+
+            # Contoh summary
+            if 'Umur' in df.columns:
+                summary_df = df.groupby('Umur')['Jumlah Kejadian'].sum().reset_index()
+            else:
+                summary_df = df[['Jumlah Kejadian']]
+
+            # Simpan ke session
+            request.session['summary_df'] = summary_df.to_json(orient='records')
+            request.session.modified = True
+
+            context['preview'] = summary_df.to_dict(orient='records')
+
+    # =========================
+    # 2️⃣ AMBIL DATA DARI SESSION
+    # =========================
+    summary_json = request.session.get('summary_df')
+
+    if summary_json:
+        df = pd.read_json(StringIO(summary_json), orient='records')
+        context['preview'] = df.to_dict(orient='records')
+
+    # =========================
+    # 3️⃣ PROSES CLUSTERING (GET ?k=)
+    # =========================
+    if df is not None and 'k' in request.GET:
+
+        try:
+            k = int(request.GET.get('k', 3))
+        except ValueError:
+            k = 3
+
+        k = max(1, min(k, 3))
+
+        X = df.select_dtypes(include=['number'])
+
+        if not X.empty and len(X) >= k:
+
+            scaler = StandardScaler()
+            X_scaled = scaler.fit_transform(X)
+
+            model = KMeans(n_clusters=k, random_state=42, n_init=10)
+            model.fit(X_scaled)
+
+            df_cluster = df.copy()
+            df_cluster['Cluster'] = model.labels_
+
+            hasil_cluster = df_cluster.to_dict(orient='records')
+            context['hasil_cluster'] = hasil_cluster
+            context['k'] = k
+
+    return render(request, 'coreapp/k-means/preprocessing.html', context)
+    
+
+# ==========================================
+# PROSES K-MEANS CLUSTERING
+# ==========================================
+@login_required(login_url='login')
+def proses_cluster(request):
+
+    if request.method != "GET":
+        return redirect('preprocessing')
+
+    # Ambil nilai k
+    try:
+        k = int(request.GET.get('k', 3))
+    except ValueError:
+        k = 3
+
+    k = max(1, min(k, 3))
+
+    # Ambil data summary dari session
+    summary_json = request.session.get('summary_df')
+
+    if not summary_json:
+        print("Session summary_df kosong")
+        return redirect('preprocessing')
+
+    # Load dataframe
+    df = pd.read_json(StringIO(summary_json), orient='records')
+
+    if df.empty:
+        print("DataFrame kosong")
+        return redirect('preprocessing')
+
+    # Ambil hanya kolom numerik (kecuali Umur)
+    numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
+
+    if 'Umur' in numeric_cols:
+        numeric_cols.remove('Umur')
+
+    if not numeric_cols:
+        print("Tidak ada fitur numerik untuk clustering")
+        return redirect('preprocessing')
+
+    X = df[numeric_cols]
+
+    # Jika jumlah data < k
+    if len(X) < k:
+        k = len(X)
+
+    try:
+        # Scaling
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+
+        # KMeans
+        model = KMeans(n_clusters=k, random_state=42, n_init=10)
+        df['Cluster'] = model.fit_predict(X_scaled)
+
+    except Exception as e:
+        print("ERROR SAAT CLUSTERING:", e)
+        return redirect('preprocessing')
+
+    # ========================
+    # Interpretasi Cluster
+    # ========================
+
+    cluster_summary = df.groupby('Cluster')[numeric_cols].mean().mean(axis=1)
+    sorted_cluster = cluster_summary.sort_values()
+
+    kategori = ['Rendah', 'Sedang', 'Tinggi']
+    label_map = {}
+
+    for i, cluster_id in enumerate(sorted_cluster.index):
+        if i < len(kategori):
+            label_map[cluster_id] = kategori[i]
+        else:
+            label_map[cluster_id] = f"Cluster {cluster_id}"
+
+    df['Kategori_Cluster'] = df['Cluster'].map(label_map)
+
+    return render(request, 'coreapp/k-means/preprocessing.html', {
+        'hasil_cluster': df.to_dict(orient='records'),
+        'k': k
+    })
+
+@login_required(login_url='login')
+def proses_kmeans(request):
+
+    if request.method != "GET":
+        return redirect("preprocessing")
+
+    # Ambil hasil preprocessing dari session
+    data = request.session.get("processed_data")
+
+    if not data:
+        return redirect("preprocessing")
+
+    df = pd.DataFrame(data)
+
+    # Pastikan semua numerik
+    df = df.apply(pd.to_numeric, errors='coerce').fillna(0)
+
+    # Ambil fitur (kecuali Umur jika mau dipisah)
+    fitur = df.drop(columns=["Umur"], errors="ignore")
+
+    # K-Means dengan 3 cluster
+    kmeans = KMeans(n_clusters=3, random_state=42)
+    df["Cluster"] = kmeans.fit_predict(fitur)
+
+    # Simpan ke session jika perlu
+    request.session["hasil_kmeans"] = df.to_dict(orient="records")
+
+    context = {
+        "hasil": df.to_dict(orient="records"),
+        "jumlah_cluster": 3
+    }
+
+    return render(request, "kmeans/hasil.html", context)
+
+@login_required(login_url='login')
+def hasil(request):
+
+    data = request.session.get("summary_df")
+
+    if not data:
+        return redirect("preprocessing")
+
+    df = pd.read_json(StringIO(data), orient='records')
+
+    # Ambil fitur numerik kecuali Umur
+    fitur = df.select_dtypes(include=['number']).drop(columns=['Umur'], errors='ignore')
+
+    # KMeans 3 cluster
+    model = KMeans(n_clusters=3, random_state=42, n_init=10)
+    df['Cluster'] = model.fit_predict(fitur) + 1   # mulai dari 1
+
+    context = {
+        "hasil_cluster": df.to_dict(orient='records'),
+        "k": 3
+    }
+
+    return render(request, "coreapp/k-means/hasil.html", context)
+
+# View Tambah Data Kecelakaan
+# =========================
+@login_required(login_url='login')
+def tambah_data(request):
+    if request.method == "POST":
+        # ambil data dari form
+        tanggal = request.POST.get('tanggal')
+        waktu = request.POST.get('waktu')
+        meninggal = request.POST.get('meninggal') or 0
+        luka_berat = request.POST.get('luka_berat') or 0
+        luka_ringan = request.POST.get('luka_ringan') or 0
+        kerugian = request.POST.get('kerugian') or 0
+        kota = request.POST.get('kota')
+        kecamatan = request.POST.get('kecamatan')
+        kelurahan = request.POST.get('kelurahan')
+
+        # simpan ke database
+        Kecelakaan.objects.create(
+            tanggal=tanggal,
+            waktu=waktu,
+            meninggal=meninggal,
+            luka_berat=luka_berat,
+            luka_ringan=luka_ringan,
+            kerugian=kerugian,
+            kota=kota,
+            kecamatan=kecamatan,
+            kelurahan=kelurahan
+        )
+
+        return redirect('data_cluster')  # kembali ke dashboard
+
+    # Jika GET request → tampilkan halaman form
+    return render(request, 'coreapp/k-means/tambah_data.html')
+
+def tambah_data_view(request):
+    kota_list = Kota.objects.all()  # ambil semua kota
+    return render(request, 'coreapp/k-means/tambah_data.html', {
+        'kota_list': kota_list
+    })
+
+def load_kecamatan(request):
+    kota_id = request.GET.get('kota_id')
+    kecamatan = list(Kecamatan.objects.filter(kota_id=kota_id).values('id', 'nama'))
+    return JsonResponse({'kecamatan': kecamatan})
+
+def load_kelurahan(request):
+    kecamatan_id = request.GET.get('kecamatan_id')
+    kelurahan = list(Kelurahan.objects.filter(kecamatan_id=kecamatan_id).values('id', 'nama'))
+    return JsonResponse({'kelurahan': kelurahan})
+# =========================
