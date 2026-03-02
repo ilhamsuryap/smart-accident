@@ -28,68 +28,205 @@
             font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
         }
         
-        .sidebar-link {
-            color: rgb(55, 65, 81);
-            padding: 0.625rem 1.25rem;
-            border-left: 4px solid transparent;
-            margin-bottom: 0.25rem;
-            transition: all 300ms;
-            display: block;
-            margin: 10px;
-        }
-        
-        .sidebar-link:hover {
-            background-color: rgb(243, 244, 246);
-            border-left-color: rgb(37, 99, 235);
-            color: rgb(37, 99, 235);
-            margin: 10px;
-            border-radius: 10px;
-        }
-        
-        .sidebar-link.active {
-            background-color: rgb(243, 244, 246);
-            border-left-color: rgb(37, 99, 235);
-            color: rgb(37, 99, 235);
-            margin: 10px;
-            border-radius: 10px;
-        }
-        
+        /* ===== STAT CARDS ===== */
         .stat-card {
             text-align: center;
             padding: 1.25rem;
-            border-radius: 0.5rem;
+            border-radius: 0.75rem;
             color: white;
         }
-        
-        .stat-card-danger {
-          background: #1152D4;
-        }
-        
-        .stat-card-warning {
+        .stat-card-danger, .stat-card-warning, .stat-card-info, .stat-card-success {
             background: #1152D4;
         }
-        
-        .stat-card-info {
-            background: #1152D4;
-        }
-        
-        .stat-card-success {
-           background: #1152D4;
-        }
-        .bg-blue {
-            background-color: #1152D4;
-        }
-        
+        .bg-blue { background-color: #1152D4; }
         .stat-card h6 {
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
-            margin-bottom: 0.625rem;
-            opacity: 0.9;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.5rem;
+            opacity: 0.85;
+            font-weight: 600;
         }
-        
         .stat-card .value {
-            font-size: 1.5rem;
+            font-size: 1.75rem;
+            font-weight: 800;
+        }
+
+        /* ===== SIDEBAR ===== */
+        #sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 256px;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+           
+            z-index: 40;
+        }
+
+        /* Brand area */
+        .sidebar-brand {
+             display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem;
+    background: #1152D4;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    
+        }
+        .sidebar-brand-icon {
+    width: 38px;
+    height: 38px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.sidebar-brand-text {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: -0.01em;
+        }
+        .sidebar-brand-sub {
+            font-size: 0.65rem;
+            color: #64748b;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Section label */
+        .sidebar-section-label {
+            font-size: 0.6rem;
             font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #475569;
+            padding: 1rem 1.25rem 0.4rem;
+        }
+
+        /* Nav items */
+        .sidebar-nav {
+            padding: 0.5rem 0.75rem;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.6rem 0.9rem;
+            border-radius: 8px;
+            color: #323334;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            margin-bottom: 2px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+            background: transparent;
+        }
+        .sidebar-link i.icon-left {
+            width: 18px;
+            text-align: center;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+        .sidebar-link:hover {
+            background: rgba(255,255,255,0.06);
+            color: #000000;
+            border-color: rgba(255,255,255,0.06);
+        }
+        .sidebar-link.active {
+            background: #1152D4;
+            color: #fbfbfb;
+            border-color: rgba(255, 255, 255, 0.2);
+            font-weight: 600;
+        }
+        .sidebar-link.active i.icon-left {
+            color: #ffffff;
+        }
+
+        /* Chevron animation */
+        .sidebar-chevron {
+            margin-left: auto;
+            font-size: 0.65rem;
+            color: #475569;
+            transition: transform 0.25s ease;
+            flex-shrink: 0;
+        }
+        .sidebar-link.active .sidebar-chevron,
+        .sidebar-link.dropdown-open .sidebar-chevron {
+            transform: rotate(180deg);
+            color: #ffffff;
+        }
+
+        /* Dropdown container */
+        .sidebar-dropdown {
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.3s ease;
+        }
+        .sidebar-dropdown.open {
+            max-height: 300px;
+        }
+        .sidebar-dropdown-inner {
+            padding: 2px 0 4px 1.6rem;
+        }
+        .sidebar-dropdown-inner .sidebar-link {
+            font-size: 0.825rem;
+            padding: 0.5rem 0.8rem;
+            color: #323334;
+        }
+        .sidebar-dropdown-inner .sidebar-link:hover {
+            color: #cbd5e1;
+        }
+        .sidebar-dropdown-inner .sidebar-link.active {
+            color: #ffffff;
+        }
+
+        /* Sidebar divider */
+        .sidebar-divider {
+            height: 1px;
+            background: rgba(255,255,255,0.06);
+            margin: 0.5rem 0.75rem;
+        }
+
+        /* Logout button */
+        .sidebar-logout {
+            padding: 0.75rem;
+            border-top: 1px solid rgba(255, 8, 8, 0.06);
+            
+        }
+        .sidebar-logout a {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.6rem 0.9rem;
+            border-radius: 8px;
+            color: #ff2424;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            background: rgba(252, 0, 0, 0.08);
+            border: 1px solid rgba(239,68,68,0.15);
+        }
+        .sidebar-logout a:hover {
+            background: rgba(255, 11, 11, 0.18);
+            color: #f82828;
         }
     </style>
     
@@ -132,36 +269,172 @@
         </div>
     </nav>
     
-    {% if user.is_authenticated %}
-    <div class="flex h-full">
-        <!-- Sidebar -->
-        <div class="w-full md:w-64 bg-white border-r border-gray-300 md:min-h-screen pt-5">
-            <nav class="flex flex-col space-y-1">
-                <a class="sidebar-link font-semibold {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" 
-                   href="{% url 'dashboard' %}">
-                    <i class="fas fa-chart-line"></i> Dashboard
-                </a>
-                <a class="sidebar-link font-semibold {% if 'ruas_jalan' in request.resolver_match.url_name %}active{% endif %}" 
-                   href="{% url 'ruas_jalan_list' %}">
-                    <i class="fas fa-road"></i> Ruas Jalan
-                </a>
-                <a class="sidebar-link font-semibold {% if 'kecelakaan' in request.resolver_match.url_name %}active{% endif %}" 
-                   href="{% url 'kecelakaan_list' %}">
-                    <i class="fas fa-exclamation-triangle"></i> Data Kecelakaan
-                </a>
-                <a class="sidebar-link font-semibold {% if 'map' in request.resolver_match.url_name %}active{% endif %}" 
-                   href="{% url 'map' %}">
-                    <i class="fas fa-map"></i> Peta 
-                </a>
-                <a class="sidebar-link font-semibold {% if 'logout' in request.resolver_match.url_name %}active{% endif %}" 
-                   href="{% url 'logout' %}">
-                      <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
-            </nav>
+   {% if user.is_authenticated %}
+<div class="flex min-h-screen overflow-hidden">
+{% with current=request.resolver_match.url_name %}
+
+<!-- Sidebar -->
+<div id="sidebar">
+
+    <!-- Brand -->
+    <div class="sidebar-brand ">
+        <div class="sidebar-brand-icon">
+            <i class="fas fa-shield-alt"></i>
         </div>
-        
+        <div>
+            <div class="sidebar-brand-text">Smart Accident</div>
+
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+
+        <!-- MENU UTAMA -->
+        <div class="sidebar-section-label">Menu Utama</div>
+
+        <!-- Dashboard -->
+        <a class="sidebar-link {% if current == 'dashboard' %}active{% endif %}" 
+           href="{% url 'dashboard' %}">
+            <i class="fas fa-chart-line icon-left"></i>
+            <span>Dashboard</span>
+        </a>
+
+        <div class="sidebar-divider"></div>
+
+        <!-- ANALISIS -->
+        <div class="sidebar-section-label">Data & Analisis</div>
+
+        <!-- ================= PEMETAAN ================= -->
+        <div>
+            <button type="button" id="btnPemetaan" onclick="toggleSidebar('pemetaanDropdown','btnPemetaan')"
+                class="sidebar-link
+                {% if current == 'ruas_jalan_list' or current == 'kecelakaan_list' or current == 'map' %}
+                    active dropdown-open
+                {% endif %}">
+                <i class="fas fa-map-marked-alt icon-left"></i>
+                <span>Pemetaan</span>
+                <i class="fas fa-chevron-down sidebar-chevron"></i>
+            </button>
+
+            <div id="pemetaanDropdown"
+                class="sidebar-dropdown
+                {% if current == 'ruas_jalan_list' or current == 'kecelakaan_list' or current == 'map' %}
+                    open
+                {% endif %}">
+                <div class="sidebar-dropdown-inner">
+                    <a class="sidebar-link {% if current == 'ruas_jalan_list' %}active{% endif %}" 
+                       href="{% url 'ruas_jalan_list' %}">
+                        <i class="fas fa-road icon-left"></i>
+                        <span>Ruas Jalan</span>
+                    </a>
+                    <a class="sidebar-link {% if current == 'kecelakaan_list' %}active{% endif %}" 
+                       href="{% url 'kecelakaan_list' %}">
+                        <i class="fas fa-exclamation-triangle icon-left"></i>
+                        <span>Data Kecelakaan</span>
+                    </a>
+                    <a class="sidebar-link {% if current == 'map' %}active{% endif %}" 
+                       href="{% url 'map' %}">
+                        <i class="fas fa-map icon-left"></i>
+                        <span>Peta Interaktif</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= KMEANS ================= -->
+        <div>
+            <button type="button" id="btnKmeans" onclick="toggleSidebar('kmeansDropdown','btnKmeans')"
+                class="sidebar-link
+                {% if current == 'cluster_data' or current == 'preprocessing' or current == 'hasil' or current == 'tambah_data' or 'kmeans' in current %} active dropdown-open {% endif %}">
+                <i class="fas fa-project-diagram icon-left"></i>
+                <span>Cluster K-Means</span>
+                <i class="fas fa-chevron-down sidebar-chevron"></i>
+            </button>
+
+            <div id="kmeansDropdown"
+                class="sidebar-dropdown
+                {% if current == 'cluster_data' or current == 'preprocessing' or current == 'hasil' or current == 'tambah_data' or 'kmeans' in current %} open {% endif %}">
+                <div class="sidebar-dropdown-inner">
+                    <a class="sidebar-link {% if current == 'cluster_data' %}active{% endif %}" 
+                       href="{% url 'cluster_data' %}">
+                        <i class="fas fa-database icon-left"></i>
+                        <span>Data</span>
+                    </a>
+                    <a class="sidebar-link {% if current == 'preprocessing' %}active{% endif %}" 
+                       href="{% url 'preprocessing' %}">
+                        <i class="fas fa-cogs icon-left"></i>
+                        <span>Proses</span>
+                    </a>
+                    <a class="sidebar-link {% if current == 'hasil' %}active{% endif %}" 
+                       href="{% url 'hasil' %}">
+                        <i class="fas fa-chart-bar icon-left"></i>
+                        <span>Hasil</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= AHC ================= -->
+        <div>
+            <button type="button" id="btnAhc" onclick="toggleSidebar('ahcDropdown','btnAhc')"
+                class="sidebar-link
+                {% if 'ahc' in current or current == 'preprocessing_data' or current == 'proses_ahc' %} active dropdown-open {% endif %}">
+                <i class="fas fa-sitemap icon-left"></i>
+                <span>Cluster AHC</span>
+                <i class="fas fa-chevron-down sidebar-chevron"></i>
+            </button>
+
+            <div id="ahcDropdown"
+                class="sidebar-dropdown
+                {% if 'ahc' in current or current == 'preprocessing_data' or current == 'proses_ahc' %} open {% endif %}">
+                <div class="sidebar-dropdown-inner">
+                    <a class="sidebar-link {% if current == 'ahc_data' %}active{% endif %}" 
+                       href="{% url 'ahc_data' %}">
+                        <i class="fas fa-database icon-left"></i>
+                        <span>Data</span>
+                    </a>
+                    <a class="sidebar-link {% if current == 'ahc_proses' or current == 'preprocessing_data' or current == 'proses_ahc' %}active{% endif %}" 
+                       href="{% url 'ahc_proses' %}">
+                        <i class="fas fa-cogs icon-left"></i>
+                        <span>Proses</span>
+                    </a>
+                    <a class="sidebar-link {% if current == 'ahc_hasil' %}active{% endif %}" 
+                       href="{% url 'ahc_hasil' %}">
+                        <i class="fas fa-chart-bar icon-left"></i>
+                        <span>Hasil</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </nav>
+
+    <!-- Logout -->
+    <div class="sidebar-logout">
+        <a href="{% url 'logout' %}">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Keluar</span>
+        </a>
+    </div>
+
+</div>
+
+{% endwith %}
+
+    <!-- Script Dropdown Sidebar -->
+    <script>
+        function toggleSidebar(dropdownId, btnId) {
+            const dropdown = document.getElementById(dropdownId);
+            const btn = document.getElementById(btnId);
+            const isOpen = dropdown.classList.contains('open');
+            dropdown.classList.toggle('open', !isOpen);
+            btn.classList.toggle('dropdown-open', !isOpen);
+        }
+    </script>
+            
         <!-- Main Content -->
-        <div class="flex-1 p-5 md:p-6 bg-gray-100">
+        <div class="flex-1 p-5 md:p-6 bg-gray-100 overflow-x-hidden ml-[256px]">
             {% if messages %}
                 <div class="mb-6 space-y-3">
                     {% for message in messages %}
@@ -194,12 +467,12 @@
     {% endif %}
     
     <!-- Footer -->
-    <footer class="bg-blue text-white py-5 text-center mt-10">
+    <!-- <footer class="bg-blue text-white py-5 text-center mt-10">
         <div class="w-full">
-            <!-- <p>&copy; 2025 Smart Accident - Sistem Pemetaan dan Analisis Kerawanan Kecelakaan Lalu Lintas</p>
-            <p>Powered by Django & Leaflet.js</p> -->
+            <p>&copy; 2025 Smart Accident - Sistem Pemetaan dan Analisis Kerawanan Kecelakaan Lalu Lintas</p>
+            <p>Powered by Django & Leaflet.js</p>
         </div>
-    </footer>
+    </footer> -->
     
     <!-- Leaflet JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
