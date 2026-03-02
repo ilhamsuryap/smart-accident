@@ -1,8 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.http import require_POST
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.contrib import messages
+from django.http import JsonResponse
 from django.views.generic import (
     ListView, DetailView, CreateView, UpdateView, DeleteView
 )
@@ -13,9 +15,33 @@ from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from sklearn.discriminant_analysis import StandardScaler
+from .models import Kecelakaan
+from .models import Kota, Kecamatan, Kelurahan
 from rest_framework import status
 import json
 import math
+import numpy as np
+
+import os
+import pandas as pd
+from sklearn.cluster import KMeans
+
+from django.conf import settings
+from django.shortcuts import render, redirect   
+from io import StringIO
+from django.shortcuts import redirect
+
+
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+
+from sklearn.cluster import AgglomerativeClustering
+from sklearn.metrics import silhouette_score
+
+
+
 
 from .models import RuasJalan, SegmenJalan, Kecelakaan, RekapSegmen, AnalisisZScore
 from .forms import (
@@ -494,3 +520,848 @@ def segmen_kecelakaan_detail(request, segmen_id):
     }
     
     return render(request, 'coreapp/analisis/segmen_detail.html', context)
+
+
+# Cluster K-Means Views
+@login_required(login_url='login')
+def cluster_data(request):
+    data = Kecelakaan.objects.all()[:50]
+
+    context = {
+        'kecelakaan': data
+    }
+
+    return render(request, 'coreapp/k-means/data_cluster.html', context)
+
+
+
+
+# ================================
+# PREPROCESSING DATA
+# ================================
+@login_required(login_url='login')
+def preprocessing(request):
+
+    context = {}
+    df = None
+    hasil_cluster = None
+
+    # =========================
+    # 1️⃣ PROSES UPLOAD (POST)
+    # =========================
+    if request.method == "POST":
+        file = request.FILES.get('file')
+
+        if file:
+            # 🔥 RESET SEMUA SESSION LAMA (lebih lengkap)
+            for key in [
+                'hasil_cluster',
+                'summary_cluster',
+                'jumlah_cluster',
+                'jumlah_data',
+                'silhouette_score',
+                'X_scaled',
+                'summary_df',
+                'jumlah_data_asli'
+            ]:
+                request.session.pop(key, None)
+
+            # ✅ Simpan nama file aktif
+            request.session['uploaded_file_name'] = file.name
+        if file:
+            df = pd.read_excel(file)
+
+            df.replace('-', np.nan, inplace=True)
+
+            numeric_cols = ['Umur', 'Jumlah Kejadian']
+            numeric_cols = [c for c in numeric_cols if c in df.columns]
+
+            for col in numeric_cols:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+
+            # Handle 'Jumlah Kejadian' - if column doesn't exist, create it with default value 1
+            if 'Jumlah Kejadian' in df.columns:
+                df['Jumlah Kejadian'] = df['Jumlah Kejadian'].fillna(1)
+            else:
+                df['Jumlah Kejadian'] = 1
+
+            if 'Umur' in df.columns:
+                df = df[df['Umur'] > 0]
+
+            # 4️⃣ Konversi jam ke kategori waktu
+            def konversi_waktu(jam):
+                try:
+                    if isinstance(jam, str) and ':' in jam:
+                        jam = int(jam.split(':')[0])
+                    else:
+                        jam = int(jam)
+                except:
+                    return "Tidak Diketahui"
+
+                if 0 <= jam < 6:
+                    return "Dini Hari"
+                elif 6 <= jam < 12:
+                    return "Pagi Hari"
+                elif 12 <= jam < 18:
+                    return "Siang Hari"
+                elif 18 <= jam < 24:
+                    return "Malam Hari"
+                else:
+                    return "Tidak Diketahui"
+
+            if 'Jam' in df.columns:
+                df['Waktu Kejadian'] = df['Jam'].apply(konversi_waktu)
+            else:
+                df['Waktu Kejadian'] = 'Tidak Diketahui'
+
+            # 5️⃣ Dummy kendaraan (PERBAIKAN)
+            kendaraan_cols = ['Motor', 'Mobil', 'Truk/Bus']
+
+            for k in kendaraan_cols:
+                df[k] = 0
+
+            if 'Jenis Kendaraan' in df.columns:
+                jenis = df['Jenis Kendaraan'].astype(str).str.lower()
+
+                df.loc[jenis.str.contains('motor', na=False), 'Motor'] = df['Jumlah Kejadian']
+                df.loc[jenis.str.contains('mobil', na=False), 'Mobil'] = df['Jumlah Kejadian']
+                df.loc[jenis.str.contains('truk|bus', na=False), 'Truk/Bus'] = df['Jumlah Kejadian']
+
+            # 6️⃣ Faktor penyebab
+            if 'Penyebab' in df.columns:
+                df['Penyebab_clean'] = df['Penyebab'].str.strip().str.lower()
+            else:
+                df['Penyebab_clean'] = ''
+
+            df['Faktor Pengemudi'] = df['Jumlah Kejadian']
+            df['Faktor Jalan'] = 0
+            df['Faktor Kendaraan'] = 0
+            df['Faktor Lingkungan'] = 0
+
+            # 7️⃣ Dummy waktu
+            waktu_cols = ['Dini Hari', 'Pagi Hari', 'Siang Hari', 'Malam Hari']
+            for w in waktu_cols:
+                df[w] = (df['Waktu Kejadian'] == w).astype(int) * df['Jumlah Kejadian']
+
+            # 8️⃣ Group by umur dengan semua fitur
+            summary_cols = (
+                ['Jumlah Kejadian']
+                + kendaraan_cols
+                + ['Faktor Pengemudi', 'Faktor Jalan', 'Faktor Kendaraan', 'Faktor Lingkungan']
+                + waktu_cols
+            )
+
+            if 'Umur' in df.columns:
+                summary_df = df.groupby('Umur')[summary_cols].sum().reset_index()
+            else:
+                summary_df = df[summary_cols].sum().to_frame().T
+
+            summary_df = summary_df.round().astype(int)
+
+            # Simpan ke session
+            request.session['summary_df'] = summary_df.to_dict(orient='records')
+            request.session.modified = True
+
+            context['preview'] = summary_df.to_dict(orient='records')
+
+    # =========================
+    # 2️⃣ AMBIL DATA DARI SESSION
+    # =========================
+    summary_json = request.session.get('summary_df')
+
+    if summary_json:
+        # Handle both JSON string and list formats
+        if isinstance(summary_json, list):
+            df = pd.DataFrame(summary_json)
+        else:
+            try:
+                df = pd.read_json(StringIO(summary_json), orient='records')
+            except Exception:
+                df = pd.DataFrame(summary_json)
+        context['preview'] = df.to_dict(orient='records')
+
+    # 💾 LOAD HASIL CLUSTER DARI SESSION (JIKA ADA)
+    hasil_cluster_session = request.session.get('hasil_cluster')
+    k_session = request.session.get('k')
+    
+    if hasil_cluster_session and k_session:
+        context['hasil_cluster'] = hasil_cluster_session
+        context['k'] = k_session
+
+    # =========================
+    # 3️⃣ PROSES CLUSTERING (GET ?k=)
+    # =========================
+    if df is not None and 'k' in request.GET:
+
+        try:
+            k = int(request.GET.get('k', 3))
+        except ValueError:
+            k = 3
+
+        k = max(1, min(k, 3))
+
+        X = df.select_dtypes(include=['number'])
+
+        if not X.empty and len(X) >= k:
+
+            scaler = StandardScaler()
+            X_scaled = scaler.fit_transform(X)
+
+            model = KMeans(n_clusters=k, random_state=42, n_init=10)
+            model.fit(X_scaled)
+
+            df_cluster = df.copy()
+            df_cluster['Cluster'] = model.labels_ + 1  # Cluster mulai dari 1, 2, 3
+
+            hasil_cluster = df_cluster.to_dict(orient='records')
+            
+            # 💾 SIMPAN KE SESSION UNTUK HALAMAN HASIL
+            request.session['hasil_cluster'] = hasil_cluster
+            request.session['k'] = k
+            request.session.modified = True
+            
+            context['hasil_cluster'] = hasil_cluster
+            context['k'] = k
+
+    return render(request, 'coreapp/k-means/preprocessing.html', context)
+
+
+@login_required(login_url='login')
+def reset_k_means(request):
+    keys_to_clear = [
+        'hasil_cluster',
+        'summary_cluster',
+        'jumlah_cluster',
+        'jumlah_data',
+        'silhouette_score',
+        'X_scaled',
+        'summary_df',
+        'uploaded_file_name',
+        'jumlah_data_asli'
+    ]
+    for key in keys_to_clear:
+        request.session.pop(key, None)
+
+    return redirect('preprocessing')
+
+
+# ===============================
+# KMEANS VIEWS
+# ===============================
+
+@login_required(login_url='login')
+def kmeans_data(request):
+    return render(request, 'coreapp/kmeans/data.html')
+
+
+@login_required(login_url='login')
+def kmeans_proses(request):
+    return render(request, 'coreapp/kmeans/proses.html')
+
+
+@login_required(login_url='login')
+def kmeans_hasil(request):
+    return render(request, 'coreapp/kmeans/hasil.html')
+
+
+# ===============================
+# AHC VIEWS
+# ===============================
+
+# ================================
+# HALAMAN DATA
+# ================================
+@login_required(login_url='login')
+def ahc_data(request):
+    return render(request, 'coreapp/ahc/data.html')
+
+
+# ================================
+# HALAMAN PROSES
+# ================================
+@login_required(login_url='login')
+def ahc_proses(request):
+    context = {}
+
+    # Ambil data preprocessing dari session
+    summary_df = request.session.get('summary_df')
+    jumlah_data_asli = request.session.get('jumlah_data_asli')
+
+    # Ambil hasil clustering dari session
+    hasil_cluster = request.session.get('hasil_cluster')
+    summary_cluster = request.session.get('summary_cluster')
+    jumlah_cluster = request.session.get('jumlah_cluster')
+
+    # Jika sudah ada preprocessing
+    if summary_df:
+        context['preview'] = summary_df
+        context['jumlah_data'] = len(summary_df)
+        context['jumlah_data_asli'] = jumlah_data_asli
+
+    # Jika sudah ada clustering
+    if hasil_cluster:
+        context['hasil_cluster'] = hasil_cluster
+        context['summary_cluster'] = summary_cluster
+        context['jumlah_cluster'] = jumlah_cluster
+
+    return render(request, 'coreapp/ahc/proses.html', context)
+
+
+# ================================
+# HALAMAN HASIL
+# ================================
+@login_required(login_url='login')
+def ahc_hasil(request):
+    return render(request, 'coreapp/ahc/hasil.html')
+
+# ================================
+# PREPROCESSING DATA
+# ================================
+
+@login_required(login_url='login')
+def preprocessing_data(request):
+    context = {}
+
+    if request.method == "POST":
+        file = request.FILES.get('file')
+
+        if file:
+            # 🔥 RESET SEMUA SESSION LAMA (lebih lengkap)
+            for key in [
+                'hasil_cluster',
+                'summary_cluster',
+                'jumlah_cluster',
+                'jumlah_data',
+                'silhouette_score',
+                'X_scaled',
+                'summary_df',
+                'jumlah_data_asli'
+            ]:
+                request.session.pop(key, None)
+
+            # ✅ Simpan nama file aktif
+            request.session['uploaded_file_name'] = file.name
+
+            # 1️⃣ Baca file
+            df = pd.read_excel(file)
+
+            context['preview_asli'] = df.head().to_html(
+                classes="table-auto w-full text-sm",
+                index=False
+            )
+
+            # Simpan jumlah data asli
+            request.session['jumlah_data_asli'] = len(df)
+
+            # 2️⃣ Handle missing value
+            df.replace('-', np.nan, inplace=True)
+
+            numeric_cols = ['Umur', 'Jumlah Kejadian']
+            numeric_cols = [c for c in numeric_cols if c in df.columns]
+
+            for col in numeric_cols:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+
+            if 'Jumlah Kejadian' in df.columns:
+                df['Jumlah Kejadian'] = df['Jumlah Kejadian'].fillna(1)
+            else:
+                df['Jumlah Kejadian'] = 1
+
+            # 3️⃣ Hapus umur <= 0
+            if 'Umur' in df.columns:
+                df = df[df['Umur'] > 0]
+
+            # 4️⃣ Konversi jam ke kategori waktu
+            def konversi_waktu(jam):
+                try:
+                    if isinstance(jam, str) and ':' in jam:
+                        jam = int(jam.split(':')[0])
+                    else:
+                        jam = int(jam)
+                except:
+                    return "Tidak Diketahui"
+
+                if 0 <= jam < 6:
+                    return "Dini Hari"
+                elif 6 <= jam < 12:
+                    return "Pagi Hari"
+                elif 12 <= jam < 18:
+                    return "Siang Hari"
+                elif 18 <= jam < 24:
+                    return "Malam Hari"
+                else:
+                    return "Tidak Diketahui"
+
+            if 'Jam' in df.columns:
+                df['Waktu Kejadian'] = df['Jam'].apply(konversi_waktu)
+            else:
+                df['Waktu Kejadian'] = 'Tidak Diketahui'
+
+            # 5️⃣ Dummy kendaraan
+            kendaraan_cols = ['Motor', 'Mobil', 'Truk/Bus']
+
+            if 'Jenis Kendaraan' in df.columns:
+                for k in kendaraan_cols:
+                    df[k] = (
+                        df['Jenis Kendaraan']
+                        .str.strip()
+                        .str.lower()
+                        .eq(k.lower())
+                        .astype(int)
+                        * df['Jumlah Kejadian']
+                    )
+            else:
+                for k in kendaraan_cols:
+                    df[k] = 0
+
+            # 6️⃣ Faktor penyebab
+            if 'Penyebab' in df.columns:
+                df['Penyebab_clean'] = df['Penyebab'].str.strip().str.lower()
+            else:
+                df['Penyebab_clean'] = ''
+
+            df['Faktor Pengemudi'] = df['Jumlah Kejadian']
+            df['Faktor Jalan'] = 0
+            df['Faktor Kendaraan'] = 0
+            df['Faktor Lingkungan'] = 0
+
+            # 7️⃣ Dummy waktu
+            waktu_cols = ['Dini Hari', 'Pagi Hari', 'Siang Hari', 'Malam Hari']
+            for w in waktu_cols:
+                df[w] = (df['Waktu Kejadian'] == w).astype(int) * df['Jumlah Kejadian']
+
+            # 8️⃣ Group by umur
+            summary_cols = (
+                ['Jumlah Kejadian']
+                + kendaraan_cols
+                + ['Faktor Pengemudi', 'Faktor Jalan', 'Faktor Kendaraan', 'Faktor Lingkungan']
+                + waktu_cols
+            )
+
+            if 'Umur' in df.columns:
+                summary_df = df.groupby('Umur')[summary_cols].sum().reset_index()
+            else:
+                summary_df = df[summary_cols].sum().to_frame().T
+
+            summary_df = summary_df.round().astype(int)
+
+            # 9️⃣ Scaling
+            fitur_clustering = summary_df.copy()
+            scaler = StandardScaler()
+            X_scaled = scaler.fit_transform(fitur_clustering)
+
+            # 🔟 Simpan ke session
+            # 🔟 Simpan hasil preprocessing saja
+            request.session['summary_df'] = summary_df.to_dict(orient='records')
+            request.session['X_scaled'] = X_scaled.tolist()
+            request.session.modified = True
+
+            context['preview'] = summary_df.to_dict(orient='records')
+            context['jumlah_data'] = len(summary_df)
+            context['jumlah_data_asli'] = request.session.get('jumlah_data_asli')
+                # Setelah upload via AHC preprocessing, redirect ke halaman proses AHC
+            return redirect('ahc_proses')
+
+            # Untuk GET (atau jika tidak ada file POST), tampilkan halaman proses AHC
+            return render(request, 'coreapp/ahc/proses.html', context)
+
+# ==========================================
+# PROSES K-MEANS CLUSTERING
+# ==========================================
+@login_required(login_url='login')
+def proses_cluster(request):
+
+    if request.method != "GET":
+        return redirect('preprocessing')
+
+    # Ambil nilai k
+    try:
+        k = int(request.GET.get('k', 3))
+    except ValueError:
+        k = 3
+
+    k = max(1, min(k, 3))
+
+    # Ambil data summary dari session
+    summary_json = request.session.get('summary_df')
+
+    if not summary_json:
+        print("Session summary_df kosong")
+        return redirect('preprocessing')
+
+    # Load dataframe - handle both JSON string and list formats
+    if isinstance(summary_json, list):
+        df = pd.DataFrame(summary_json)
+    else:
+        try:
+            df = pd.read_json(StringIO(summary_json), orient='records')
+        except Exception:
+            df = pd.DataFrame(summary_json)
+
+    if df.empty:
+        print("DataFrame kosong")
+        return redirect('preprocessing')
+
+    # Ambil hanya kolom numerik (kecuali Umur)
+    numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
+
+    if 'Umur' in numeric_cols:
+        numeric_cols.remove('Umur')
+
+    if not numeric_cols:
+        print("Tidak ada fitur numerik untuk clustering")
+        return redirect('preprocessing')
+
+    X = df[numeric_cols]
+
+    # Jika jumlah data < k
+    if len(X) < k:
+        k = len(X)
+
+    try:
+        # Scaling
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+
+        # KMeans
+        model = KMeans(n_clusters=k, random_state=42, n_init=10)
+        df['Cluster'] = model.fit_predict(X_scaled) + 1  # Cluster mulai dari 1, 2, 3
+
+    except Exception as e:
+        print("ERROR SAAT CLUSTERING:", e)
+        return redirect('preprocessing')
+
+    # ========================
+    # Interpretasi Cluster
+    # ========================
+
+    cluster_summary = df.groupby('Cluster')[numeric_cols].mean().mean(axis=1)
+    sorted_cluster = cluster_summary.sort_values()
+
+    kategori = ['Rendah', 'Sedang', 'Tinggi']
+    label_map = {}
+
+    for i, cluster_id in enumerate(sorted_cluster.index):
+        if i < len(kategori):
+            label_map[cluster_id] = kategori[i]
+        else:
+            label_map[cluster_id] = f"Cluster {cluster_id}"
+
+    df['Kategori_Cluster'] = df['Cluster'].map(label_map)
+
+    # SIMPAN HASIL CLUSTER KE SESSION (INI KUNCI)
+    request.session['hasil_cluster'] = df.to_dict(orient='records')
+    request.session['k'] = k
+    request.session.modified = True
+
+    return render(request, 'coreapp/k-means/preprocessing.html', {
+        'hasil_cluster': df.to_dict(orient='records'),
+        'k': k
+    })
+
+
+@login_required(login_url='login')
+def hasil(request):
+
+    data = request.session.get("hasil_cluster")
+
+    if not data:
+        return redirect("preprocessing")
+
+    # data sudah HASIL CLUSTER, bukan summary
+    if isinstance(data, list):
+        df = pd.DataFrame(data)
+    else:
+        try:
+            df = pd.read_json(StringIO(data), orient='records')
+        except Exception:
+            df = pd.DataFrame(data)
+
+    context = {
+        "hasil_cluster": df.to_dict(orient='records'),
+        "k": request.session.get("k")
+    }
+
+    return render(request, "coreapp/k-means/hasil.html", context)
+
+# View Tambah Data Kecelakaan
+# =========================
+@login_required(login_url='login')
+def tambah_data(request):
+    if request.method == "POST":
+        # ambil data dari form
+        tanggal = request.POST.get('tanggal')
+        waktu = request.POST.get('waktu')
+        meninggal = request.POST.get('meninggal') or 0
+        luka_berat = request.POST.get('luka_berat') or 0
+        luka_ringan = request.POST.get('luka_ringan') or 0
+        kerugian = request.POST.get('kerugian') or 0
+        kota = request.POST.get('kota')
+        kecamatan = request.POST.get('kecamatan')
+        kelurahan = request.POST.get('kelurahan')
+
+        # simpan ke database
+        Kecelakaan.objects.create(
+            tanggal=tanggal,
+            waktu=waktu,
+            meninggal=meninggal,
+            luka_berat=luka_berat,
+            luka_ringan=luka_ringan,
+            kerugian=kerugian,
+            kota=kota,
+            kecamatan=kecamatan,
+            kelurahan=kelurahan
+        )
+
+        return redirect('data_cluster')  # kembali ke dashboard
+
+    # Jika GET request → tampilkan halaman form
+    return render(request, 'coreapp/k-means/tambah_data.html')
+
+def tambah_data_view(request):
+    kota_list = Kota.objects.all()  # ambil semua kota
+    return render(request, 'coreapp/k-means/tambah_data.html', {
+        'kota_list': kota_list
+    })
+
+def load_kecamatan(request):
+    kota_id = request.GET.get('kota_id')
+    kecamatan = list(Kecamatan.objects.filter(kota_id=kota_id).values('id', 'nama'))
+    return JsonResponse({'kecamatan': kecamatan})
+
+def load_kelurahan(request):
+    kecamatan_id = request.GET.get('kecamatan_id')
+    kelurahan = list(Kelurahan.objects.filter(kecamatan_id=kecamatan_id).values('id', 'nama'))
+    return JsonResponse({'kelurahan': kelurahan})
+
+
+    # if 'Jumlah Kejadian' in df.columns:
+    #             df['Jumlah Kejadian'] = df['Jumlah Kejadian'].fillna(1)
+    # else:
+    #             df['Jumlah Kejadian'] = 1
+
+    #         # 3️⃣ Hapus umur <= 0
+    # if 'Umur' in df.columns:
+    #             df = df[df['Umur'] > 0]
+
+    #         # 4️⃣ Konversi jam ke kategori waktu
+    # def konversi_waktu(jam):
+    #             try:
+    #                 if isinstance(jam, str) and ':' in jam:
+    #                     jam = int(jam.split(':')[0])
+    #                 else:
+    #                     jam = int(jam)
+    #             except:
+    #                 return "Tidak Diketahui"
+
+    #             if 0 <= jam < 6:
+    #                 return "Dini Hari"
+    #             elif 6 <= jam < 12:
+    #                 return "Pagi Hari"
+    #             elif 12 <= jam < 18:
+    #                 return "Siang Hari"
+    #             elif 18 <= jam < 24:
+    #                 return "Malam Hari"
+    #             else:
+    #                 return "Tidak Diketahui"
+
+    # if 'Jam' in df.columns:
+    #             df['Waktu Kejadian'] = df['Jam'].apply(konversi_waktu)
+    # else:
+    #             df['Waktu Kejadian'] = 'Tidak Diketahui'
+
+    #         # 5️⃣ Dummy kendaraan
+    # kendaraan_cols = ['Motor', 'Mobil', 'Truk/Bus']
+
+    # if 'Jenis Kendaraan' in df.columns:
+    #             for k in kendaraan_cols:
+    #                 df[k] = (
+    #                     df['Jenis Kendaraan']
+    #                     .str.strip()
+    #                     .str.lower()
+    #                     .eq(k.lower())
+    #                     .astype(int)
+    #                     * df['Jumlah Kejadian']
+    #                 )
+    # else:
+    #             for k in kendaraan_cols:
+    #                 df[k] = 0
+
+    #         # 6️⃣ Faktor penyebab
+    # if 'Penyebab' in df.columns:
+    #             df['Penyebab_clean'] = df['Penyebab'].str.strip().str.lower()
+    # else:
+    #             df['Penyebab_clean'] = ''
+
+    #             df['Faktor Pengemudi'] = df['Jumlah Kejadian']
+    #             df['Faktor Jalan'] = 0
+    #             df['Faktor Kendaraan'] = 0
+    #             df['Faktor Lingkungan'] = 0
+
+    #         # 7️⃣ Dummy waktu
+    # waktu_cols = ['Dini Hari', 'Pagi Hari', 'Siang Hari', 'Malam Hari']
+    # for w in waktu_cols:
+    #             df[w] = (df['Waktu Kejadian'] == w).astype(int) * df['Jumlah Kejadian']
+
+    #         # 8️⃣ Group by umur
+    # summary_cols = (
+    #             ['Jumlah Kejadian']
+    #             + kendaraan_cols
+    #             + ['Faktor Pengemudi', 'Faktor Jalan', 'Faktor Kendaraan', 'Faktor Lingkungan']
+    #             + waktu_cols
+    #         )
+
+    # if 'Umur' in df.columns:
+    #             summary_df = df.groupby('Umur')[summary_cols].sum().reset_index()
+    # else:
+    #             summary_df = df[summary_cols].sum().to_frame().T
+
+    # summary_df = summary_df.round().astype(int)
+
+    #         # 9️⃣ Scaling
+    # fitur_clustering = summary_df.copy()
+    # scaler = StandardScaler()
+    # X_scaled = scaler.fit_transform(fitur_clustering)
+
+    # # 🔟 Simpan ke session
+    # request.session['X_scaled'] = X_scaled.tolist()
+    # request.session['summary_df'] = summary_df.to_dict(orient='records')
+
+    # context['preview'] = summary_df.to_dict(orient='records')
+    # context['jumlah_data'] = len(summary_df)
+    # context['jumlah_data_asli'] = request.session.get('jumlah_data_asli')
+
+    #     return render(request, 'coreapp/ahc/proses.html', context)
+
+
+# ================================
+# PROSES AHC
+# ================================
+
+@login_required(login_url='login')
+def proses_ahc(request):
+    context = {}
+
+    X_scaled = request.session.get('X_scaled')
+    summary_df = request.session.get('summary_df')
+
+    if not X_scaled or not summary_df:
+        context['error'] = "Silakan lakukan preprocessing terlebih dahulu."
+        return render(request, 'coreapp/ahc/proses.html', context)
+
+    X_scaled = np.array(X_scaled)
+    df = pd.DataFrame(summary_df)
+
+    n_cluster = int(request.GET.get('cluster', 3))
+
+    model = AgglomerativeClustering(
+        n_clusters=n_cluster,
+        linkage='ward'
+    )
+
+    labels = model.fit_predict(X_scaled)
+    sil_score = silhouette_score(X_scaled, labels)
+    sil_score = round(float(sil_score), 4)
+    df['Cluster'] = labels
+
+    total_data = len(df)
+    summary = []
+
+    faktor_cols = [
+        "Faktor Pengemudi",
+        "Faktor Jalan",
+        "Faktor Kendaraan",
+        "Faktor Lingkungan"
+    ]
+
+    waktu_cols = [
+        "Dini Hari",
+        "Pagi Hari",
+        "Siang Hari",
+        "Malam Hari"
+    ]
+
+    for cluster_id in sorted(df['Cluster'].unique()):
+        cluster_data = df[df['Cluster'] == cluster_id]
+
+        jumlah = len(cluster_data)
+        persentase = round((jumlah / total_data) * 100, 2)
+        rata_umur = round(cluster_data['Umur'].mean(), 1)
+
+        faktor_dominan = cluster_data[faktor_cols].sum().idxmax()
+        waktu_dominan = cluster_data[waktu_cols].sum().idxmax()
+
+        summary.append({
+            "cluster": int(cluster_id),
+            "jumlah": jumlah,
+            "persentase": persentase,
+            "rata_umur": rata_umur,
+            "faktor_dominan": faktor_dominan,
+            "waktu_dominan": waktu_dominan,
+        })
+
+    # Simpan untuk halaman hasil
+    request.session['hasil_cluster'] = df.to_dict(orient="records")
+    request.session['summary_cluster'] = summary
+    request.session['jumlah_cluster'] = n_cluster
+    request.session['jumlah_data'] = total_data
+    request.session['silhouette_score'] = sil_score
+
+    # 🔥 Kirim ulang preview preprocessing agar tidak hilang
+    context['preview'] = summary_df
+    context['jumlah_data'] = len(summary_df)
+    context['jumlah_data_asli'] = request.session.get('jumlah_data_asli')
+
+    # 🔥 Tambahkan hasil clustering
+    context['hasil_cluster'] = df.to_dict(orient="records")
+    context['summary_cluster'] = summary
+    context['jumlah_cluster'] = n_cluster
+
+    return render(request, 'coreapp/ahc/proses.html', context)
+
+
+# ================================
+# HALAMAN HASIL
+# ================================
+
+@login_required(login_url='login')
+def ahc_hasil(request):
+    hasil_cluster = request.session.get('hasil_cluster', [])
+    summary_cluster = request.session.get('summary_cluster', [])
+    jumlah_cluster = request.session.get('jumlah_cluster')
+    jumlah_data = request.session.get('jumlah_data')
+    silhouette = request.session.get('silhouette_score')
+
+    # Jika belum ada data cluster
+    belum_clustering = len(hasil_cluster) == 0
+
+    context = {
+        "hasil_cluster": hasil_cluster,
+        "summary_cluster": summary_cluster,
+        "jumlah_cluster": jumlah_cluster,
+        "jumlah_data": jumlah_data,
+        "silhouette_score": silhouette,
+        "belum_clustering": belum_clustering,
+    }
+
+    return render(request, 'coreapp/ahc/hasil.html', context)
+
+
+@login_required(login_url='login')
+def reset_ahc(request):
+    keys_to_clear = [
+        'hasil_cluster',
+        'summary_cluster',
+        'jumlah_cluster',
+        'jumlah_data',
+        'silhouette_score',
+        'X_scaled',
+        'summary_df',
+        'uploaded_file_name',
+        'jumlah_data_asli'
+    ]
+
+    for key in keys_to_clear:
+        request.session.pop(key, None)
+
+    return redirect('ahc_proses')

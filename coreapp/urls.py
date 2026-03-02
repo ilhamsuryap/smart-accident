@@ -29,9 +29,39 @@ urlpatterns = [
     # Analisis
     path('analisis/', views.analisis_view, name='analisis'),
     
-    # Map
+    # Map 
     path('peta/', views.map_view, name='map'),
+
+    # ================= KMEANS =================
+    path('kmeans/data/', views.kmeans_data, name='kmeans_data'),
+    path('kmeans/proses/', views.kmeans_proses, name='kmeans_proses'),
+    path('kmeans/hasil/', views.kmeans_hasil, name='kmeans_hasil'),
+
+    # ================= AHC =================   
+
+    # AHC URLS
+    path('ahc/data/', views.ahc_data, name='ahc_data'),
+    path('ahc/proses/', views.ahc_proses, name='ahc_proses'),
+    path('ahc/preprocessing/', views.preprocessing_data, name='preprocessing_data'),
+    path('ahc/hasil/', views.ahc_hasil, name='ahc_hasil'),
+    path('proses-ahc/', views.proses_ahc, name='proses_ahc'),
+    path('ahc/reset/', views.reset_ahc, name='reset_ahc'),
+  
+
     
+    # Cluster K-Means
+    path('k-means/data_cluster/', views.cluster_data, name='cluster_data'),
+    path('k-means/tambah/', views.tambah_data, name='tambah_data'),
+    # path('k-means/hasil/', views.hasil_cluster, name='hasil_cluster'),
+    path('k-means/preprocessing/', views.preprocessing, name='preprocessing'),
+    path('k-means/hasil/', views.hasil, name='hasil'),
+    path('k-means/reset/', views.reset_k_means, name='reset_k_means'),
+
+    # path('tambah-data/', views.tambah_data, name='tambah_data'),
+    path('ajax/load-kecamatan/', views.load_kecamatan, name='ajax_load_kecamatan'),
+    path('ajax/load-kelurahan/', views.load_kelurahan, name='ajax_load_kelurahan'),
+
+
     # API
     path('api/segmen/geojson/', views.api_segmen_geojson, name='api_segmen_geojson'),
     path('api/kecelakaan/geojson/', views.api_kecelakaan_geojson, name='api_kecelakaan_geojson'),
