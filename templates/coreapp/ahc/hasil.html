@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="max-w-6xl mx-auto pt-6 pb-10">
+
+    <!-- HEADER SELALU MUNCUL -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">
+            Hasil Clustering AHC
+        </h1>
+        <p class="text-gray-500 mt-1">
+            Menggunakan Metode Agglomerative Hierarchical Clustering (Ward)
+        </p>
+
+        {% if belum_clustering %}
+        <p class="text-red-500 mt-2 text-sm">
+            Data belum tersedia, silahkan lakukan proses clustering dahulu.
+        </p>
+        {% endif %}
+    </div>
+
+    {% if not belum_clustering %}
+        <!-- INFO RINGKAS -->
+        <div class="grid grid-cols-3 gap-4 mb-6 text-center">
+            <div class="bg-blue-50 p-4 rounded-lg shadow">
+                <p class="text-gray-500 text-sm">Jumlah Data</p>
+                <p class="text-2xl font-bold text-blue-700">{{ jumlah_data }}</p>
+            </div>
+            <div class="bg-green-50 p-4 rounded-lg shadow">
+                <p class="text-gray-500 text-sm">Jumlah Cluster</p>
+                <p class="text-2xl font-bold text-green-700">{{ jumlah_cluster }}</p>
+            </div>
+            <div class="bg-purple-50 p-4 rounded-lg shadow">
+                <p class="text-gray-500 text-sm">Silhouette Score</p>
+                <p class="text-2xl font-bold text-purple-700">{{ silhouette_score }}</p>
+            </div>
+        </div>
+
+        <!-- TABEL HASIL CLUSTERING -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4 text-gray-700">
+                Detail Data Cluster
+            </h2>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm text-left border border-gray-200">
+                    <thead class="bg-gray-100 text-gray-700">
+                        <tr>
+                            {% for col in hasil_cluster.0.keys %}
+                                <th class="px-4 py-2 border">{{ col }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in hasil_cluster %}
+                        <tr class="hover:bg-gray-50">
+                            {% for value in row.values %}
+                                <td class="px-4 py-2 border">{{ value }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- RINGKASAN CLUSTER -->
+        <div class="bg-white rounded-xl shadow-md p-6 mt-10">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">
+                Ringkasan Cluster
+            </h2>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm text-left border border-gray-200">
+                    <thead class="bg-gray-100 text-gray-700">
+                        <tr>
+                            <th class="px-4 py-2 border">Cluster</th>
+                            <th class="px-4 py-2 border">Jumlah</th>
+                            <th class="px-4 py-2 border">Persentase (%)</th>
+                            <th class="px-4 py-2 border">Rata-rata Umur</th>
+                            <th class="px-4 py-2 border">Faktor Dominan</th>
+                            <th class="px-4 py-2 border">Waktu Dominan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in summary_cluster %}
+                        <tr>
+                            <td class="px-4 py-2 border font-semibold">{{ s.cluster }}</td>
+                            <td class="px-4 py-2 border">{{ s.jumlah }}</td>
+                            <td class="px-4 py-2 border">{{ s.persentase }}%</td>
+                            <td class="px-4 py-2 border">{{ s.rata_umur }}</td>
+                            <td class="px-4 py-2 border text-blue-700 font-medium">{{ s.faktor_dominan }}</td>
+                            <td class="px-4 py-2 border text-purple-700 font-medium">{{ s.waktu_dominan }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}

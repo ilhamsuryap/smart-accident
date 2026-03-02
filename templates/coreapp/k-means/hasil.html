@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="bg-white rounded-xl shadow-md p-6">
+
+    <!-- JUDUL -->
+    <div class="mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">
+            Hasil Clustering
+        </h2>
+        <p class="text-gray-500 text-sm">
+            Menggunakan Metode K-Means (3 Cluster)
+        </p>
+    </div>
+
+    {% if hasil_cluster %}
+
+    <div class="overflow-x-auto">
+        <table class="min-w-full text-sm text-left border border-gray-200">
+
+            <!-- HEADER -->
+            <thead class="bg-gray-100 text-gray-700">
+                <tr>
+                    {% for key in hasil_cluster.0.keys %}
+                        <th class="px-4 py-3 border whitespace-nowrap">
+                            {{ key }}
+                        </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+
+            <!-- BODY -->
+            <tbody>
+                {% for row in hasil_cluster %}
+                <tr class="hover:bg-gray-50 transition">
+
+                    {% for key, value in row.items %}
+                        <td class="px-4 py-2 border whitespace-nowrap">
+
+                            {% if key == "Cluster" %}
+                                {% if value == 1 %}
+                                    <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-semibold">
+                                        Cluster 1
+                                    </span>
+                                {% elif value == 2 %}
+                                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full font-semibold">
+                                        Cluster 2
+                                    </span>
+                                {% elif value == 3 %}
+                                    <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full font-semibold">
+                                        Cluster 3
+                                    </span>
+                                {% endif %}
+                            {% else %}
+                                {{ value }}
+                            {% endif %}
+
+                        </td>
+                    {% endfor %}
+
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}
