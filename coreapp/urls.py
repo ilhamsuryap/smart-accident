@@ -66,4 +66,8 @@ urlpatterns = [
     path('api/segmen/geojson/', views.api_segmen_geojson, name='api_segmen_geojson'),
     path('api/kecelakaan/geojson/', views.api_kecelakaan_geojson, name='api_kecelakaan_geojson'),
     path('api/analisis/statistik/', views.api_analisis_statistik, name='api_analisis_statistik'),
+    
+    # Geoapify API
+    path('api/geoapify/routing/', views.api_geoapify_routing, name='api_geoapify_routing'),
+    path('api/geoapify/reverse-geocoding/', views.api_geoapify_reverse_geocoding, name='api_geoapify_reverse_geocoding'),
 ]
