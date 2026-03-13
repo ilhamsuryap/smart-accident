@@ -22,6 +22,8 @@ from rest_framework import status
 import json
 import math
 import numpy as np
+import requests
+import os
 
 import os
 import pandas as pd
@@ -340,7 +342,14 @@ def map_view(request):
 @login_required(login_url='login')
 def api_segmen_geojson(request):
     """API untuk mendapatkan GeoJSON segmen jalan"""
-    tahun = request.GET.get('tahun', timezone.now().year)
+    tahun_raw = request.GET.get('tahun')
+    if not tahun_raw or tahun_raw == 'None':
+        tahun = timezone.now().year
+    else:
+        try:
+            tahun = int(tahun_raw)
+        except (ValueError, TypeError):
+            tahun = timezone.now().year
     
     segmen_list = SegmenJalan.objects.select_related('ruas_jalan').all()
     
@@ -357,19 +366,29 @@ def api_segmen_geojson(request):
             zscore = 0
             color = '#999999'
         
-        # Tanpa geometry spatial, gunakan data lat/lon dari kecelakaan
-        kecelakaan_list = segmen.kecelakaan.filter(
-            tanggal__year=tahun
-        ).values_list('latitude', 'longitude')
+        # Perbaikan otomatis: Jika geometry segmen kosong tapi geometry ruas ada, generate ulang
+        if not segmen.geometry and segmen.ruas_jalan.geometry:
+            try:
+                segmen.geometry = segmen.ruas_jalan._get_segment_geometry(float(segmen.km_awal), float(segmen.km_akhir))
+                segmen.save(update_fields=['geometry'])
+            except Exception as e:
+                print(f"Repair geometry error: {e}")
+
+        # Gunakan geometry yang tersimpan di model
+        geometry = None
+        if segmen.geometry:
+            try:
+                geometry = json.loads(segmen.geometry)
+            except:
+                pass
         
-        if kecelakaan_list:
-            # Buat LineString dari koordinat kecelakaan
-            coords = [[float(lon), float(lat)] for lat, lon in kecelakaan_list]
-            
-            feature = {
+        if geometry:
+            # 1. Feature LineString (Garis Jalan)
+            feature_line = {
                 'type': 'Feature',
-                'id': segmen.id,
+                'id': f"line_{segmen.id}",
                 'properties': {
+                    'type': 'line',
                     'segmen_id': segmen.id,
                     'ruas_nama': segmen.ruas_jalan.nama_ruas,
                     'km_awal': float(segmen.km_awal),
@@ -379,12 +398,34 @@ def api_segmen_geojson(request):
                     'color': color,
                     'url': f'/kecelakaan/segmen/{segmen.id}/'
                 },
-                'geometry': {
-                    'type': 'LineString',
-                    'coordinates': coords
-                }
+                'geometry': geometry
             }
-            features.append(feature)
+            features.append(feature_line)
+
+            # 2. Feature Point (Marker di tengah segmen)
+            if geometry.get('coordinates'):
+                coords = geometry['coordinates']
+                mid_idx = len(coords) // 2
+                mid_point = coords[mid_idx]
+                
+                feature_point = {
+                    'type': 'Feature',
+                    'id': f"point_{segmen.id}",
+                    'properties': {
+                        'type': 'marker',
+                        'segmen_id': segmen.id,
+                        'ruas_nama': segmen.ruas_jalan.nama_ruas,
+                        'km_awal': float(segmen.km_awal),
+                        'km_akhir': float(segmen.km_akhir),
+                        'kategori': kategori,
+                        'color': color
+                    },
+                    'geometry': {
+                        'type': 'Point',
+                        'coordinates': mid_point
+                    }
+                }
+                features.append(feature_point)
     
     geojson = {
         'type': 'FeatureCollection',
@@ -436,6 +477,107 @@ def api_kecelakaan_geojson(request):
     }
     
     return Response(geojson)
+
+
+@api_view(['GET'])
+@login_required(login_url='login')
+def api_geoapify_routing(request):
+    """
+    API untuk mendapatkan rute jalan dari Geoapify.
+    Input: lat_awal, lon_awal, lat_akhir, lon_akhir
+    Output: JSON berisi distance_km dan geometry
+    """
+    lat_awal = request.GET.get('lat_awal')
+    lon_awal = request.GET.get('lon_awal')
+    lat_akhir = request.GET.get('lat_akhir')
+    lon_akhir = request.GET.get('lon_akhir')
+
+    if not all([lat_awal, lon_awal, lat_akhir, lon_akhir]):
+        return JsonResponse({'status': 'error', 'message': 'Parameter tidak lengkap'}, status=400)
+
+    api_key = os.getenv('GEOAPIFY_API_KEY')
+    if not api_key:
+        return JsonResponse({'status': 'error', 'message': 'API Key Geoapify tidak ditemukan di .env'}, status=500)
+
+    url = f"https://api.geoapify.com/v1/routing?waypoints={lat_awal},{lon_awal}|{lat_akhir},{lon_akhir}&mode=drive&apiKey={api_key}"
+
+    try:
+        response = requests.get(url, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if 'features' in data and len(data['features']) > 0:
+                route_feature = data['features'][0]
+                distance_meters = route_feature['properties']['distance']
+                distance_km = round(distance_meters / 1000, 3)
+                
+                return JsonResponse({
+                    'status': 'success',
+                    'distance_km': distance_km,
+                    'geometry': route_feature['geometry']
+                })
+            else:
+                return JsonResponse({'status': 'error', 'message': 'Rute tidak ditemukan'}, status=404)
+        else:
+            return JsonResponse({'status': 'error', 'message': f'API Error: {response.status_code}'}, status=response.status_code)
+            
+    except requests.exceptions.Timeout:
+        return JsonResponse({'status': 'error', 'message': 'API Request timeout'}, status=504)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@api_view(['GET'])
+@login_required(login_url='login')
+def api_geoapify_reverse_geocoding(request):
+    """
+    API untuk mendapatkan informasi alamat dari koordinat (Geoapify).
+    Input: lat, lon
+    Output: JSON berisi nama_jalan, wilayah (kota/kab, provinsi)
+    """
+    lat = request.GET.get('lat')
+    lon = request.GET.get('lon')
+
+    if not all([lat, lon]):
+        return JsonResponse({'status': 'error', 'message': 'Parameter tidak lengkap'}, status=400)
+
+    api_key = os.getenv('GEOAPIFY_API_KEY')
+    if not api_key:
+        return JsonResponse({'status': 'error', 'message': 'API Key Geoapify tidak ditemukan di .env'}, status=500)
+
+    url = f"https://api.geoapify.com/v1/geocode/reverse?lat={lat}&lon={lon}&apiKey={api_key}"
+
+    try:
+        response = requests.get(url, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if 'features' in data and len(data['features']) > 0:
+                properties = data['features'][0]['properties']
+                
+                # Ekstrak informasi yang dibutuhkan
+                nama_jalan = properties.get('street', properties.get('name', 'Tidak diketahui'))
+                kota = properties.get('city', properties.get('county', ''))
+                provinsi = properties.get('state', '')
+                
+                wilayah = f"{kota}, {provinsi}".strip(", ")
+                
+                return JsonResponse({
+                    'status': 'success',
+                    'nama_jalan': nama_jalan,
+                    'wilayah': wilayah,
+                    'kota_kab': kota,
+                    'provinsi': provinsi
+                })
+            else:
+                return JsonResponse({'status': 'error', 'message': 'Data lokasi tidak ditemukan'}, status=404)
+        else:
+            return JsonResponse({'status': 'error', 'message': f'API Error: {response.status_code}'}, status=response.status_code)
+            
+    except requests.exceptions.Timeout:
+        return JsonResponse({'status': 'error', 'message': 'API Request timeout'}, status=504)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 
 @api_view(['GET'])
