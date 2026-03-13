@@ -27,8 +27,9 @@ class RuasJalanForm(forms.ModelForm):
     
     class Meta:
         model = RuasJalan
-        fields = ['nama_ruas', 'jenis_jalan', 'wilayah', 'panjang_km', 'lat_awal', 'lon_awal', 'lat_akhir', 'lon_akhir']
+        fields = ['nama_ruas', 'jenis_jalan', 'wilayah', 'panjang_km', 'lat_awal', 'lon_awal', 'lat_akhir', 'lon_akhir', 'geometry']
         widgets = {
+            'geometry': forms.HiddenInput(),
             'nama_ruas': forms.TextInput(attrs={
                 'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500',
                 'placeholder': 'Masukkan nama ruas jalan'

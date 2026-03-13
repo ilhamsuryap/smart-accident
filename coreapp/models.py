@@ -19,7 +19,7 @@ class RuasJalan(models.Model):
     )
     
     id = models.AutoField(primary_key=True)
-    nama_ruas = models.CharField(max_length=45)
+    nama_ruas = models.CharField(max_length=100)
     jenis_jalan = models.CharField(max_length=20, choices=JENIS_JALAN_CHOICES)
     wilayah = models.CharField(max_length=100)
     panjang_km = models.DecimalField(max_digits=10, decimal_places=3, validators=[MinValueValidator(0)])
@@ -27,6 +27,7 @@ class RuasJalan(models.Model):
     lon_awal = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, help_text="Longitude titik awal ruas jalan")
     lat_akhir = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, help_text="Latitude titik akhir ruas jalan")
     lon_akhir = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, help_text="Longitude titik akhir ruas jalan")
+    geometry = models.TextField(null=True, blank=True, help_text="GeoJSON LineString untuk seluruh ruas jalan")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -56,8 +57,59 @@ class RuasJalan(models.Model):
                 ruas_jalan=self,
                 km_awal=km_awal,
                 km_akhir=km_akhir,
-                panjang_segmen=panjang_segmen
+                panjang_segmen=panjang_segmen,
+                geometry=self._get_segment_geometry(km_awal, km_akhir)
             )
+
+    def _get_segment_geometry(self, km_start, km_end):
+        """Memotong geometry utama untuk segmen tertentu (km_start sampai km_end)"""
+        if not self.geometry:
+            return None
+            
+        try:
+            import json
+            geom_data = json.loads(self.geometry)
+            coords = geom_data.get('coordinates', [])
+            
+            if not coords:
+                return None
+                
+            # Logika pemotongan sederhana berdasarkan jarak kumulatif
+            def calculate_dist(p1, p2):
+                return geodesic((p1[1], p1[0]), (p2[1], p2[0])).kilometers
+                
+            segment_coords = []
+            total_dist = 0
+            
+            for i in range(len(coords) - 1):
+                p1 = coords[i]
+                p2 = coords[i+1]
+                d = calculate_dist(p1, p2)
+                
+                # Jika p1 atau p2 berada dalam rentang, atau segmen p1-p2 melintasi rentang
+                p1_in = (total_dist >= km_start and total_dist <= km_end)
+                p2_in = (total_dist + d >= km_start and total_dist + d <= km_end)
+                crosses = (total_dist < km_start and total_dist + d > km_end)
+                
+                if p1_in or p2_in or crosses:
+                    if not segment_coords:
+                        segment_coords.append(p1)
+                    segment_coords.append(p2)
+                
+                total_dist += d
+                if total_dist > km_end and not (p1_in or p2_in or crosses):
+                    break
+                    
+            # Pastikan minimal ada 2 titik untuk LineString
+            if len(segment_coords) >= 2:
+                return json.dumps({
+                    "type": "LineString",
+                    "coordinates": segment_coords
+                })
+        except Exception as e:
+            print(f"Error slicing geometry: {e}")
+            
+        return None
 
 
 class SegmenJalan(models.Model):
@@ -68,6 +120,7 @@ class SegmenJalan(models.Model):
     km_awal = models.DecimalField(max_digits=10, decimal_places=3)
     km_akhir = models.DecimalField(max_digits=10, decimal_places=3)
     panjang_segmen = models.DecimalField(max_digits=10, decimal_places=3)
+    geometry = models.TextField(null=True, blank=True, help_text="GeoJSON LineString untuk segmen ini")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
