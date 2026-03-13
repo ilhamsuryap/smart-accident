@@ -21,7 +21,7 @@
                     <small class="text-gray-600">
                         <i class="fas fa-info-circle"></i> 
                         Klik pada peta untuk menandai titik awal (marker merah) dan titik akhir (marker biru). 
-                        Garis hitam akan menghubungkan kedua titik.
+                        Garis akan menghubungkan kedua titik.
                     </small>
                 </div>
             </div>
@@ -128,6 +128,7 @@
                         {{ form.lon_awal }}
                         {{ form.lat_akhir }}
                         {{ form.lon_akhir }}
+                        {{ form.geometry }}
                         
                         <!-- Informasi Koordinat (Read-only) -->
                         <div class="mb-4">
@@ -191,22 +192,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const map = L.map('map').setView([-7.6, 111.4], 10); 
     // Tambah tile layer
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        // attribution: '© OpenStreetMap contributors',
         maxZoom: 19
     }).addTo(map);
     
     // Marker untuk titik awal dan akhir
     let markerAwal = null;
     let markerAkhir = null;
-    let polyline = null;
+    let routeLayer = null;
     
-    // Ambil nilai dari form jika ada
+    // Ambil elemen form
     const latAwalInput = document.getElementById('id_lat_awal');
     const lonAwalInput = document.getElementById('id_lon_awal');
     const latAkhirInput = document.getElementById('id_lat_akhir');
     const lonAkhirInput = document.getElementById('id_lon_akhir');
+    const panjangKmInput = document.getElementById('id_panjang_km');
+    const namaRuasInput = document.getElementById('id_nama_ruas');
+    const wilayahInput = document.getElementById('id_wilayah');
+    const geometryInput = document.getElementById('id_geometry');
     
-    // Fungsi untuk update display
+    // Fungsi untuk update display koordinat
     function updateDisplay() {
         const latAwal = latAwalInput.value;
         const lonAwal = lonAwalInput.value;
@@ -224,138 +228,145 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('display-lon-akhir-input').value = lonAkhir || '';
     }
     
-    // Fungsi untuk menghitung jarak antara dua titik (Haversine formula)
-    function calculateDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371; // Radius bumi dalam km
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = 
-            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-            Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return R * c;
-    }
-    
-    // Fungsi untuk update panjang km
-    function updatePanjangKm() {
-        const latAwal = parseFloat(latAwalInput.value);
-        const lonAwal = parseFloat(lonAwalInput.value);
-        const latAkhir = parseFloat(latAkhirInput.value);
-        const lonAkhir = parseFloat(lonAkhirInput.value);
+    // Fungsi untuk mendapatkan data rute dari backend
+    async function fetchRoute() {
+        const latAwal = latAwalInput.value;
+        const lonAwal = lonAwalInput.value;
+        const latAkhir = latAkhirInput.value;
+        const lonAkhir = lonAkhirInput.value;
         
-        if (!isNaN(latAwal) && !isNaN(lonAwal) && !isNaN(latAkhir) && !isNaN(lonAkhir)) {
-            const jarak = calculateDistance(latAwal, lonAwal, latAkhir, lonAkhir);
-            document.getElementById('id_panjang_km').value = jarak.toFixed(2);
-        }
-    }
-    
-    // Fungsi untuk draw polyline
-    function drawLine() {
-        if (polyline) {
-            map.removeLayer(polyline);
-        }
-        
-        const latAwal = parseFloat(latAwalInput.value);
-        const lonAwal = parseFloat(lonAwalInput.value);
-        const latAkhir = parseFloat(latAkhirInput.value);
-        const lonAkhir = parseFloat(lonAkhirInput.value);
-        
-        if (!isNaN(latAwal) && !isNaN(lonAwal) && !isNaN(latAkhir) && !isNaN(lonAkhir)) {
-            const route = L.Routing.control({
-                waypoints: [
-                    L.latLng(latAwal, lonAwal),
-                    L.latLng(latAkhir, lonAkhir)
-                ],
-                routeWhileDragging: false,
-                show: false,
-                addWaypoints: false,
-                lineOptions: {
-                    styles: [{color: '#000', opacity: 0.8, weight: 3}]
-                },
-                createMarker: function() { return null; } // Jangan buat marker dari routing
-            }).addTo(map);
-            
-            // Fallback: jika routing tidak available, buat garis lurus
-            if (!L.Routing.control) {
-                polyline = L.polyline([
-                    [latAwal, lonAwal],
-                    [latAkhir, lonAkhir]
-                ], {
-                    color: '#000',
-                    weight: 3,
-                    opacity: 0.8,
-                    dashArray: '5, 5'
+        if (!latAwal || !lonAwal || !latAkhir || !lonAkhir) return;
+
+        // Reset layer rute lama
+        if (routeLayer) map.removeLayer(routeLayer);
+
+        try {
+            const response = await fetch(`/api/geoapify/routing/?lat_awal=${latAwal}&lon_awal=${lonAwal}&lat_akhir=${latAkhir}&lon_akhir=${lonAkhir}`);
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                // 1. Gambar rute di peta
+                routeLayer = L.geoJSON(data.geometry, {
+                    style: { color: '#2563eb', weight: 5, opacity: 0.7 }
                 }).addTo(map);
+                
+                // Fit bounds ke rute
+                map.fitBounds(routeLayer.getBounds());
+
+                // 2. Isi otomatis panjang km
+                panjangKmInput.value = data.distance_km;
+
+                // 2.5 Simpan geometry ke hidden input
+                geometryInput.value = JSON.stringify(data.geometry);
+
+                // 3. Reverse Geocoding untuk Titik Awal dan Akhir
+                const startInfo = await fetchReverseGeocoding(latAwal, lonAwal);
+                const endInfo = await fetchReverseGeocoding(latAkhir, lonAkhir);
+
+                if (startInfo && endInfo) {
+                    // Update nama ruas: Nama Awal - Nama Akhir
+                    namaRuasInput.value = `${startInfo.nama_jalan} - ${endInfo.nama_jalan}`;
+                    // Update wilayah dari titik awal (sebagai representasi)
+                    wilayahInput.value = startInfo.wilayah;
+                }
+            } else {
+                console.error('Routing error:', data.message);
+                alert('Gagal mengambil rute: ' + data.message);
             }
-            
-            // Update panjang km secara otomatis
-            updatePanjangKm();
+        } catch (error) {
+            console.error('Fetch error:', error);
+        }
+    }
+
+    // Fungsi untuk reverse geocoding dari backend (mengembalikan data)
+    async function fetchReverseGeocoding(lat, lon) {
+        try {
+            const response = await fetch(`/api/geoapify/reverse-geocoding/?lat=${lat}&lon=${lon}`);
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                return data;
+            }
+            return null;
+        } catch (error) {
+            console.error('Geocoding error:', error);
+            return null;
         }
     }
     
     // Fungsi untuk add/update marker
     function addMarker(lat, lon, type) {
+        const iconUrl = type === 'awal' 
+            ? 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png'
+            : 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png';
+
+        const markerOptions = {
+            icon: L.icon({
+                iconUrl: iconUrl,
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            }),
+            title: type === 'awal' ? 'Titik Awal' : 'Titik Akhir'
+        };
+
         if (type === 'awal') {
-            if (markerAwal) {
-                map.removeLayer(markerAwal);
-            }
-            markerAwal = L.marker([lat, lon], {
-                icon: L.icon({
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 41],
-                    popupAnchor: [1, -34],
-                    shadowSize: [41, 41]
-                }),
-                title: 'Titik Awal'
-            }).addTo(map).bindPopup('Titik Awal<br>Lat: ' + lat.toFixed(6) + '<br>Lon: ' + lon.toFixed(6));
-            
+            if (markerAwal) map.removeLayer(markerAwal);
+            markerAwal = L.marker([lat, lon], markerOptions).addTo(map);
             latAwalInput.value = lat.toFixed(6);
             lonAwalInput.value = lon.toFixed(6);
         } else {
-            if (markerAkhir) {
-                map.removeLayer(markerAkhir);
-            }
-            markerAkhir = L.marker([lat, lon], {
-                icon: L.icon({
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 41],
-                    popupAnchor: [1, -34],
-                    shadowSize: [41, 41]
-                }),
-                title: 'Titik Akhir'
-            }).addTo(map).bindPopup('Titik Akhir<br>Lat: ' + lat.toFixed(6) + '<br>Lon: ' + lon.toFixed(6));
-            
+            if (markerAkhir) map.removeLayer(markerAkhir);
+            markerAkhir = L.marker([lat, lon], markerOptions).addTo(map);
             latAkhirInput.value = lat.toFixed(6);
             lonAkhirInput.value = lon.toFixed(6);
         }
         
         updateDisplay();
-        drawLine();
+        
+        // Jika kedua titik sudah ada, ambil rute
+        if (latAwalInput.value && latAkhirInput.value) {
+            fetchRoute();
+        }
     }
     
-    // Tambah marker dari form jika ada
+    // Inisialisasi marker jika mengedit data lama
     if (latAwalInput.value && lonAwalInput.value) {
-        addMarker(parseFloat(latAwalInput.value), parseFloat(lonAwalInput.value), 'awal');
+        const lat = parseFloat(latAwalInput.value);
+        const lon = parseFloat(lonAwalInput.value);
+        markerAwal = L.marker([lat, lon], {
+            icon: L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41]
+            })
+        }).addTo(map);
     }
     if (latAkhirInput.value && lonAkhirInput.value) {
-        addMarker(parseFloat(latAkhirInput.value), parseFloat(lonAkhirInput.value), 'akhir');
+        const lat = parseFloat(latAkhirInput.value);
+        const lon = parseFloat(lonAkhirInput.value);
+        markerAkhir = L.marker([lat, lon], {
+            icon: L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41]
+            })
+        }).addTo(map);
+        fetchRoute();
     }
     
     // Click handler untuk map
-    let clickCount = 0;
+    let clickCount = markerAwal && markerAkhir ? 2 : (markerAwal ? 1 : 0);
     map.on('click', function(e) {
         const lat = e.latlng.lat;
         const lon = e.latlng.lng;
         
-        // Toggle antara awal dan akhir
         if (clickCount % 2 === 0) {
             addMarker(lat, lon, 'awal');
-            map.setView([lat, lon], map.getZoom());
         } else {
             addMarker(lat, lon, 'akhir');
         }
@@ -367,26 +378,27 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('btn-reset-map').addEventListener('click', function() {
         if (markerAwal) map.removeLayer(markerAwal);
         if (markerAkhir) map.removeLayer(markerAkhir);
-        if (polyline) map.removeLayer(polyline);
+        if (routeLayer) map.removeLayer(routeLayer);
         
         markerAwal = null;
         markerAkhir = null;
-        polyline = null;
+        routeLayer = null;
         clickCount = 0;
         
         latAwalInput.value = '';
         lonAwalInput.value = '';
         latAkhirInput.value = '';
         lonAkhirInput.value = '';
+        panjangKmInput.value = '';
+        namaRuasInput.value = '';
+        wilayahInput.value = '';
         
         updateDisplay();
         map.setView([-7.6, 111.4], 10);
     });
     
-    // Update display on load
     updateDisplay();
     
-    // Validasi sebelum submit
     document.getElementById('ruasJalanForm').addEventListener('submit', function(e) {
         if (!latAwalInput.value || !lonAwalInput.value || !latAkhirInput.value || !lonAkhirInput.value) {
             e.preventDefault();
@@ -396,8 +408,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-
-<!-- Tambah Leaflet Routing Machine untuk routing lebih akurat -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
-<script src="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 {% endblock %}
