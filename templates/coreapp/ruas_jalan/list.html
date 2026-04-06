@@ -35,6 +35,7 @@
                 <table class="w-full">
                     <thead class="bg-gray-100">
                         <tr>
+                            <th class="px-4 py-3 text-left font-semibold">No</th>
                             <th class="px-4 py-3 text-left font-semibold">Nama Ruas</th>
                             <th class="px-4 py-3 text-left font-semibold">Jenis Jalan</th>
                             <th class="px-4 py-3 text-left font-semibold">Wilayah</th>
@@ -46,7 +47,10 @@
                         {% for ruas in ruas_jalan %}
                         <tr class="border-b hover:bg-gray-50">
                             <td class="px-4 py-3">
-                                <strong>{{ ruas.nama_ruas }}</strong>
+                                {{ forloop.counter }}
+                            </td>
+                            <td class="px-4 py-3">
+                                {{ ruas.nama_ruas }}
                             </td>
                             <td class="px-4 py-3">
                                 <span class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-semibold">{{ ruas.get_jenis_jalan_display }}</span>
