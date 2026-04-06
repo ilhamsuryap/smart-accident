@@ -2,158 +2,468 @@
 
 {% block title %}{% if title %}{{ title }}{% else %}Detail Ruas Jalan{% endif %} - Smart Accident{% endblock %}
 
+{% block extra_css %}
+<style>
+    #mapDetail {
+        height: 450px;
+        width: 100%;
+        border-radius: 8px;
+    }
+    .seg-row { cursor: pointer; transition: background 0.15s; }
+    .seg-row:hover { background-color: #eff6ff !important; }
+    .seg-row.active { background-color: #dbeafe !important; }
+    .badge-has-geom  { background:#dcfce7; color:#166534; }
+    .badge-no-geom   { background:#fee2e2; color:#991b1b; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="w-full">
+
+    {# ── Header ────────────────────────────────────────────────────────── #}
     <div class="mb-6">
-        <div class="flex justify-between items-start">
+        <div class="flex justify-between items-start flex-wrap gap-3">
             <div>
-                <h1 class="text-3xl font-bold">
-                    <i class="fas fa-road"></i> {{ ruas.nama_ruas }}
+                <h1 class="text-3xl font-bold flex items-center gap-2">
+                    <i class="fas fa-road text-blue-600"></i>
+                    {{ ruas.nama_ruas }}
                 </h1>
-                <p class="text-gray-500 text-sm">Detail Ruas Jalan</p>
+                <p class="text-gray-500 text-sm mt-1">Detail Ruas Jalan</p>
             </div>
-            {% if is_admin %}
             <div class="flex gap-2">
-                <a href="{% url 'ruas_jalan_update' ruas.id %}" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
+                {% if is_admin %}
+                <a href="{% url 'ruas_jalan_update' ruas.id %}"
+                   class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 text-sm font-medium">
                     <i class="fas fa-edit"></i> Edit
                 </a>
-                <a href="{% url 'ruas_jalan_list' %}" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                {% endif %}
+                <a href="{% url 'ruas_jalan_list' %}"
+                   class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm font-medium">
                     <i class="fas fa-arrow-left"></i> Kembali
                 </a>
             </div>
-            {% else %}
+        </div>
+    </div>
+
+    {# ── Stats Cards ───────────────────────────────────────────────────── #}
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                <i class="fas fa-road"></i>
+            </div>
             <div>
-                <a href="{% url 'ruas_jalan_list' %}" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
-                    <i class="fas fa-arrow-left"></i> Kembali
+                <p class="text-xs text-gray-500">Jenis Jalan</p>
+                <p class="font-semibold text-sm">{{ ruas.get_jenis_jalan_display }}</p>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                <i class="fas fa-ruler-horizontal"></i>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500">Total Panjang</p>
+                <p class="font-semibold text-sm">{{ ruas.panjang_km }} km</p>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
+                <i class="fas fa-layer-group"></i>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500">Total Segmen</p>
+                <p class="font-semibold text-sm">{{ segmen.count }} segmen</p>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
+                <i class="fas fa-map-marker-alt"></i>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500">Wilayah</p>
+                <p class="font-semibold text-sm truncate max-w-[120px]" title="{{ ruas.wilayah }}">{{ ruas.wilayah }}</p>
+            </div>
+        </div>
+    </div>
+
+    {# ── Info + Peta (2 kolom) ─────────────────────────────────────────── #}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+
+        {# Kolom kiri: info detail #}
+        <div class="space-y-4">
+            {# Informasi Umum #}
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="bg-gray-50 px-5 py-3 border-b border-gray-200">
+                    <h5 class="font-semibold text-sm"><i class="fas fa-info-circle text-blue-500 mr-1"></i> Informasi Umum</h5>
+                </div>
+                <div class="p-5 space-y-3 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Nama Ruas</span>
+                        <span class="font-medium text-right max-w-[60%]">{{ ruas.nama_ruas }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Jenis Jalan</span>
+                        <span class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                            {{ ruas.get_jenis_jalan_display }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Wilayah</span>
+                        <span class="font-medium">{{ ruas.wilayah }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Panjang Total</span>
+                        <span class="font-semibold text-blue-700">{{ ruas.panjang_km }} km</span>
+                    </div>
+                    {% if ruas.lat_awal %}
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Koordinat Awal</span>
+                        <span class="font-mono text-xs">{{ ruas.lat_awal|floatformat:5 }}, {{ ruas.lon_awal|floatformat:5 }}</span>
+                    </div>
+                    {% endif %}
+                    {% if ruas.lat_akhir %}
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Koordinat Akhir</span>
+                        <span class="font-mono text-xs">{{ ruas.lat_akhir|floatformat:5 }}, {{ ruas.lon_akhir|floatformat:5 }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Geometry</span>
+                        {% if ruas.geometry %}
+                        <span class="px-2 py-0.5 badge-has-geom rounded-full text-xs font-medium">✓ Tersedia</span>
+                        {% else %}
+                        <span class="px-2 py-0.5 badge-no-geom rounded-full text-xs font-medium">✗ Tidak ada</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {# Statistik Waktu #}
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="bg-gray-50 px-5 py-3 border-b border-gray-200">
+                    <h5 class="font-semibold text-sm"><i class="fas fa-clock text-gray-500 mr-1"></i> Riwayat</h5>
+                </div>
+                <div class="p-5 space-y-3 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Dibuat</span>
+                        <span class="font-medium">{{ ruas.created_at|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Diperbarui</span>
+                        <span class="font-medium">{{ ruas.updated_at|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Total Segmen</span>
+                        <span class="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-semibold">{{ segmen.count }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Kolom kanan (2/3): Peta #}
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-lg shadow-md overflow-hidden h-full">
+                <div class="bg-gray-50 px-5 py-3 border-b border-gray-200 flex justify-between items-center">
+                    <h5 class="font-semibold text-sm">
+                        <i class="fas fa-map-marked-alt text-blue-500 mr-1"></i> Visualisasi Jalur &amp; Segmen
+                    </h5>
+                    <div class="flex items-center gap-3 text-xs text-gray-500">
+                        <span class="flex items-center gap-1">
+                            <span class="inline-block w-6 h-1 bg-gray-400 rounded" style="border-top:3px dashed #9ca3af"></span> Ruas Utama
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <span class="inline-block w-6 h-1.5 bg-blue-500 rounded"></span> Segmen
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <span class="inline-block w-3 h-3 rounded-full bg-red-500 border-2 border-white"></span> Awal
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <span class="inline-block w-3 h-3 rounded-full bg-blue-500 border-2 border-white"></span> Akhir
+                        </span>
+                    </div>
+                </div>
+                <div id="mapDetail" style="height:430px; border-radius:0"></div>
+            </div>
+        </div>
+    </div>
+
+    {# ── Daftar Segmen ─────────────────────────────────────────────────── #}
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <h5 class="font-semibold flex items-center gap-2">
+                <i class="fas fa-list text-blue-500"></i>
+                Daftar Segmen Jalan
+                <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
+                    {{ segmen.count }} segmen
+                </span>
+            </h5>
+            {% if is_admin %}
+            <a href="{% url 'generate_segmen' ruas.id %}"
+               class="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-xs font-medium">
+                <i class="fas fa-sync-alt"></i> Generate Ulang
+            </a>
+            {% endif %}
+        </div>
+        <div class="p-0">
+            {% if segmen %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm" id="segmen-table">
+                    <thead class="bg-gray-100 border-b border-gray-200 text-xs uppercase tracking-wide text-gray-600">
+                        <tr>
+                            <th class="px-4 py-3 text-left w-8">#</th>
+                            <th class="px-4 py-3 text-left">Titik / Label</th>
+                            <th class="px-4 py-3 text-left">KM Awal → Akhir</th>
+                            <th class="px-4 py-3 text-left">Koordinat Awal</th>
+                            <th class="px-4 py-3 text-left">Koordinat Akhir</th>
+                            <th class="px-4 py-3 text-center">Panjang</th>
+                            <th class="px-4 py-3 text-center">Geometry</th>
+                            <th class="px-4 py-3 text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="segmen-tbody">
+                        {% for seg in segmen %}
+                        <tr class="seg-row border-b border-gray-100 {% cycle 'bg-white' 'bg-gray-50' %}"
+                            data-seg-idx="{{ forloop.counter0 }}">
+                            <td class="px-4 py-3">
+                                <span class="w-6 h-6 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center">
+                                    {{ forloop.counter }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="font-medium">{% if seg.nama_segmen %}{{ seg.nama_segmen }}{% else %}Segmen {{ forloop.counter }}{% endif %}</div>
+                                {% if seg.keterangan %}
+                                <div class="text-xs text-gray-500 mt-1 mb-1 line-clamp-2" title="{{ seg.keterangan }}">
+                                    {{ seg.keterangan }}
+                                </div>
+                                {% endif %}
+                                {% if seg.titik_awal %}
+                                <div class="text-[10px] text-blue-600 mt-0.5">
+                                    {{ seg.titik_awal }} &rarr; {{ seg.titik_akhir }}
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="font-mono text-xs">
+                                    {{ seg.km_awal }} &rarr; {{ seg.km_akhir }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 font-mono text-xs text-gray-600">
+                                {% if seg.lat_awal %}
+                                    {{ seg.lat_awal|floatformat:5 }},<br>{{ seg.lon_awal|floatformat:5 }}
+                                {% else %}
+                                    <span class="text-gray-400">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 font-mono text-xs text-gray-600">
+                                {% if seg.lat_akhir %}
+                                    {{ seg.lat_akhir|floatformat:5 }},<br>{{ seg.lon_akhir|floatformat:5 }}
+                                {% else %}
+                                    <span class="text-gray-400">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <span class="font-semibold text-blue-700">{{ seg.panjang_segmen }} km</span>
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                {% if seg.geometry %}
+                                <span class="px-2 py-0.5 badge-has-geom rounded-full text-xs font-medium">✓ Ada</span>
+                                {% else %}
+                                <span class="px-2 py-0.5 badge-no-geom rounded-full text-xs font-medium">✗ Kosong</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <a href="{% url 'segmen_kecelakaan_detail' seg.id %}"
+                                   class="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-xs font-medium">
+                                    <i class="fas fa-eye"></i> Detail
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-6 text-center">
+                <div class="text-gray-400 text-5xl mb-3"><i class="fas fa-route"></i></div>
+                <p class="text-gray-600 font-medium mb-1">Belum ada segmen jalan</p>
+                <p class="text-gray-400 text-sm mb-4">Segmen dibuat otomatis saat ruas jalan ditambah/diedit.</p>
+                {% if is_admin %}
+                <a href="{% url 'generate_segmen' ruas.id %}"
+                   class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">
+                    <i class="fas fa-sync-alt"></i> Generate Segmen Sekarang
                 </a>
+                {% endif %}
             </div>
             {% endif %}
         </div>
     </div>
-    
-    <!-- Informasi Ruas Jalan -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            <div class="bg-gray-100 px-6 py-4 border-b border-gray-200">
-                <h5 class="font-semibold">Informasi Umum</h5>
-            </div>
-            <div class="p-6">
-                <div class="mb-4">
-                    <div class="flex justify-between mb-2">
-                        <div><strong>Nama Ruas:</strong></div>
-                        <div>{{ ruas.nama_ruas }}</div>
-                    </div>
-                </div>
-                <div class="mb-4">
-                    <div class="flex justify-between mb-2">
-                        <div><strong>Jenis Jalan:</strong></div>
-                        <div>
-                            <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">{{ ruas.get_jenis_jalan_display }}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="mb-4">
-                    <div class="flex justify-between mb-2">
-                        <div><strong>Wilayah:</strong></div>
-                        <div>{{ ruas.wilayah }}</div>
-                    </div>
-                </div>
-                <div>
-                    <div class="flex justify-between">
-                        <div><strong>Panjang:</strong></div>
-                        <div>{{ ruas.panjang_km }} km</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            <div class="bg-gray-100 px-6 py-4 border-b border-gray-200">
-                <h5 class="font-semibold">Statistik</h5>
-            </div>
-            <div class="p-6">
-                <div class="mb-4">
-                    <div class="flex justify-between mb-2">
-                        <div><strong>Total Segmen:</strong></div>
-                        <div>
-                            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">{{ segmen.count }}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="mb-4">
-                    <div class="flex justify-between mb-2">
-                        <div><strong>Dibuat:</strong></div>
-                        <div>{{ ruas.created_at|date:"d/m/Y H:i" }}</div>
-                    </div>
-                </div>
-                <div>
-                    <div class="flex justify-between">
-                        <div><strong>Update Terakhir:</strong></div>
-                        <div>{{ ruas.updated_at|date:"d/m/Y H:i" }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Daftar Segmen -->
-    <div>
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            <div class="bg-gray-100 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                <h5 class="font-semibold">
-                    <i class="fas fa-map-marked"></i> Segmen Jalan
-                </h5>
-                {% if is_admin %}
-                <!-- <a href="{% url 'generate_segmen' ruas.id %}" class="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
-                    <i class="fas fa-bolt"></i> Generate Segmen Otomatis
-                </a> -->
-                {% endif %}
-            </div>
-            <div class="p-6">
-                {% if segmen %}
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead class="bg-gray-100 border-b border-gray-200">
-                                <tr>
-                                    <th class="px-4 py-3 text-left font-semibold">Segmen</th>
-                                    <th class="px-4 py-3 text-left font-semibold">Km Awal</th>
-                                    <th class="px-4 py-3 text-left font-semibold">Km Akhir</th>
-                                    <th class="px-4 py-3 text-left font-semibold">Panjang Segmen</th>
-                                    <th class="px-4 py-3 text-center font-semibold">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for seg in segmen %}
-                                <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                    <td class="px-4 py-3">
-                                        <a href="{% url 'segmen_kecelakaan_detail' seg.id %}" class="text-blue-600 hover:underline">
-                                            Segmen {{ seg.km_awal }}-{{ seg.km_akhir }}
-                                        </a>
-                                    </td>
-                                    <td class="px-4 py-3">{{ seg.km_awal }}</td>
-                                    <td class="px-4 py-3">{{ seg.km_akhir }}</td>
-                                    <td class="px-4 py-3">{{ seg.panjang_segmen }} km</td>
-                                    <td class="px-4 py-3 text-center">
-                                        <a href="{% url 'segmen_kecelakaan_detail' seg.id %}" 
-                                           class="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-sm">
-                                            <i class="fas fa-eye"></i> Detail
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <div class="p-4 bg-blue-50 text-blue-800 rounded-lg">
-                        <i class="fas fa-info-circle"></i> Belum ada segmen jalan. 
-                        {% if is_admin %}
-                        <a href="{% url 'generate_segmen' ruas.id %}" class="text-blue-600 hover:underline">Generate sekarang</a>
-                        {% endif %}
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
+
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{# ── Data JSON dari Django (aman, tidak ada template tag di dalam JS) ── #}
+<script id="ruas-geom-data" type="application/json">{{ ruas.geometry|default:"null" }}</script>
+<script id="segmen-data" type="application/json">
+[{% for seg in segmen %}{"index":{{ forloop.counter }},"isFirst":{% if forloop.first %}true{% else %}false{% endif %},"isLast":{% if forloop.last %}true{% else %}false{% endif %},"geometry":{{ seg.geometry|default:"null" }},"nama_segmen":"{{ seg.nama_segmen|default_if_none:''|escapejs }}","keterangan":"{{ seg.keterangan|default_if_none:''|escapejs }}","km_awal":"{{ seg.km_awal }}","km_akhir":"{{ seg.km_akhir }}","panjang":"{{ seg.panjang_segmen }}","titik_awal":"{{ seg.titik_awal|default:'' }}","titik_akhir":"{{ seg.titik_akhir|default:'' }}","lat_awal":{% if seg.lat_awal %}{{ seg.lat_awal }}{% else %}null{% endif %},"lon_awal":{% if seg.lon_awal %}{{ seg.lon_awal }}{% else %}null{% endif %},"lat_akhir":{% if seg.lat_akhir %}{{ seg.lat_akhir }}{% else %}null{% endif %},"lon_akhir":{% if seg.lon_akhir %}{{ seg.lon_akhir }}{% else %}null{% endif %}}{% if not forloop.last %},{% endif %}{% endfor %}]
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // ─── Init Map ────────────────────────────────────────────────────────
+    const map = L.map('mapDetail').setView([-7.6, 111.4], 12);
+    L.tileLayer('https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}@2x.png?key=4fcV8gk13zZ6iV6ig54V', {
+        attribution: '\u003ca href=\"https://www.maptiler.com/copyright/\" target=\"_blank\"\u003e\u0026copy; MapTiler\u003c/a\u003e \u003ca href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\"\u003e\u0026copy; OpenStreetMap contributors\u003c/a\u003e',
+        maxZoom: 19,
+        tileSize: 512,
+        zoomOffset: -1
+    }).addTo(map);
+
+    // ─── Baca data Django ────────────────────────────────────────────────
+    let ruasGeomRaw = null;
+    let segmenData  = [];
+    try { ruasGeomRaw = JSON.parse(document.getElementById('ruas-geom-data').textContent); } catch (_) {}
+    try { segmenData  = JSON.parse(document.getElementById('segmen-data').textContent); }  catch (_) {}
+
+    // ─── Warna per segmen (beda warna agar mudah dibedakan) ─────────────
+    const SEGMENT_COLORS = [
+        '#2563eb','#16a34a','#dc2626','#d97706','#7c3aed',
+        '#0891b2','#be185d','#65a30d','#9333ea','#0369a1'
+    ];
+    function segColor(idx) { return SEGMENT_COLORS[idx % SEGMENT_COLORS.length]; }
+
+    // ─── Referensi layer per segmen (untuk highlight dari tabel) ─────────
+    const segLayers = [];
+    let allBounds   = null;
+
+    // ─── Gambar Ruas Utama (dashed) ──────────────────────────────────────
+    let ruasLayer = null;
+    if (ruasGeomRaw) {
+        try {
+            const geom = ruasGeomRaw.type === 'Feature' ? ruasGeomRaw.geometry : ruasGeomRaw;
+            ruasLayer = L.geoJSON(geom, {
+                style: { color: '#9ca3af', weight: 3, opacity: 0.5, dashArray: '8, 8' }
+            }).addTo(map);
+            allBounds = ruasLayer.getBounds();
+        } catch (e) { console.warn('Rute utama error:', e); }
+    }
+
+    // ─── Gambar tiap segmen ───────────────────────────────────────────────
+    segmenData.forEach(function (seg, idx) {
+        const color = segColor(idx);
+        const layerGroup = L.layerGroup().addTo(map);
+        segLayers.push(layerGroup);
+
+        // Garis segmen
+        if (seg.geometry) {
+            try {
+                const geomObj = typeof seg.geometry === 'string' ? JSON.parse(seg.geometry) : seg.geometry;
+                const line = L.geoJSON(geomObj, {
+                    style: { color: color, weight: 5, opacity: 0.85 }
+                }).bindPopup(
+                    '<div style="font-size:0.82rem;min-width:160px">' +
+                    '<strong style="color:' + color + '">' + (seg.nama_segmen || 'Segmen ' + seg.index) + '</strong><br>' +
+                    (seg.keterangan ? '<div style="color:#6b7280; font-size:11px; margin:4px 0">' + seg.keterangan + '</div>' : '') +
+                    (seg.titik_awal ? '<span style="color:#6b7280; font-size:10px">' + seg.titik_awal + ' &rarr; ' + seg.titik_akhir + '</span><br>' : '') +
+                    'KM: <b>' + seg.km_awal + '</b> &rarr; <b>' + seg.km_akhir + '</b><br>' +
+                    'Panjang: <b>' + seg.panjang + ' km</b>' +
+                    '</div>'
+                );
+                layerGroup.addLayer(line);
+
+                // Extend bounds
+                const lb = line.getBounds();
+                if (lb.isValid()) allBounds = allBounds ? allBounds.extend(lb) : lb;
+            } catch (e) { console.warn('Segmen ' + seg.index + ' geometry error:', e); }
+        }
+
+        // Marker titik awal (semua segmen)
+        if (seg.lat_awal !== null && seg.lon_awal !== null) {
+            const isStart = seg.isFirst;
+            const cm = L.circleMarker([seg.lat_awal, seg.lon_awal], {
+                radius     : isStart ? 7 : 5,
+                fillColor  : isStart ? '#ef4444' : color,
+                color      : '#fff',
+                weight     : 2,
+                opacity    : 1,
+                fillOpacity: 1
+            }).bindPopup(
+                '<b>' + (isStart ? '🔴 Titik START' : 'Titik Awal Segmen ' + seg.index) + '</b><br>' +
+                seg.lat_awal.toFixed(5) + ', ' + seg.lon_awal.toFixed(5)
+            );
+            layerGroup.addLayer(cm);
+        }
+
+        // Marker titik akhir (hanya segmen terakhir)
+        if (seg.isLast && seg.lat_akhir !== null && seg.lon_akhir !== null) {
+            const cm = L.circleMarker([seg.lat_akhir, seg.lon_akhir], {
+                radius: 7, fillColor: '#3b82f6', color: '#fff',
+                weight: 2, opacity: 1, fillOpacity: 1
+            }).bindPopup(
+                '<b>🔵 Titik END Ruas</b><br>' +
+                seg.lat_akhir.toFixed(5) + ', ' + seg.lon_akhir.toFixed(5)
+            );
+            layerGroup.addLayer(cm);
+        }
+    });
+
+    // ─── Fit bounds ke semua layer ───────────────────────────────────────
+    if (allBounds && allBounds.isValid()) {
+        map.fitBounds(allBounds, { padding: [20, 20] });
+    }
+
+    // ─── Highlight segmen dari baris tabel ───────────────────────────────
+    const rows = document.querySelectorAll('.seg-row');
+    rows.forEach(function (row) {
+        const idx = parseInt(row.dataset.segIdx, 10);
+
+        row.addEventListener('mouseenter', function () {
+            rows.forEach(function (r) { r.classList.remove('active'); });
+            row.classList.add('active');
+
+            // Tonjolkan layer segmen yg di-hover
+            segLayers.forEach(function (lg, i) {
+                lg.eachLayer(function (l) {
+                    if (l.setStyle) {
+                        l.setStyle(i === idx
+                            ? { weight: 8, opacity: 1 }
+                            : { weight: 3, opacity: 0.35 }
+                        );
+                    }
+                });
+            });
+
+            // Zoom ke segmen
+            if (segLayers[idx]) {
+                const bounds = [];
+                segLayers[idx].eachLayer(function (l) {
+                    if (l.getBounds) {
+                        try { bounds.push(l.getBounds()); } catch (_) {}
+                    } else if (l.getLatLng) {
+                        bounds.push(L.latLngBounds([l.getLatLng()]));
+                    }
+                });
+                if (bounds.length) {
+                    let b = bounds[0];
+                    bounds.forEach(function (bb) { b = b.extend(bb); });
+                    if (b.isValid()) map.flyToBounds(b, { padding: [40, 40], duration: 0.5 });
+                }
+            }
+        });
+
+        row.addEventListener('mouseleave', function () {
+            // Kembalikan semua ke normal
+            segLayers.forEach(function (lg, i) {
+                lg.eachLayer(function (l) {
+                    if (l.setStyle) l.setStyle({ weight: 5, opacity: 0.85 });
+                });
+            });
+            row.classList.remove('active');
+            if (allBounds && allBounds.isValid()) {
+                map.flyToBounds(allBounds, { padding: [20, 20], duration: 0.5 });
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

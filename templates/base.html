@@ -20,6 +20,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100;0,14..32,200;0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900;1,14..32,100;1,14..32,200;1,14..32,300;1,14..32,400;1,14..32,500;1,14..32,600;1,14..32,700;1,14..32,800;1,14..32,900&display=swap" rel="stylesheet">
     
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+    
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/static/css/style.css">
     
@@ -55,9 +60,9 @@
         /* ===== SIDEBAR ===== */
         #sidebar {
             position: fixed;
-            top: 0;
+            top: 64px;
             left: 0;
-            height: 100vh;
+            height: calc(100vh - 64px);
             width: 256px;
             background: #ffffff;
             display: flex;
@@ -234,7 +239,7 @@
 </head>
 <body class="bg-gray-100">
     <!-- Navbar -->
-    <nav class="bg-blue shadow-md">
+    <nav class="bg-blue shadow-md sticky top-0 z-50">
         <div class="w-full px-4 py-4">
             <div class="flex items-center justify-between">
                 <a href="{% url 'dashboard' %}" class="font-bold text-xl text-white">
@@ -275,17 +280,6 @@
 
 <!-- Sidebar -->
 <div id="sidebar">
-
-    <!-- Brand -->
-    <div class="sidebar-brand ">
-        <div class="sidebar-brand-icon">
-            <i class="fas fa-shield-alt"></i>
-        </div>
-        <div>
-            <div class="sidebar-brand-text">Smart Accident</div>
-
-        </div>
-    </div>
 
     <!-- Navigation -->
     <nav class="sidebar-nav">
