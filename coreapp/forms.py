@@ -44,32 +44,13 @@ class RuasJalanForm(forms.ModelForm):
             'panjang_km': forms.NumberInput(attrs={
                 'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500',
                 'step': '0.001',
-                'placeholder': 'Masukkan panjang dalam km'
-            }),
-            'lat_awal': forms.NumberInput(attrs={
-                'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500',
-                'step': '0.000001',
-                'placeholder': 'Latitude awal',
+                'placeholder': 'Masukkan panjang dalam km',
                 'readonly': True
             }),
-            'lon_awal': forms.NumberInput(attrs={
-                'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500',
-                'step': '0.000001',
-                'placeholder': 'Longitude awal',
-                'readonly': True
-            }),
-            'lat_akhir': forms.NumberInput(attrs={
-                'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500',
-                'step': '0.000001',
-                'placeholder': 'Latitude akhir',
-                'readonly': True
-            }),
-            'lon_akhir': forms.NumberInput(attrs={
-                'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500',
-                'step': '0.000001',
-                'placeholder': 'Longitude akhir',
-                'readonly': True
-            }),
+            'lat_awal': forms.HiddenInput(),
+            'lon_awal': forms.HiddenInput(),
+            'lat_akhir': forms.HiddenInput(),
+            'lon_akhir': forms.HiddenInput(),
         }
 
 

@@ -5,9 +5,10 @@
 {% block extra_css %}
 <style>
     #mapContainer {
-        height: calc(100vh - 180px);
+        height: calc(100vh - 65px);
         border-radius: 6px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        margin-top: 10px;
     }
 
     .map-legend {
@@ -134,11 +135,14 @@
 
     // Initialize Map
     function initMap() {
-        map = L.map('mapContainer', { attributionControl: false }).setView([-7.6298, 111.5239], 13);
+        map = L.map('mapContainer').setView([-7.6298, 111.5239], 13);
 
         // Tile Layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19
+        L.tileLayer('https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}@2x.png?key=4fcV8gk13zZ6iV6ig54V', {
+            attribution: '\u003ca href=\"https://www.maptiler.com/copyright/\" target=\"_blank\"\u003e\u0026copy; MapTiler\u003c/a\u003e \u003ca href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\"\u003e\u0026copy; OpenStreetMap contributors\u003c/a\u003e',
+            maxZoom: 19,
+            tileSize: 512,
+            zoomOffset: -1
         }).addTo(map);
 
         // Load Data

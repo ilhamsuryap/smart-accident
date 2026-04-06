@@ -3,13 +3,15 @@
 {% block title %}{{ title }} - Smart Accident{% endblock %}
 
 {% block content %}
-<div class="w-full"></div>
+<div class="w-full">
     <div class="mb-6">
         <h1 class="text-3xl font-bold">{{ title }}</h1>
     </div>
     
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Kolom Kiri: Peta + Info Titik -->
         <div class="lg:col-span-2">
+            <!-- Peta -->
             <div class="bg-white rounded-lg shadow-md overflow-hidden mb-4">
                 <div class="bg-white border-b border-gray-300 p-4">
                     <h5 class="font-semibold">Peta Lokasi Ruas Jalan</h5>
@@ -19,41 +21,57 @@
                 </div>
                 <div class="bg-gray-50 border-t border-gray-300 p-4">
                     <small class="text-gray-600">
-                        <i class="fas fa-info-circle"></i> 
-                        Klik pada peta untuk menandai titik awal (marker merah) dan titik akhir (marker biru). 
-                        Garis akan menghubungkan kedua titik.
+                        <i class="fas fa-info-circle"></i>
+                        Klik pada peta secara berurutan untuk menandai jalur ruas jalan.
+                        Setiap titik yang Anda klik akan menjadi pembatas antar segmen.
                     </small>
                 </div>
             </div>
-            
+
+            <!-- Panel Info Titik & Segmen -->
             <div class="bg-white rounded-lg shadow-md overflow-hidden">
                 <div class="bg-white border-b border-gray-300 p-4">
-                    <h5 class="font-semibold">Informasi Titik</h5>
+                    <h5 class="font-semibold">Informasi Titik &amp; Segmen</h5>
                 </div>
                 <div class="p-5">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <label class="font-semibold block mb-2">Titik Awal</label>
-                            <div class="border border-gray-300 rounded p-3 bg-gray-50">
-                                <small class="text-gray-600 block">Latitude: <span id="display-lat-awal">-</span></small>
-                                <small class="text-gray-600 block">Longitude: <span id="display-lon-awal">-</span></small>
-                            </div>
+
+
+                    <!-- Daftar Segmen yang akan dibuat -->
+                    <div id="segmen-info" class="mb-4 hidden">
+                        <label class="font-semibold block mb-2 text-green-700">
+                            <i class="fas fa-road"></i>
+                            Segmen yang Akan Dibuat (<span id="count-segmen">0</span>)
+                        </label>
+                        <div id="segmen-list" class="border border-green-200 rounded p-3 bg-green-50 flex flex-col gap-1 text-xs">
                         </div>
-                        <div>
-                            <label class="font-semibold block mb-2">Titik Akhir</label>
-                            <div class="border border-gray-300 rounded p-3 bg-gray-50">
-                                <small class="text-gray-600 block">Latitude: <span id="display-lat-akhir">-</span></small>
-                                <small class="text-gray-600 block">Longitude: <span id="display-lon-akhir">-</span></small>
-                            </div>
-                        </div>
+                        <p class="text-xs text-gray-500 mt-1">
+                            Total Panjang: <strong id="total-panjang">0</strong> km
+                        </p>
                     </div>
-                    <button type="button" class="px-3 py-1.5 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-sm" id="btn-reset-map">
-                        <i class="fas fa-redo"></i> Reset Peta
-                    </button>
+
+                    <!-- Loading indicator -->
+                    <div id="loading-route" class="hidden mb-3 p-2 bg-blue-50 border border-blue-200 rounded text-blue-700 text-sm">
+                        <i class="fas fa-spinner fa-spin"></i> Mengambil rute dari API...
+                    </div>
+
+                    <!-- Tombol Aksi -->
+                    <div class="flex gap-2">
+                        <button type="button"
+                            class="px-3 py-1.5 bg-orange-500 text-white rounded hover:bg-orange-600 text-sm"
+                            id="btn-undo">
+                            <i class="fas fa-undo"></i> Hapus Titik Terakhir
+                        </button>
+                        <button type="button"
+                            class="px-3 py-1.5 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-sm"
+                            id="btn-reset-map">
+                            <i class="fas fa-redo"></i> Reset Peta
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-        
+
+        <!-- Kolom Kanan: Form Data -->
         <div>
             <div class="bg-white rounded-lg shadow-md overflow-hidden">
                 <div class="bg-white border-b border-gray-300 p-4">
@@ -62,110 +80,104 @@
                 <div class="p-5">
                     <form method="post" novalidate id="ruasJalanForm">
                         {% csrf_token %}
-                        
+
                         <!-- Nama Ruas -->
                         <div class="mb-4">
                             {{ form.nama_ruas.label_tag }}
+                            {{ form.nama_ruas }}
                             {% if form.nama_ruas.errors %}
-                                {{ form.nama_ruas }}
-                                <div class="text-red-600 text-sm mt-1">
-                                    {% for error in form.nama_ruas.errors %}
-                                        {{ error }}<br>
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                {{ form.nama_ruas }}
+                            <div class="text-red-600 text-sm mt-1">
+                                {% for error in form.nama_ruas.errors %}{{ error }}<br>{% endfor %}
+                            </div>
                             {% endif %}
                         </div>
-                        
+
                         <!-- Jenis Jalan -->
                         <div class="mb-4">
                             {{ form.jenis_jalan.label_tag }}
+                            {{ form.jenis_jalan }}
                             {% if form.jenis_jalan.errors %}
-                                {{ form.jenis_jalan }}
-                                <div class="text-red-600 text-sm mt-1">
-                                    {% for error in form.jenis_jalan.errors %}
-                                        {{ error }}<br>
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                {{ form.jenis_jalan }}
+                            <div class="text-red-600 text-sm mt-1">
+                                {% for error in form.jenis_jalan.errors %}{{ error }}<br>{% endfor %}
+                            </div>
                             {% endif %}
                         </div>
-                        
+
                         <!-- Wilayah -->
                         <div class="mb-4">
                             {{ form.wilayah.label_tag }}
+                            {{ form.wilayah }}
                             {% if form.wilayah.errors %}
-                                {{ form.wilayah }}
-                                <div class="text-red-600 text-sm mt-1">
-                                    {% for error in form.wilayah.errors %}
-                                        {{ error }}<br>
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                {{ form.wilayah }}
+                            <div class="text-red-600 text-sm mt-1">
+                                {% for error in form.wilayah.errors %}{{ error }}<br>{% endfor %}
+                            </div>
                             {% endif %}
                         </div>
-                        
-                        <!-- Panjang KM -->
+
+                        <!-- Panjang KM (auto-filled) -->
                         <div class="mb-4">
                             {{ form.panjang_km.label_tag }}
+                            {{ form.panjang_km }}
                             {% if form.panjang_km.errors %}
-                                {{ form.panjang_km }}
-                                <div class="text-red-600 text-sm mt-1">
-                                    {% for error in form.panjang_km.errors %}
-                                        {{ error }}<br>
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                {{ form.panjang_km }}
+                            <div class="text-red-600 text-sm mt-1">
+                                {% for error in form.panjang_km.errors %}{{ error }}<br>{% endfor %}
+                            </div>
                             {% endif %}
                         </div>
-                        
-                        <!-- Hidden fields untuk lat/lon -->
+
+                        <!-- Hidden fields -->
                         {{ form.lat_awal }}
                         {{ form.lon_awal }}
                         {{ form.lat_akhir }}
                         {{ form.lon_akhir }}
-                        {{ form.geometry }}
-                        
-                        <!-- Informasi Koordinat (Read-only) -->
-                        <div class="mb-4">
-                            <label class="block text-gray-700 font-semibold mb-2">Koordinat Awal</label>
-                            <div class="mb-2 flex gap-2">
-                                <span class="bg-gray-200 px-3 py-2 rounded text-sm font-semibold">Lat</span>
-                                <input type="text" class="flex-1 px-3 py-2 border border-gray-300 rounded bg-gray-50" id="display-lat-awal-input" readonly>
-                            </div>
-                            <div class="flex gap-2">
-                                <span class="bg-gray-200 px-3 py-2 rounded text-sm font-semibold">Lon</span>
-                                <input type="text" class="flex-1 px-3 py-2 border border-gray-300 rounded bg-gray-50" id="display-lon-awal-input" readonly>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <label class="block text-gray-700 font-semibold mb-2">Koordinat Akhir</label>
-                            <div class="mb-2 flex gap-2">
-                                <span class="bg-gray-200 px-3 py-2 rounded text-sm font-semibold">Lat</span>
-                                <input type="text" class="flex-1 px-3 py-2 border border-gray-300 rounded bg-gray-50" id="display-lat-akhir-input" readonly>
-                            </div>
-                            <div class="flex gap-2">
-                                <span class="bg-gray-200 px-3 py-2 rounded text-sm font-semibold">Lon</span>
-                                <input type="text" class="flex-1 px-3 py-2 border border-gray-300 rounded bg-gray-50" id="display-lon-akhir-input" readonly>
-                            </div>
-                        </div>
-                        
-                        <!-- Button Aksi -->
-                        <div class="flex gap-2">
-                            <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold">
+                        <input type="hidden" id="id_geometry" name="geometry">
+
+                        <!-- Tombol Submit -->
+                        <div class="flex gap-2 mt-4">
+                            <button type="submit"
+                                class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold">
                                 <i class="fas fa-save"></i> Simpan
                             </button>
-                            <a href="{% url 'ruas_jalan_list' %}" class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-semibold text-center">
+                            <a href="{% url 'ruas_jalan_list' %}"
+                                class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-semibold text-center">
                                 <i class="fas fa-times"></i> Batal
                             </a>
                         </div>
                     </form>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Segmen -->
+    <div id="segment-modal" class="fixed inset-0 flex items-center justify-center hidden bg-black bg-opacity-50" style="z-index: 9999;">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-md mx-4 overflow-hidden">
+            <div class="bg-blue-600 text-white px-4 py-3 flex justify-between items-center">
+                <h3 class="font-bold">Detail Segmen <span id="modal-seg-id"></span></h3>
+                <button type="button" class="text-white hover:text-gray-200" id="btn-close-modal">&times;</button>
+            </div>
+            <div class="p-4 space-y-4 text-sm">
+                <div>
+                    <label class="block font-semibold mb-1">1. Nama Segmen</label>
+                    <input type="text" id="modal-nama" class="w-full border p-2 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="Contoh: Segmen 1">
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">2. Penjelasan/Keterangan</label>
+                    <textarea id="modal-ket" class="w-full border p-2 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500" rows="3" placeholder="Masukkan penjelasan..."></textarea>
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">3. Panjang Kilometer</label>
+                    <div class="p-2 bg-gray-50 border rounded text-gray-700" id="modal-panjang"></div>
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">4. Titik Awal & Akhir</label>
+                    <div class="p-2 bg-gray-50 border rounded text-gray-700 font-mono text-xs leading-relaxed" id="modal-koordinat"></div>
+                </div>
+                <input type="hidden" id="modal-idx">
+            </div>
+            <div class="bg-gray-50 px-4 py-3 flex justify-end gap-2 border-t">
+                <button type="button" id="btn-cancel-modal" class="px-3 py-1.5 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">Batal</button>
+                <button type="button" id="btn-save-modal" class="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold"><i class="fas fa-save mr-1"></i> Simpan Perubahan</button>
             </div>
         </div>
     </div>
@@ -176,236 +188,631 @@
     input[type="number"],
     select,
     textarea {
-        @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200;
+        width: 100%;
+        padding: 0.5rem 1rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        outline: none;
     }
-    
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    select:focus,
+    textarea:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 2px rgba(191, 219, 254, 1);
+    }
     label {
-        @apply block text-gray-700 font-semibold mb-2;
+        display: block;
+        color: #374151;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
     }
 </style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Inisialisasi Map
-    const map = L.map('map').setView([-7.6, 111.4], 10); 
-    // Tambah tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19
+document.addEventListener('DOMContentLoaded', function () {
+
+    // ─── Inisialisasi Map ────────────────────────────────────────────────
+    const map = L.map('map').setView([-7.6, 111.4], 10);
+    L.tileLayer('https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}@2x.png?key=4fcV8gk13zZ6iV6ig54V', {
+        attribution: '\u003ca href=\"https://www.maptiler.com/copyright/\" target=\"_blank\"\u003e\u0026copy; MapTiler\u003c/a\u003e \u003ca href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\"\u003e\u0026copy; OpenStreetMap contributors\u003c/a\u003e',
+        maxZoom: 19,
+        tileSize: 512,
+        zoomOffset: -1
     }).addTo(map);
-    
-    // Marker untuk titik awal dan akhir
-    let markerAwal = null;
-    let markerAkhir = null;
-    let routeLayer = null;
-    
-    // Ambil elemen form
-    const latAwalInput = document.getElementById('id_lat_awal');
-    const lonAwalInput = document.getElementById('id_lon_awal');
-    const latAkhirInput = document.getElementById('id_lat_akhir');
-    const lonAkhirInput = document.getElementById('id_lon_akhir');
+
+    // ─── State ──────────────────────────────────────────────────────────
+    // markers[i]       → L.Marker di peta
+    // routeLayers[i]   → L.GeoJSON layer garis antara titik i dan i+1
+    // segments[i]      → { kmAwal, kmAkhir, panjang, latAwal, lonAwal, latAkhir, lonAkhir, geometry }
+    // splits           → [{km, lat, lon}, ...] — array yg dibaca generate_segmen() di models.py
+    //                    splits[0] = titik pertama (km=0), splits[i] = titik ke-i+1 dst
+    // fullCoordinates  → [[lon,lat], ...] — gabungan semua koordinat rute
+    let markers         = [];
+    let routeLayers     = [];
+    let segments        = [];
+    let splits          = [];
+    let fullCoordinates = [];
+    let totalDist       = 0;
+    let isFetching      = false;
+
+    // ─── Form Inputs ─────────────────────────────────────────────────────
+    const latAwalInput   = document.getElementById('id_lat_awal');
+    const lonAwalInput   = document.getElementById('id_lon_awal');
+    const latAkhirInput  = document.getElementById('id_lat_akhir');
+    const lonAkhirInput  = document.getElementById('id_lon_akhir');
     const panjangKmInput = document.getElementById('id_panjang_km');
-    const namaRuasInput = document.getElementById('id_nama_ruas');
-    const wilayahInput = document.getElementById('id_wilayah');
-    const geometryInput = document.getElementById('id_geometry');
+    const namaRuasInput  = document.getElementById('id_nama_ruas');
+    const wilayahInput   = document.getElementById('id_wilayah');
+    const geometryInput  = document.getElementById('id_geometry')
+                           || document.querySelector('input[name="geometry"]');
+
+    // Debug: verifikasi geometry input ada
+    console.log('Geometry Input found:', {
+        id_geometry: document.getElementById('id_geometry'),
+        name_geometry: document.querySelector('input[name="geometry"]'),
+        final: geometryInput,
+        initialValue: geometryInput ? geometryInput.value : 'N/A'
+    });
     
-    // Fungsi untuk update display koordinat
-    function updateDisplay() {
-        const latAwal = latAwalInput.value;
-        const lonAwal = lonAwalInput.value;
-        const latAkhir = latAkhirInput.value;
-        const lonAkhir = lonAkhirInput.value;
-        
-        document.getElementById('display-lat-awal').textContent = latAwal || '-';
-        document.getElementById('display-lon-awal').textContent = lonAwal || '-';
-        document.getElementById('display-lat-akhir').textContent = latAkhir || '-';
-        document.getElementById('display-lon-akhir').textContent = lonAkhir || '-';
-        
-        document.getElementById('display-lat-awal-input').value = latAwal || '';
-        document.getElementById('display-lon-awal-input').value = lonAwal || '';
-        document.getElementById('display-lat-akhir-input').value = latAkhir || '';
-        document.getElementById('display-lon-akhir-input').value = lonAkhir || '';
+    // Immediate check: ensure geometryInput is accessible
+    if (!geometryInput) {
+        console.error('CRITICAL: geometryInput is NULL!');
+    } else {
+        console.log('✓ geometryInput is accessible', { type: geometryInput.type, name: geometryInput.name });
     }
-    
-    // Fungsi untuk mendapatkan data rute dari backend
-    async function fetchRoute() {
-        const latAwal = latAwalInput.value;
-        const lonAwal = lonAwalInput.value;
-        const latAkhir = latAkhirInput.value;
-        const lonAkhir = lonAkhirInput.value;
-        
-        if (!latAwal || !lonAwal || !latAkhir || !lonAkhir) return;
 
-        // Reset layer rute lama
-        if (routeLayer) map.removeLayer(routeLayer);
+    // ─── Icon Helper ─────────────────────────────────────────────────────
+    function makeIcon(color) {
+        // color: 'red' | 'blue' | 'green' | 'orange' | 'grey'
+        return L.icon({
+            iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41], iconAnchor: [12, 41],
+            popupAnchor: [1, -34], shadowSize: [41, 41]
+        });
+    }
 
-        try {
-            const response = await fetch(`/api/geoapify/routing/?lat_awal=${latAwal}&lon_awal=${lonAwal}&lat_akhir=${latAkhir}&lon_akhir=${lonAkhir}`);
-            const data = await response.json();
+    // ─── Update UI ────────────────────────────────────────────────────────
+    function updateUI() {
+        const segInfoEl = document.getElementById('segmen-info');
+        const segListEl = document.getElementById('segmen-list');
 
-            if (data.status === 'success') {
-                // 1. Gambar rute di peta
-                routeLayer = L.geoJSON(data.geometry, {
-                    style: { color: '#2563eb', weight: 5, opacity: 0.7 }
-                }).addTo(map);
+        // Daftar segmen yang akan dibuat di database
+        if (segments.length > 0) {
+            segInfoEl.classList.remove('hidden');
+            document.getElementById('count-segmen').textContent  = segments.length;
+            document.getElementById('total-panjang').textContent = totalDist.toFixed(3);
+            segListEl.innerHTML = '';
+            segments.forEach(function (seg, idx) {
+                const div = document.createElement('div');
+                div.className = 'bg-white p-2 rounded border border-green-200 cursor-pointer hover:bg-green-50 transition-colors flex justify-between items-center group mb-2';
                 
-                // Fit bounds ke rute
-                map.fitBounds(routeLayer.getBounds());
+                if (!seg.nama_segmen) seg.nama_segmen = `Segmen ${idx + 1}`;
+                if (!seg.keterangan) seg.keterangan = '';
 
-                // 2. Isi otomatis panjang km
-                panjangKmInput.value = data.distance_km;
-
-                // 2.5 Simpan geometry ke hidden input
-                geometryInput.value = JSON.stringify(data.geometry);
-
-                // 3. Reverse Geocoding untuk Titik Awal dan Akhir
-                const startInfo = await fetchReverseGeocoding(latAwal, lonAwal);
-                const endInfo = await fetchReverseGeocoding(latAkhir, lonAkhir);
-
-                if (startInfo && endInfo) {
-                    // Update nama ruas: Nama Awal - Nama Akhir
-                    namaRuasInput.value = `${startInfo.nama_jalan} - ${endInfo.nama_jalan}`;
-                    // Update wilayah dari titik awal (sebagai representasi)
-                    wilayahInput.value = startInfo.wilayah;
-                }
-            } else {
-                console.error('Routing error:', data.message);
-                alert('Gagal mengambil rute: ' + data.message);
-            }
-        } catch (error) {
-            console.error('Fetch error:', error);
+                div.innerHTML = `
+                    <div class="flex-1" onclick="openSegmentModal(${idx})">
+                        <div class="font-semibold text-gray-800 text-sm">${seg.nama_segmen}</div>
+                        <div class="text-[10px] text-gray-500 mt-1 line-clamp-1">${seg.keterangan || 'Tidak ada keterangan'}</div>
+                        <div class="text-[10px] text-gray-400 mt-1 font-mono">
+                            Awal: ${seg.latAwal.toFixed(5)}, ${seg.lonAwal.toFixed(5)} &bull; Akhir: ${seg.latAkhir.toFixed(5)}, ${seg.lonAkhir.toFixed(5)}
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-end justify-between self-stretch shrink-0 ml-2">
+                        <span class="text-green-700 font-bold text-[11px] bg-green-100 px-2 py-0.5 rounded">${seg.panjang.toFixed(3)} km</span>
+                        <button type="button" class="text-blue-500 hover:text-blue-700 mt-2 text-sm" onclick="openSegmentModal(${idx})" title="Edit Detail">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </div>`;
+                segListEl.appendChild(div);
+            });
+        } else {
+            segInfoEl.classList.add('hidden');
         }
+
+        // Update hidden form inputs
+        if (markers.length > 0) {
+            const s = markers[0].getLatLng();
+            latAwalInput.value = s.lat.toFixed(6);
+            lonAwalInput.value = s.lng.toFixed(6);
+            const e = markers[markers.length - 1].getLatLng();
+            latAkhirInput.value = e.lat.toFixed(6);
+            lonAkhirInput.value = e.lng.toFixed(6);
+        } else {
+            latAwalInput.value  = '';
+            lonAwalInput.value  = '';
+            latAkhirInput.value = '';
+            lonAkhirInput.value = '';
+        }
+        panjangKmInput.value = totalDist.toFixed(3);
+
+        updateHiddenGeometry();
     }
 
-    // Fungsi untuk reverse geocoding dari backend (mengembalikan data)
+    // ─── Reverse Geocoding ────────────────────────────────────────────────
+    
+    // ─── Fungsi untuk Update Value Field Hidden Segmen ──────────────────────────
+    function updateHiddenGeometry() {
+        console.log('updateHiddenGeometry called:', {
+            fullCoordinatesLength: fullCoordinates.length,
+            splitsLength: splits.length,
+            segmentsLength: segments.length,
+            markerCount: markers.length,
+            totalDist: totalDist,
+            geometryInputExists: !!geometryInput
+        });
+
+        // PRIMARY CONDITION: jika ada segments dan fullCoordinates
+        if (segments.length > 0 && fullCoordinates.length >= 2) {
+            const geomObj = {
+                type: 'Feature',
+                properties: {
+                    splits: splits,
+                    segment_geometries: segments.map(function(seg) { return seg.geometry; }),
+                    segment_info: segments.map(function(seg, i) { 
+                        return { 
+                            nama_segmen: seg.nama_segmen || `Segmen ${i + 1}`,
+                            keterangan: seg.keterangan || ''
+                        }; 
+                    })
+                },
+                geometry: { type: 'LineString', coordinates: fullCoordinates }
+            };
+            geometryInput.value = JSON.stringify(geomObj);
+            console.log('✓ Geometry updated (PRIMARY):', {
+                coordinatesCount: geomObj.geometry.coordinates.length,
+                segmentsCount: segments.length,
+                valueLength: geometryInput.value.length
+            });
+            return;
+        }
+
+        // FALLBACK 1: jika ada 2+ markers dan fullCoordinates (case: belum ada segments tapi sudah ada rute)
+        if (markers.length >= 2 && fullCoordinates.length >= 2) {
+            console.warn('FALLBACK 1: Using markers + fullCoordinates (segments might be empty)');
+            // Reconstruct splits dari markers
+            const reconstructedSplits = [];
+            let cumulativeDist = 0;
+            markers.forEach(function(m, i) {
+                const ll = m.getLatLng();
+                reconstructedSplits.push({ km: cumulativeDist, lat: ll.lat, lon: ll.lng });
+                // Calculate distance to next marker
+                if (i < markers.length - 1) {
+                    const nextLL = markers[i + 1].getLatLng();
+                    const dist = L.latLng(ll.lat, ll.lng).distanceTo(L.latLng(nextLL.lat, nextLL.lng)) / 1000;
+                    cumulativeDist += dist;
+                }
+            });
+
+            const geomObj = {
+                type: 'Feature',
+                properties: {
+                    splits: reconstructedSplits,
+                    segment_geometries: segments.length > 0 ? segments.map(s => s.geometry) : [],
+                    segment_info: segments.length > 0 ? segments.map((s, i) => ({
+                        nama_segmen: s.nama_segmen || `Segmen ${i + 1}`,
+                        keterangan: s.keterangan || ''
+                    })) : []
+                },
+                geometry: { type: 'LineString', coordinates: fullCoordinates }
+            };
+            geometryInput.value = JSON.stringify(geomObj);
+            console.log('✓ Geometry updated (FALLBACK 1):', {
+                valueLength: geometryInput.value.length
+            });
+            return;
+        }
+
+        // FALLBACK 2: minimal ada 2 markers, buat simplified geometry
+        if (markers.length >= 2) {
+            console.warn('FALLBACK 2: Minimal markers, creating simplified geometry');
+            const simpleSplits = [];
+            markers.forEach(function(m, i) {
+                const ll = m.getLatLng();
+                simpleSplits.push({ km: i, lat: ll.lat, lon: ll.lng });
+            });
+
+            const simpleCoords = markers.map(function(m) {
+                const ll = m.getLatLng();
+                return [ll.lng, ll.lat];
+            });
+
+            const geomObj = {
+                type: 'Feature',
+                properties: {
+                    splits: simpleSplits,
+                    segment_geometries: [],
+                    segment_info: []
+                },
+                geometry: { type: 'LineString', coordinates: simpleCoords }
+            };
+            geometryInput.value = JSON.stringify(geomObj);
+            console.log('✓ Geometry updated (FALLBACK 2):', {
+                valueLength: geometryInput.value.length
+            });
+            return;
+        }
+
+        // NO DATA: empty geometry
+        console.warn('Not enough data for geometry:', {
+            fullCoordinatesLength: fullCoordinates.length,
+            segmentsLength: segments.length,
+            markerCount: markers.length
+        });
+        geometryInput.value = '';
+    }
     async function fetchReverseGeocoding(lat, lon) {
         try {
-            const response = await fetch(`/api/geoapify/reverse-geocoding/?lat=${lat}&lon=${lon}`);
-            const data = await response.json();
+            const resp = await fetch(`/api/geoapify/reverse-geocoding/?lat=${lat}&lon=${lon}`);
+            const data = await resp.json();
+            return data.status === 'success' ? data : null;
+        } catch (_) { return null; }
+    }
 
-            if (data.status === 'success') {
-                return data;
+    // ─── Click Handler (async) ────────────────────────────────────────────
+    map.on('click', async function (e) {
+        if (isFetching) return;
+
+        const lat     = e.latlng.lat;
+        const lon     = e.latlng.lng;
+        const isFirst = markers.length === 0;
+
+        // Buat marker sementara sebelum fetch
+        const marker = L.marker([lat, lon], { icon: makeIcon(isFirst ? 'red' : 'blue') })
+            .bindPopup(`<strong>Titik ${markers.length + 1}</strong><br>${lat.toFixed(5)}, ${lon.toFixed(5)}`)
+            .addTo(map);
+
+        if (isFirst) {
+            // ── Titik Pertama: tidak perlu fetch rute ──
+            fullCoordinates = [[lon, lat]];
+            splits = [{ km: 0, lat: lat, lon: lon }];
+            markers.push(marker);
+            console.log('✓ Titik pertama ditambahkan', { lat, lon, fullCoordinates });
+            updateUI();
+            updateHiddenGeometry();  // Explicit call
+            return;
+        }
+
+        // ── Titik Selanjutnya: fetch rute ke titik sebelumnya ──
+        const p1 = markers[markers.length - 1].getLatLng();
+        isFetching = true;
+        document.getElementById('loading-route').classList.remove('hidden');
+
+        try {
+            const resp = await fetch(
+                `/api/geoapify/routing/?lat_awal=${p1.lat}&lon_awal=${p1.lng}&lat_akhir=${lat}&lon_akhir=${lon}`
+            );
+            const data = await resp.json();
+
+            if (data.status !== 'success') {
+                map.removeLayer(marker);
+                alert('Gagal mengambil rute: ' + (data.message || 'Coba titik lain'));
+                return;
             }
-            return null;
-        } catch (error) {
-            console.error('Geocoding error:', error);
-            return null;
-        }
-    }
-    
-    // Fungsi untuk add/update marker
-    function addMarker(lat, lon, type) {
-        const iconUrl = type === 'awal' 
-            ? 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png'
-            : 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png';
 
-        const markerOptions = {
-            icon: L.icon({
-                iconUrl: iconUrl,
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41]
-            }),
-            title: type === 'awal' ? 'Titik Awal' : 'Titik Akhir'
-        };
+            // Gabungkan koordinat (buang ujung terakhir agar tidak duplikat di join)
+            if (fullCoordinates.length > 0) fullCoordinates.pop();
+            fullCoordinates.push(...data.geometry.coordinates);
 
-        if (type === 'awal') {
-            if (markerAwal) map.removeLayer(markerAwal);
-            markerAwal = L.marker([lat, lon], markerOptions).addTo(map);
-            latAwalInput.value = lat.toFixed(6);
-            lonAwalInput.value = lon.toFixed(6);
-        } else {
-            if (markerAkhir) map.removeLayer(markerAkhir);
-            markerAkhir = L.marker([lat, lon], markerOptions).addTo(map);
-            latAkhirInput.value = lat.toFixed(6);
-            lonAkhirInput.value = lon.toFixed(6);
+            const kmAwal  = totalDist;
+            totalDist    += data.distance_km;
+            const kmAkhir = totalDist;
+
+            // Simpan info segmen untuk ditampilkan di sidebar
+            segments.push({
+                kmAwal  : kmAwal,
+                kmAkhir : kmAkhir,
+                panjang : data.distance_km,
+                latAwal : p1.lat,
+                lonAwal : p1.lng,
+                latAkhir: lat,
+                lonAkhir: lon,
+                geometry: data.geometry,   // disimpan untuk kebutuhan undo
+                nama_segmen: '', // placeholder, diatur pas updateUI
+                keterangan: ''   // placeholder
+            });
+
+            // Tambah split point — generate_segmen() menggunakan lat/lon ini
+            // untuk mengisi SegmenJalan.lat_awal/lon_awal/lat_akhir/lon_akhir
+            splits.push({ km: totalDist, lat: lat, lon: lon });
+
+            // Gambar rute di peta
+            const routeLayer = L.geoJSON(data.geometry, {
+                style: { color: '#2563eb', weight: 5, opacity: 0.75 }
+            }).addTo(map);
+            routeLayers.push(routeLayer);
+
+            // Ubah warna marker sebelumnya → hijau (titik tengah)
+            if (markers.length > 1) {
+                markers[markers.length - 1].setIcon(makeIcon('green'));
+            }
+
+            // Auto-isi nama ruas dari reverse geocoding
+            if (markers.length === 1) {
+                const [startInfo, endInfo] = await Promise.all([
+                    fetchReverseGeocoding(p1.lat, p1.lng),
+                    fetchReverseGeocoding(lat, lon)
+                ]);
+                if (startInfo && endInfo) {
+                    namaRuasInput.value = `${startInfo.nama_jalan} - ${endInfo.nama_jalan}`;
+                    wilayahInput.value  = startInfo.wilayah;
+                }
+            } else {
+                const endInfo = await fetchReverseGeocoding(lat, lon);
+                if (endInfo) {
+                    const awal = namaRuasInput.value.split(' - ')[0];
+                    namaRuasInput.value = `${awal} - ${endInfo.nama_jalan}`;
+                }
+            }
+
+            markers.push(marker);
+            updateUI();
+            updateHiddenGeometry();  // Explicit call saat segmen terbentuk
+
+        } catch (err) {
+            console.error('Routing error:', err);
+            map.removeLayer(marker);
+            alert('Error mengambil rute. Periksa koneksi internet.');
+        } finally {
+            isFetching = false;
+            document.getElementById('loading-route').classList.add('hidden');
         }
-        
-        updateDisplay();
-        
-        // Jika kedua titik sudah ada, ambil rute
-        if (latAwalInput.value && latAkhirInput.value) {
-            fetchRoute();
-        }
-    }
-    
-    // Inisialisasi marker jika mengedit data lama
-    if (latAwalInput.value && lonAwalInput.value) {
-        const lat = parseFloat(latAwalInput.value);
-        const lon = parseFloat(lonAwalInput.value);
-        markerAwal = L.marker([lat, lon], {
-            icon: L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41]
-            })
-        }).addTo(map);
-    }
-    if (latAkhirInput.value && lonAkhirInput.value) {
-        const lat = parseFloat(latAkhirInput.value);
-        const lon = parseFloat(lonAkhirInput.value);
-        markerAkhir = L.marker([lat, lon], {
-            icon: L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41]
-            })
-        }).addTo(map);
-        fetchRoute();
-    }
-    
-    // Click handler untuk map
-    let clickCount = markerAwal && markerAkhir ? 2 : (markerAwal ? 1 : 0);
-    map.on('click', function(e) {
-        const lat = e.latlng.lat;
-        const lon = e.latlng.lng;
-        
-        if (clickCount % 2 === 0) {
-            addMarker(lat, lon, 'awal');
-        } else {
-            addMarker(lat, lon, 'akhir');
-        }
-        
-        clickCount++;
     });
-    
-    // Reset button
-    document.getElementById('btn-reset-map').addEventListener('click', function() {
-        if (markerAwal) map.removeLayer(markerAwal);
-        if (markerAkhir) map.removeLayer(markerAkhir);
-        if (routeLayer) map.removeLayer(routeLayer);
-        
-        markerAwal = null;
-        markerAkhir = null;
-        routeLayer = null;
-        clickCount = 0;
-        
-        latAwalInput.value = '';
-        lonAwalInput.value = '';
-        latAkhirInput.value = '';
-        lonAkhirInput.value = '';
+
+    // ─── Undo: Hapus Titik Terakhir ──────────────────────────────────────
+    document.getElementById('btn-undo').addEventListener('click', function () {
+        if (markers.length === 0) return;
+
+        map.removeLayer(markers.pop());
+
+        if (markers.length === 0) {
+            // Reset total
+            fullCoordinates = [];
+            splits          = [];
+            segments        = [];
+            totalDist       = 0;
+        } else {
+            // Hapus segmen dan route layer terakhir
+            if (routeLayers.length > 0) map.removeLayer(routeLayers.pop());
+            if (segments.length > 0) totalDist -= segments.pop().panjang;
+            if (splits.length > 1) splits.pop();
+
+            // Rebuild fullCoordinates dari sisa segmen
+            const firstLL = markers[0].getLatLng();
+            fullCoordinates = [[firstLL.lng, firstLL.lat]];
+            segments.forEach(function (seg) {
+                if (seg.geometry && seg.geometry.coordinates) {
+                    fullCoordinates.pop(); // buang ujung agar tidak duplikat
+                    fullCoordinates.push(...seg.geometry.coordinates);
+                }
+            });
+
+            // Kembalikan warna marker terakhir
+            if (markers.length === 1) {
+                markers[0].setIcon(makeIcon('red'));
+            } else {
+                markers[markers.length - 1].setIcon(makeIcon('blue'));
+            }
+        }
+        updateUI();
+        updateHiddenGeometry();  // Explicit call after undo
+    });
+
+    // ─── Reset ───────────────────────────────────────────────────────────
+    document.getElementById('btn-reset-map').addEventListener('click', function () {
+        markers.forEach(function (m) { map.removeLayer(m); });
+        routeLayers.forEach(function (l) { map.removeLayer(l); });
+        markers         = [];
+        routeLayers     = [];
+        segments        = [];
+        splits          = [];
+        fullCoordinates = [];
+        totalDist       = 0;
+
+        latAwalInput.value   = '';
+        lonAwalInput.value   = '';
+        latAkhirInput.value  = '';
+        lonAkhirInput.value  = '';
         panjangKmInput.value = '';
-        namaRuasInput.value = '';
-        wilayahInput.value = '';
-        
-        updateDisplay();
-        map.setView([-7.6, 111.4], 10);
+        namaRuasInput.value  = '';
+        wilayahInput.value   = '';
+        geometryInput.value  = '';
+
+        updateUI();
+        updateHiddenGeometry();  // Explicit call after reset
     });
-    
-    updateDisplay();
-    
-    document.getElementById('ruasJalanForm').addEventListener('submit', function(e) {
-        if (!latAwalInput.value || !lonAwalInput.value || !latAkhirInput.value || !lonAkhirInput.value) {
+
+    // ─── Validasi Submit ─────────────────────────────────────────────────
+    document.getElementById('ruasJalanForm').addEventListener('submit', function (e) {
+        console.log('=== FORM SUBMIT ===');
+        console.log('Markers:', markers.length, 'Segments:', segments.length, 'FullCoords:', fullCoordinates.length);
+
+        if (markers.length < 2 || segments.length === 0) {
             e.preventDefault();
-            alert('Silahkan tentukan titik awal dan akhir pada peta');
+            alert(markers.length < 2 ? 
+                'Tentukan minimal 2 titik pada peta' : 
+                'Belum ada segmen. Klik 2+ titik');
+            return false;
+        }        
+        
+        // Reconstruct geometry dari segments jika perlu
+        if (segments.length > 0) {
+            let coords = fullCoordinates.slice(); // copy
+            
+            if (coords.length < 2) {
+                console.log('Reconstructing coordinates dari segments...');
+                coords = [];
+                if (markers.length > 0) {
+                    const m0 = markers[0].getLatLng();
+                    coords.push([m0.lng, m0.lat]);
+                }
+                segments.forEach(seg => {
+                    if (seg.geometry && seg.geometry.coordinates) {
+                        coords.push(...seg.geometry.coordinates.slice(1));
+                    }
+                });
+                if (coords.length < 2) {
+                    coords = markers.map(m => {const ll = m.getLatLng(); return [ll.lng, ll.lat];});
+                }
+            }
+            
+            geometryInput.value = JSON.stringify({
+                type: 'Feature',
+                properties: {
+                    splits: splits,
+                    segment_geometries: segments.map(s => s.geometry),
+                    segment_info: segments.map((s, i) => ({
+                        nama_segmen: s.nama_segmen || `Segmen ${i + 1}`,
+                        keterangan: s.keterangan || ''
+                    }))
+                },
+                geometry: { type: 'LineString', coordinates: coords}
+            });
+            console.log('✓ Geometry set, length:', geometryInput.value.length);
+        }
+        
+        if (!geometryInput.value) {
+            e.preventDefault();
+            alert('Geometry tidak terisi. Please try again.');
             return false;
         }
+        
+        console.log('✓ Submit OK');
     });
+
+    updateUI();
+    
+    // ─── Load Geometry untuk Edit Mode ─────────────────────────────────
+    const existingGeometry = geometryInput.value;
+    if (existingGeometry) {
+        try {
+            const geomData = JSON.parse(existingGeometry);
+            if (geomData.type === 'Feature' && geomData.properties) {
+                const props = geomData.properties;
+                splits = props.splits || [];
+                fullCoordinates = (geomData.geometry && geomData.geometry.coordinates) || [];
+                
+                // Restore segment info
+                segments = [];
+                if (props.segment_info && props.segment_geometries) {
+                    const geomsAwal = props.segment_geometries;
+                    const infos = props.segment_info;
+                    let kmAwal = 0;
+                    
+                    for (let i = 0; i < splits.length - 1; i++) {
+                        const split1 = splits[i];
+                        const split2 = splits[i + 1];
+                        const kmAkhir = split2.km;
+                        
+                        segments.push({
+                            kmAwal: kmAwal,
+                            kmAkhir: kmAkhir,
+                            panjang: kmAkhir - kmAwal,
+                            latAwal: split1.lat,
+                            lonAwal: split1.lon,
+                            latAkhir: split2.lat,
+                            lonAkhir: split2.lon,
+                            geometry: geomsAwal[i] || null,
+                            nama_segmen: (infos[i] && infos[i].nama_segmen) || `Segmen ${i + 1}`,
+                            keterangan: (infos[i] && infos[i].keterangan) || ''
+                        });
+                        
+                        kmAwal = kmAkhir;
+                    }
+                }
+                
+                // Hitung total panjang
+                totalDist = splits.length > 0 ? splits[splits.length - 1].km : 0;
+                
+                // Restore markers di peta
+                if (fullCoordinates.length > 0) {
+                    fullCoordinates.forEach(function(coord, idx) {
+                        const lat = coord[1];
+                        const lon = coord[0];
+                        
+                        // Hanya buat marker di split points (awal ruas)
+                        let isSplitPoint = false;
+                        splits.forEach(function(s) {
+                            if (Math.abs(s.lat - lat) < 0.00001 && Math.abs(s.lon - lon) < 0.00001) {
+                                isSplitPoint = true;
+                            }
+                        });
+                        
+                        if (isSplitPoint && markers.length < splits.length) {
+                            const isFirst = markers.length === 0;
+                            const marker = L.marker([lat, lon], { 
+                                icon: makeIcon(isFirst ? 'red' : (idx === fullCoordinates.length - 1 ? 'blue' : 'green'))
+                            })
+                            .bindPopup(`<strong>Titik ${markers.length + 1}</strong><br>${lat.toFixed(5)}, ${lon.toFixed(5)}`)
+                            .addTo(map);
+                            markers.push(marker);
+                        }
+                    });
+                    
+                    // Restore route layers
+                    segments.forEach(function(seg) {
+                        if (seg.geometry) {
+                            const routeLayer = L.geoJSON(seg.geometry, {
+                                style: { color: '#2563eb', weight: 5, opacity: 0.75 }
+                            }).addTo(map);
+                            routeLayers.push(routeLayer);
+                        }
+                    });
+                    
+                    // Zoom to bounds
+                    if (fullCoordinates.length > 0) {
+                        const lats = fullCoordinates.map(c => c[1]);
+                        const lons = fullCoordinates.map(c => c[0]);
+                        const bounds = L.latLngBounds(
+                            [Math.min(...lats), Math.min(...lons)],
+                            [Math.max(...lats), Math.max(...lons)]
+                        );
+                        map.fitBounds(bounds, { padding: [50, 50] });
+                    }
+                }
+                
+                updateUI();
+                console.log('Loaded existing geometry:', {splits: splits.length, segments: segments.length, coords: fullCoordinates.length});
+            }
+        } catch (err) {
+            console.error('Error loading existing geometry:', err);
+        }
+    }
+    
+    // ─── Modal Handlers ──────────────────────────────────────────────────
+    window.openSegmentModal = function(idx) {
+        if (!segments[idx]) return;
+        const seg = segments[idx];
+        
+        document.getElementById('modal-seg-id').textContent = idx + 1;
+        document.getElementById('modal-nama').value = seg.nama_segmen || `Segmen ${idx + 1}`;
+        document.getElementById('modal-ket').value = seg.keterangan || '';
+        document.getElementById('modal-panjang').innerHTML = `<strong>${seg.panjang.toFixed(3)}</strong> km (dari KM ${seg.kmAwal.toFixed(3)} ke KM ${seg.kmAkhir.toFixed(3)})`;
+        document.getElementById('modal-koordinat').innerHTML = `<strong>Awal :</strong> ${seg.latAwal.toFixed(5)}, ${seg.lonAwal.toFixed(5)}<br><strong>Akhir:</strong> ${seg.latAkhir.toFixed(5)}, ${seg.lonAkhir.toFixed(5)}`;
+        document.getElementById('modal-idx').value = idx;
+        
+        document.getElementById('segment-modal').classList.remove('hidden');
+    };
+
+    function closeSegmentModal() {
+        document.getElementById('segment-modal').classList.add('hidden');
+    }
+
+    document.getElementById('btn-close-modal').addEventListener('click', closeSegmentModal);
+    document.getElementById('btn-cancel-modal').addEventListener('click', closeSegmentModal);
+    document.getElementById('btn-save-modal').addEventListener('click', function() {
+        const idx = document.getElementById('modal-idx').value;
+        if (idx !== '') {
+            segments[idx].nama_segmen = document.getElementById('modal-nama').value;
+            segments[idx].keterangan = document.getElementById('modal-ket').value;
+            updateUI(); // Segarkan tampilan list dan form hidden
+        }
+        closeSegmentModal();
+    });
+
 });
 </script>
 {% endblock %}
