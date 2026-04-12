@@ -2,15 +2,18 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # Homepage
+    path('', views.homepage_view, name='homepage'),
+    
     # Authentication
     path('register/', views.register_view, name='register'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     
-    # Dashboard
-    path('', views.dashboard_view, name='dashboard'),
+    # Dashboard (Admin)
+    path('dashboard/', views.dashboard_view, name='dashboard'),
     
-    # Ruas Jalan
+    # Ruas Jalan (Admin)
     path('ruas-jalan/', views.ruas_jalan_list, name='ruas_jalan_list'),
     path('ruas-jalan/create/', views.ruas_jalan_create, name='ruas_jalan_create'),
     path('ruas-jalan/<int:pk>/', views.ruas_jalan_detail, name='ruas_jalan_detail'),
@@ -31,6 +34,7 @@ urlpatterns = [
     
     # Map 
     path('peta/', views.map_view, name='map'),
+    path('peta-user/', views.peta_user_view, name='peta_user'),
 
     # ================= KMEANS =================
     path('kmeans/data/', views.kmeans_data, name='kmeans_data'),
@@ -64,6 +68,7 @@ urlpatterns = [
 
     # API
     path('api/segmen/geojson/', views.api_segmen_geojson, name='api_segmen_geojson'),
+    path('api/segmen/thresholds/', views.api_threshold_data, name='api_threshold_data'),
     path('api/kecelakaan/geojson/', views.api_kecelakaan_geojson, name='api_kecelakaan_geojson'),
     path('api/analisis/statistik/', views.api_analisis_statistik, name='api_analisis_statistik'),
     

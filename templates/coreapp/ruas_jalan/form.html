@@ -17,7 +17,7 @@
                     <h5 class="font-semibold">Peta Lokasi Ruas Jalan</h5>
                 </div>
                 <div class="p-0">
-                    <div id="map" style="height: 500px; width: 100%; border-radius: 4px;"></div>
+                    <div id="map" style="height: 500px; width: 100%; border-radius: 4px; position: relative; z-index: 1;"></div>
                 </div>
                 <div class="bg-gray-50 border-t border-gray-300 p-4">
                     <small class="text-gray-600">
@@ -215,15 +215,15 @@
 document.addEventListener('DOMContentLoaded', function () {
 
     // ─── Inisialisasi Map ────────────────────────────────────────────────
-    const map = L.map('map').setView([-7.6, 111.4], 10);
+    const map = L.map('map', { attributionControl: false }).setView([-7.6, 111.4], 10);
     L.tileLayer('https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}@2x.png?key=4fcV8gk13zZ6iV6ig54V', {
-        attribution: '\u003ca href=\"https://www.maptiler.com/copyright/\" target=\"_blank\"\u003e\u0026copy; MapTiler\u003c/a\u003e \u003ca href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\"\u003e\u0026copy; OpenStreetMap contributors\u003c/a\u003e',
+        attribution: '',
         maxZoom: 19,
         tileSize: 512,
         zoomOffset: -1
     }).addTo(map);
 
-    // ─── State ──────────────────────────────────────────────────────────
+    
     // markers[i]       → L.Marker di peta
     // routeLayers[i]   → L.GeoJSON layer garis antara titik i dan i+1
     // segments[i]      → { kmAwal, kmAkhir, panjang, latAwal, lonAwal, latAkhir, lonAkhir, geometry }

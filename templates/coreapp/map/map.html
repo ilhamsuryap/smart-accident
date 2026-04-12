@@ -5,10 +5,17 @@
 {% block extra_css %}
 <style>
     #mapContainer {
-        height: calc(100vh - 65px);
+        height: calc(100vh - 80px);
         border-radius: 6px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         margin-top: 10px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .leaflet-container {
+        position: relative;
+        z-index: 1;
     }
 
     .map-legend {
@@ -47,6 +54,20 @@
     .popup-info {
         font-size: 0.9rem;
     }
+
+    .dynamic-legend {
+        background: #f5f5f5;
+        padding: 8px;
+        border-radius: 3px;
+        font-size: 0.85rem;
+        margin-bottom: 10px;
+    }
+
+    .threshold-display {
+        font-family: monospace;
+        font-size: 0.8rem;
+        color: #666;
+    }
 </style>
 {% endblock %}
 
@@ -56,22 +77,33 @@
         <div>
             <h1 class="text-3xl font-bold">Peta Kerawanan Kecelakaan</h1>
         </div>
-        <form method="get" class="flex gap-2">
-            <select name="tahun"
+        <div class="flex gap-2 flex-wrap md:flex-nowrap">
+            <!-- Tahun Filter -->
+            <form method="get" class="flex gap-2">
+                <select name="tahun"
+                    id="tahunSelect"
+                    class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
+                    onchange="handleTahunChange()">
+                    <option value="">-- Pilih Tahun --</option>
+                    {% for tahun_opt in tahun_options %}
+                    <option value="{{ tahun_opt }}"
+                        {% if request.GET.tahun == tahun_opt|stringformat:"s" %}
+                        selected
+                        {% endif %}
+                        >
+                        {{ tahun_opt }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </form>
+
+            <!-- Ruas Jalan Filter -->
+            <select id="ruasFilter"
                 class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
-                onchange="this.form.submit()">
-                <option value="">-- Pilih Tahun --</option>
-                {% for tahun_opt in tahun_options %}
-                <option value="{{ tahun_opt }}"
-                    {% if request.GET.tahun == tahun_opt|stringformat:"s" %}
-                    selected
-                    {% endif %}
-                    >
-                    {{ tahun_opt }}
-                </option>
-                {% endfor %}
+                onchange="handleRuasChange()">
+                <option value="">-- Semua Ruas Jalan --</option>
             </select>
-        </form>
+        </div>
     </div>
 
     <!-- Map Container -->
@@ -80,26 +112,9 @@
     <!-- Legend -->
     <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-6">
         <div class="map-legend">
-            <h6 class="mb-3 font-semibold"><i class="fas fa-square-full"></i> Kategori Z-Score Kerawanan</h6>
-            <div class="legend-item">
-                <div class="legend-color" style="background-color: #d32f2f;"></div>
-                <div class="legend-text">Sangat Tinggi (Z > 1.5)</div>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background-color: #f57c00;"></div>
-                <div class="legend-text">Tinggi (0.5 < Z ≤ 1.5)</div>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background-color: #fbc02d;"></div>
-                <div class="legend-text">Sedang (-0.5 < Z ≤ 0.5)</div>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background-color: #7cb342;"></div>
-                <div class="legend-text">Rendah (-1.5 < Z ≤ -0.5)</div>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background-color: #388e3c;"></div>
-                <div class="legend-text">Sangat Rendah (Z ≤ -1.5)</div>
+            <h6 class="mb-3 font-semibold"><i class="fas fa-square-full"></i> Kategori Kerawanan</h6>
+            <div id="dynamicLegend">
+                <p class="text-gray-500 text-sm">Pilih tahun dan/atau ruas jalan untuk melihat kategori</p>
             </div>
         </div>
         
@@ -107,11 +122,15 @@
             <h6 class="mb-3 font-semibold"><i class="fas fa-circle"></i> Jenis Marker</h6>
             <div class="legend-item">
                 <i class="fas fa-road" style="color: #2c3e50; font-size: 1.2rem; margin-right: 10px;"></i>
-                <div class="legend-text">Segmen Jalan</div>
+                <div class="legend-text">Garis Segmen Jalan</div>
             </div>
             <div class="legend-item">
-                <i class="fas fa-map-pin" style="color: #d32f2f; font-size: 1.2rem; margin-right: 10px;"></i>
-                <div class="legend-text">Titik Kecelakaan</div>
+                <i class="fas fa-circle" style="color: #1976d2; font-size: 0.7rem; margin-right: 10px;"></i>
+                <div class="legend-text">Marker Awal/Akhir Segmen</div>
+            </div>
+            <div class="legend-item">
+                <i class="fas fa-circle" style="color: #c92a2a; font-size: 0.9rem; margin-right: 10px;"></i>
+                <div class="legend-text">Marker Awal/Akhir Ruas Jalan</div>
             </div>
         </div>
         
@@ -129,7 +148,18 @@
 {% block extra_js %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
 <script>
-    const tahun = "{{ tahun }}" || new Date().getFullYear();
+    // Pastikan tahun selalu ada dengan nilai yang valid
+    let tahun = "{{ tahun }}";
+    if (!tahun || tahun === "None" || tahun === "") {
+        tahun = new Date().getFullYear();
+    }
+    
+    let selectedRuas = null;  // Store selected ruas jalan
+    let thresholdData = {};   // Store threshold data
+    let allSegmenData = null; // Store all segment data from API
+    
+    console.log(`🗓️ Map Loading for Year: ${tahun}`);
+    
     let map;
     let segmenLayer, kecelakaanLayer;
 
@@ -146,128 +176,278 @@
         }).addTo(map);
 
         // Load Data
+        loadThresholdData();
         loadSegmenData();
-        loadKecelakaanData();
         loadStatistik();
+    }
+
+    // Load threshold data per ruas jalan
+    function loadThresholdData() {
+        const url = `/api/segmen/thresholds/?tahun=${tahun}`;
+        console.log("📊 Loading threshold data from:", url);
+
+        axios.get(url)
+            .then(response => {
+                thresholdData = response.data.ruas_data;
+                console.log("✅ Threshold data loaded:", thresholdData);
+                
+                // Populate ruas filter dropdown
+                populateRuasFilter();
+                
+                // Update legend for first ruas (if available)
+                if (Object.keys(thresholdData).length > 0) {
+                    const firstRuasId = Object.keys(thresholdData)[0];
+                    updateLegend(firstRuasId);
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error loading threshold data:', error);
+            });
+    }
+
+    // Populate ruas jalan filter dropdown
+    function populateRuasFilter() {
+        const ruasFilter = document.getElementById('ruasFilter');
+        
+        // Clear existing options
+        ruasFilter.innerHTML = '<option value="">-- Semua Ruas Jalan --</option>';
+        
+        // Add ruas options
+        Object.entries(thresholdData).forEach(([ruasId, data]) => {
+            const option = document.createElement('option');
+            option.value = ruasId;
+            option.textContent = data.nama;
+            ruasFilter.appendChild(option);
+        });
+    }
+
+    // Update legend dynamically
+    function updateLegend(ruasId) {
+        const legendDiv = document.getElementById('dynamicLegend');
+        
+        if (!ruasId || !thresholdData[ruasId]) {
+            legendDiv.innerHTML = '<p class="text-gray-500 text-sm">Tidak ada data threshold untuk ruas ini</p>';
+            return;
+        }
+        
+        const data = thresholdData[ruasId];
+        const t1 = data.t1;
+        const t2 = data.t2;
+        const t3 = data.t3;
+        const t4 = data.t4;
+        
+        let html = `
+            <div class="dynamic-legend">
+                <strong>${data.nama}</strong><br>
+                <span class="threshold-display">
+                    Z: [${data.z_min.toFixed(3)}, ${data.z_max.toFixed(3)}] | I: ${data.interval.toFixed(3)}
+                </span>
+            </div>
+        `;
+        
+        // Color legend items with actual thresholds
+        html += `
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #d32f2f;"></div>
+                <div class="legend-text">Sangat Tinggi (Z ≥ ${t4.toFixed(3)})</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #f57c00;"></div>
+                <div class="legend-text">Tinggi (${t3.toFixed(3)} ≤ Z < ${t4.toFixed(3)})</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #fbc02d;"></div>
+                <div class="legend-text">Sedang (${t2.toFixed(3)} ≤ Z < ${t3.toFixed(3)})</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #7cb342;"></div>
+                <div class="legend-text">Rendah (${t1.toFixed(3)} ≤ Z < ${t2.toFixed(3)})</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #388e3c;"></div>
+                <div class="legend-text">Sangat Rendah (Z < ${t1.toFixed(3)})</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #1976d2;"></div>
+                <div class="legend-text">Aman (Tidak Ada Data)</div>
+            </div>
+        `;
+        
+        legendDiv.innerHTML = html;
+    }
+
+    // Handle ruas jalan filter change
+    function handleRuasChange() {
+        const ruasFilter = document.getElementById('ruasFilter');
+        selectedRuas = ruasFilter.value || null;
+        
+        console.log(`🔍 Ruas filter changed to: ${selectedRuas || 'All'}`);
+        
+        // Update legend if ruas selected
+        if (selectedRuas) {
+            updateLegend(selectedRuas);
+        } else if (Object.keys(thresholdData).length > 0) {
+            const firstRuasId = Object.keys(thresholdData)[0];
+            updateLegend(firstRuasId);
+        }
+        
+        // Refresh map with filter
+        if (allSegmenData) {
+            renderSegmenLayer(allSegmenData);
+        }
+    }
+
+    // Handle tahun change
+    function handleTahunChange() {
+        const tahunSelect = document.getElementById('tahunSelect');
+        tahun = tahunSelect.value;
+        
+        if (tahun) {
+            // Reload all data with new tahun
+            loadThresholdData();
+            loadSegmenData();
+            loadStatistik();
+        }
     }
 
     // Load Segmen GeoJSON
     function loadSegmenData() {
         const url = `/api/segmen/geojson/?tahun=${tahun}`;
-        console.log("Loading segments from:", url);
+        console.log("📍 Loading segments from:", url);
 
         axios.get(url)
             .then(response => {
-                console.log("Segments data received:", response.data);
-                
-                if (segmenLayer) {
-                    map.removeLayer(segmenLayer);
-                }
-
-                if (response.data.features.length === 0) {
-                    console.warn("No segments found for this year.");
-                    return;
-                }
-
-                segmenLayer = L.geoJSON(response.data, {
-                    style: function (feature) {
-                        if (feature.properties.type === 'line') {
-                            const color = feature.properties.color || '#ff00ff';
-                            return {
-                                color: color,
-                                weight: 7,
-                                opacity: 1,
-                                lineJoin: 'round'
-                            };
-                        }
-                        return {};
-                    },
-                    pointToLayer: function (feature, latlng) {
-                        if (feature.properties.type === 'marker') {
-                            return L.marker(latlng, {
-                                icon: L.divIcon({
-                                    className: 'segmen-marker-icon',
-                                    html: `<div style="display: flex; justify-content: center; align-items: center; width: 24px; height: 24px; background: white; border-radius: 50%; border: 2px solid ${feature.properties.color}; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">
-                                            <i class="fas fa-road" style="color: #2c3e50; font-size: 12px;"></i>
-                                           </div>`,
-                                    iconSize: [24, 24],
-                                    iconAnchor: [12, 12]
-                                })
-                            });
-                        }
-                        // Fallback jika ada point lain di layer ini
-                        return L.circleMarker(latlng, { radius: 1 });
-                    },
-                    onEachFeature: function (feature, layer) {
-                        const props = feature.properties;
-                        // Hanya tambahkan popup ke garis atau marker secara spesifik
-                        const popup = `
-                            <div class="popup-info">
-                                <strong class="text-blue-700">${props.ruas_nama}</strong><br>
-                                <span class="text-gray-600">KM: ${props.km_awal.toFixed(2)} - ${props.km_akhir.toFixed(2)}</span><br>
-                                <div class="mt-2 p-2 rounded text-white font-bold text-center" style="background-color: ${props.color}">
-                                    ${props.kategori.replace(/_/g, ' ').toUpperCase()}
-                                </div>
-                                ${props.zscore ? `<div class="mt-1 text-xs text-gray-500 text-center">Z-Score: ${props.zscore.toFixed(3)}</div>` : ''}
-                                <hr class="my-2">
-                                <a href="${props.url || '#'}" class="block text-center px-3 py-1 bg-blue-600 text-white rounded-lg text-sm">Lihat Detail</a>
-                            </div>
-                        `;
-                        layer.bindPopup(popup);
-                    }
-                }).addTo(map);
-
-                // Auto-zoom ke data segmen
-                if (response.data.features.length > 0) {
-                    map.fitBounds(segmenLayer.getBounds());
-                }
+                console.log("📊 Segments API Response:", response.data);
+                allSegmenData = response.data; // Store for filtering
+                renderSegmenLayer(response.data);
             })
-            .catch(error => console.error('Error loading segmen:', error));
+            .catch(error => {
+                console.error('❌ Error loading segmen:', error);
+            });
     }
 
-    // Load Kecelakaan GeoJSON
-    function loadKecelakaanData() {
-        const url = `/api/kecelakaan/geojson/?tahun=${tahun}`;
+    // Render segmen layer with optional ruas filter
+    function renderSegmenLayer(geoJsonData) {
+        if (segmenLayer) {
+            map.removeLayer(segmenLayer);
+        }
 
-        axios.get(url)
-            .then(response => {
-                if (kecelakaanLayer) {
-                    map.removeLayer(kecelakaanLayer);
+        if (geoJsonData.features.length === 0) {
+            console.warn("⚠️ No segments found for this year");
+            return;
+        }
+
+        // Filter features by ruas if selected
+        let featuresToRender = geoJsonData.features;
+        if (selectedRuas) {
+            featuresToRender = geoJsonData.features.filter(f => {
+                return f.properties.ruas_id === parseInt(selectedRuas) || 
+                       f.properties.marker_type === 'ruas_start' || 
+                       f.properties.marker_type === 'ruas_end';
+            });
+            console.log(`🔍 Filtered features for ruas ${selectedRuas}: ${featuresToRender.length}`);
+        }
+
+        const filteredGeoJson = {
+            type: 'FeatureCollection',
+            features: featuresToRender
+        };
+
+        segmenLayer = L.geoJSON(filteredGeoJson, {
+            style: function (feature) {
+                if (feature.properties.type === 'line') {
+                    const color = feature.properties.color || '#1976d2';
+                    return {
+                        color: color,
+                        weight: 8,
+                        opacity: 0.9,
+                        lineJoin: 'bevel',
+                        lineCap: 'round',
+                        dashArray: null
+                    };
                 }
-
-                kecelakaanLayer = L.geoJSON(response.data, {
-                    pointToLayer: function (feature, latlng) {
+                return {};
+            },
+            pointToLayer: function (feature, latlng) {
+                const props = feature.properties;
+                
+                if (props.type === 'segment_marker') {
+                    if (props.marker_type === 'ruas_start' || props.marker_type === 'ruas_end') {
                         return L.circleMarker(latlng, {
-                            radius: 6,
-                            fillColor: '#d32f2f',
-                            color: '#fff',
-                            weight: 2,
+                            radius: 12,
+                            fillColor: '#ff6b6b',
+                            color: '#c92a2a',
+                            weight: 4,
                             opacity: 1,
-                            fillOpacity: 0.8
+                            fillOpacity: 0.9
                         });
-                    },
-                    onEachFeature: function (feature, layer) {
-                        const props = feature.properties;
-                        const popup = `
-                            <div class="popup-info">
-                                <strong>${props.lokasi}</strong><br>
-                                Tanggal: ${props.tanggal}<br>
-                                Waktu: ${props.waktu}<br>
-                                <hr>
-                                <strong>Korban:</strong><br>
-                                Meninggal: ${props.korban_meninggal}<br>
-                                Luka Berat: ${props.korban_luka_berat}<br>
-                                Luka Ringan: ${props.korban_luka_ringan}<br>
-                                <strong>Total: ${props.total_korban}</strong><br>
-                                <strong>Kerugian: Rp ${props.kerugian.toLocaleString('id-ID')}</strong><br>
-                                <a href="${props.url}" class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm mt-2 inline-block">Detail</a>
-                            </div>
-                        `;
-                        layer.bindPopup(popup);
+                    } else {
+                        const color = props.color || '#1976d2';
+                        return L.circleMarker(latlng, {
+                            radius: 8,
+                            fillColor: color,
+                            color: '#fff',
+                            weight: 3,
+                            opacity: 1,
+                            fillOpacity: 0.95
+                        });
                     }
-                }).addTo(map);
-            })
-            .catch(error => console.error('Error loading kecelakaan:', error));
+                }
+                return L.circleMarker(latlng, { radius: 1 });
+            },
+            onEachFeature: function (feature, layer) {
+                const props = feature.properties;
+                
+                if (props.marker_type === 'ruas_start' || props.marker_type === 'ruas_end') {
+                    const popup = `
+                        <div class="popup-info" style="font-family: Arial, sans-serif; font-size: 0.85rem;">
+                            <strong style="color: #c92a2a; font-size: 14px;">
+                                ${props.marker_type === 'ruas_start' ? '🚩 AWAL RUAS' : '🏁 AKHIR RUAS'}
+                            </strong><br>
+                            <span style="color: #666; font-size: 12px;">${props.ruas_nama}</span>
+                        </div>
+                    `;
+                    layer.bindPopup(popup);
+                    return;
+                }
+                
+                const categoryDisplay = props.kategori === 'aman' 
+                    ? 'AMAN (TIDAK ADA DATA)' 
+                    : props.kategori.replace(/_/g, ' ').toUpperCase();
+                
+                const popup = `
+                    <div class="popup-info" style="font-family: Arial, sans-serif; font-size: 0.85rem; max-width: 350px;">
+                        <strong style="color: ${props.color}; font-size: 14px;">🛣️ ${props.nama_segmen}</strong><br>
+                        <span style="color: #666; font-size: 11px;">Ruas: <strong>${props.ruas_nama}</strong></span><br>
+                        <span style="color: #666; font-size: 11px;">📍 KM ${props.km_awal.toFixed(2)} - ${props.km_akhir.toFixed(2)}</span><br>
+                        <span style="color: #666; font-size: 11px;">📏 Panjang: <strong>${props.panjang.toFixed(3)} km</strong></span><br>
+                        ${props.keterangan ? `<span style="color: #666; font-size: 11px; font-style: italic;">📝 ${props.keterangan}</span><br>` : ''}
+                        <div style="background: linear-gradient(90deg, ${props.color}dd 0%, ${props.color} 100%); color: white; padding: 8px 10px; border-radius: 4px; text-align: center; margin-top: 8px; font-weight: bold; font-size: 12px;">
+                            ${categoryDisplay}
+                        </div>
+                        <div style="color: #666; font-size: 11px; text-align: center; margin-top: 5px;">
+                            ${props.accident_count > 0 ? `<i class="fas fa-exclamation-triangle"></i> <strong>${props.accident_count}</strong> kecelakaan` : '✓ Data aman - Tidak ada kecelakaan'}
+                        </div>
+                        ${props.zscore !== undefined && props.kategori !== 'aman' ? `<div style="color: #666; font-size: 10px; text-align: center; margin-top: 3px;">Z-Score: <strong>${props.zscore.toFixed(3)}</strong></div>` : ''}
+                        <hr style="margin: 8px 0; border: none; border-top: 1px solid #ddd;">
+                        <a href="${props.url || '#'}" style="display: block; text-align: center; padding: 8px 10px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;">👁️ Lihat Detail Segmen</a>
+                    </div>
+                `;
+                layer.bindPopup(popup);
+            }
+        }).addTo(map);
+
+        // Auto-zoom ke data segmen
+        if (filteredGeoJson.features.length > 0) {
+            try {
+                const bounds = segmenLayer.getBounds();
+                if (bounds.isValid()) {
+                    map.fitBounds(bounds, { padding: [50, 50] });
+                }
+            } catch (e) {
+                console.warn('Could not fit bounds:', e);
+            }
+        }
     }
 
     // Load Statistik
