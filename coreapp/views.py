@@ -104,10 +104,24 @@ def logout_view(request):
     return redirect('login')
 
 
+# Homepage View
+def homepage_view(request):
+    """Halaman homepage untuk user biasa"""
+    context = {
+        'total_ruas': RuasJalan.objects.count(),
+        'total_segmen': SegmenJalan.objects.count(),
+        'total_kecelakaan': Kecelakaan.objects.count(),
+        'total_korban': Kecelakaan.objects.aggregate(
+            total=Sum('korban_meninggal') + Sum('korban_luka_berat') + Sum('korban_luka_ringan')
+        )['total'] or 0,
+    }
+    return render(request, 'homepage.html', context)
+
+
 # Dashboard Views
 @login_required(login_url='login')
 def dashboard_view(request):
-    """Dashboard utama"""
+    """Dashboard utama - untuk admin/user yang login"""
     context = {
         'total_ruas': RuasJalan.objects.count(),
         'total_segmen': SegmenJalan.objects.count(),
@@ -323,12 +337,22 @@ def kecelakaan_delete(request, pk):
 # Map Views
 @login_required(login_url='login')
 def map_view(request):
-    """Tampilkan peta interaktif"""
-    tahun = request.GET.get('tahun', timezone.now().year)
+    """Tampilkan peta interaktif untuk admin (dengan sidebar)"""
+    tahun_param = request.GET.get('tahun')
+    tahun = timezone.now().year
+    
+    if tahun_param:
+        try:
+            tahun = int(tahun_param)
+        except (ValueError, TypeError):
+            tahun = timezone.now().year
     
     # Hitung Z-Score jika belum ada
-    if not AnalisisZScore.objects.filter(tahun=tahun).exists():
-        AnalisisZScore.calculate_zscore(tahun)
+    try:
+        if not AnalisisZScore.objects.filter(tahun=tahun).exists():
+            AnalisisZScore.calculate_zscore(tahun)
+    except Exception as e:
+        print(f"Warning: Could not calculate Z-Score for {tahun}: {e}")
     
     context = {
         'tahun': tahun,
@@ -337,11 +361,35 @@ def map_view(request):
     return render(request, 'coreapp/map/map.html', context)
 
 
+def peta_user_view(request):
+    """Tampilkan peta interaktif untuk user biasa (tanpa sidebar, standalone)"""
+    tahun_param = request.GET.get('tahun')
+    tahun = timezone.now().year
+    
+    if tahun_param:
+        try:
+            tahun = int(tahun_param)
+        except (ValueError, TypeError):
+            tahun = timezone.now().year
+    
+    # Hitung Z-Score jika belum ada
+    try:
+        if not AnalisisZScore.objects.filter(tahun=tahun).exists():
+            AnalisisZScore.calculate_zscore(tahun)
+    except Exception as e:
+        print(f"Warning: Could not calculate Z-Score for {tahun}: {e}")
+    
+    context = {
+        'tahun': tahun,
+        'tahun_options': range(2020, timezone.now().year + 1)
+    }
+    return render(request, 'peta_user.html', context)
+
+
 # API Views
 @api_view(['GET'])
-@login_required(login_url='login')
 def api_segmen_geojson(request):
-    """API untuk mendapatkan GeoJSON segmen jalan"""
+    """API untuk mendapatkan GeoJSON segmen jalan dengan Z-Score atau default blue untuk no accidents"""
     tahun_raw = request.GET.get('tahun')
     if not tahun_raw or tahun_raw == 'None':
         tahun = timezone.now().year
@@ -351,10 +399,32 @@ def api_segmen_geojson(request):
         except (ValueError, TypeError):
             tahun = timezone.now().year
     
+    print(f"\n{'='*80}")
+    print(f"📍 API: api_segmen_geojson called for tahun={tahun}")
+    print(f"{'='*80}")
+    
+    # Ensure Z-Score calculation exists for this year
+    if not AnalisisZScore.objects.filter(tahun=tahun).exists():
+        try:
+            AnalisisZScore.calculate_zscore(tahun)
+            print(f"✓ Auto-calculated Z-Score for {tahun}")
+        except Exception as e:
+            print(f"⚠ Could not auto-calculate Z-Score: {e}")
+    
     segmen_list = SegmenJalan.objects.select_related('ruas_jalan').all()
+    print(f"📊 Found {segmen_list.count()} segments in database")
     
     features = []
+    line_count = 0
+    marker_count = 0
+    
     for segmen in segmen_list:
+        # Hitung jumlah kecelakaan di segmen ini untuk tahun tertentu
+        accident_count = Kecelakaan.objects.filter(
+            segmen_jalan=segmen,
+            tanggal__year=tahun
+        ).count()
+        
         # Cari analisis Z-Score
         try:
             analisis = AnalisisZScore.objects.get(segmen_jalan=segmen, tahun=tahun)
@@ -362,25 +432,74 @@ def api_segmen_geojson(request):
             zscore = float(analisis.nilai_zscore)
             color = analisis.get_kategori_display_color()
         except AnalisisZScore.DoesNotExist:
-            kategori = 'unknown'
-            zscore = 0
-            color = '#999999'
+            # Jika tidak ada Z-Score untuk tahun ini
+            if accident_count == 0:
+                # Tidak ada kecelakaan → gunakan biru (AMAN)
+                kategori = 'aman'
+                zscore = -2.0
+                color = '#1976d2'  # Blue
+            else:
+                # Ada kecelakaan tapi belum ada Z-Score → coba hitung
+                try:
+                    AnalisisZScore.calculate_zscore(tahun)
+                    analisis = AnalisisZScore.objects.get(segmen_jalan=segmen, tahun=tahun)
+                    kategori = analisis.kategori
+                    zscore = float(analisis.nilai_zscore)
+                    color = analisis.get_kategori_display_color()
+                except Exception:
+                    kategori = 'unknown'
+                    zscore = 0
+                    color = '#999999'
         
-        # Perbaikan otomatis: Jika geometry segmen kosong tapi geometry ruas ada, generate ulang
-        if not segmen.geometry and segmen.ruas_jalan.geometry:
-            try:
-                segmen.geometry = segmen.ruas_jalan._get_segment_geometry(float(segmen.km_awal), float(segmen.km_akhir))
-                segmen.save(update_fields=['geometry'])
-            except Exception as e:
-                print(f"Repair geometry error: {e}")
-
-        # Gunakan geometry yang tersimpan di model
+        # PENTING: Generate geometry dari lat/lon jika kosong
         geometry = None
         if segmen.geometry:
             try:
-                geometry = json.loads(segmen.geometry)
-            except:
-                pass
+                parsed_geom = json.loads(segmen.geometry)
+                # Convert MultiLineString to LineString untuk rendering yang lebih baik
+                if parsed_geom.get('type') == 'MultiLineString':
+                    coords = []
+                    for line in parsed_geom.get('coordinates', []):
+                        coords.extend(line)
+                    geometry = {'type': 'LineString', 'coordinates': coords}
+                    print(f"✓ Converted MultiLineString to LineString for segmen {segmen.id}")
+                else:
+                    geometry = parsed_geom
+            except Exception as e:
+                print(f"⚠ Error parsing geometry for segmen {segmen.id}: {e}")
+                geometry = None
+        
+        # Fallback: Jika geometry kosong, buat dari lat/lon awal-akhir
+        if not geometry:
+            if segmen.lat_awal and segmen.lon_awal and segmen.lat_akhir and segmen.lon_akhir:
+                geometry = {
+                    'type': 'LineString',
+                    'coordinates': [
+                        [float(segmen.lon_awal), float(segmen.lat_awal)],
+                        [float(segmen.lon_akhir), float(segmen.lat_akhir)]
+                    ]
+                }
+                print(f"✓ Generated fallback geometry for segmen {segmen.id} from lat/lon")
+            else:
+                # Coba ambil dari ruas_jalan geometry
+                if segmen.ruas_jalan.geometry:
+                    try:
+                        ruas_geom = json.loads(segmen.ruas_jalan.geometry)
+                        if ruas_geom.get('type') == 'Feature':
+                            ruas_geom = ruas_geom.get('geometry', {})
+                        
+                        if ruas_geom.get('type') == 'LineString':
+                            geometry = ruas_geom
+                        elif ruas_geom.get('type') == 'MultiLineString':
+                            coords = []
+                            for line in ruas_geom.get('coordinates', []):
+                                coords.extend(line)
+                            geometry = {'type': 'LineString', 'coordinates': coords}
+                        
+                        if geometry:
+                            print(f"✓ Generated geometry for segmen {segmen.id} from ruas_jalan")
+                    except Exception as e:
+                        print(f"⚠ Error getting ruas geometry for segmen {segmen.id}: {e}")
         
         if geometry:
             # 1. Feature LineString (Garis Jalan)
@@ -390,49 +509,245 @@ def api_segmen_geojson(request):
                 'properties': {
                     'type': 'line',
                     'segmen_id': segmen.id,
+                    'ruas_id': segmen.ruas_jalan.id,
                     'ruas_nama': segmen.ruas_jalan.nama_ruas,
                     'km_awal': float(segmen.km_awal),
                     'km_akhir': float(segmen.km_akhir),
+                    'panjang': float(segmen.panjang_segmen),
                     'kategori': kategori,
                     'zscore': zscore,
                     'color': color,
+                    'accident_count': accident_count,
+                    'nama_segmen': segmen.nama_segmen or f"Segmen {segmen.km_awal}-{segmen.km_akhir}",
+                    'keterangan': segmen.keterangan or '',
                     'url': f'/kecelakaan/segmen/{segmen.id}/'
                 },
                 'geometry': geometry
             }
             features.append(feature_line)
+            line_count += 1
 
-            # 2. Feature Point (Marker di tengah segmen)
-            if geometry.get('coordinates'):
+            # 2. Feature Point - Marker AWAL segmen
+            if geometry.get('coordinates') and len(geometry['coordinates']) > 0:
                 coords = geometry['coordinates']
-                mid_idx = len(coords) // 2
-                mid_point = coords[mid_idx]
+                start_point = coords[0]
+                end_point = coords[-1]
                 
-                feature_point = {
+                # Marker awal segmen
+                feature_point_start = {
                     'type': 'Feature',
-                    'id': f"point_{segmen.id}",
+                    'id': f"point_start_{segmen.id}",
                     'properties': {
-                        'type': 'marker',
+                        'type': 'segment_marker',
+                        'marker_type': 'start',
                         'segmen_id': segmen.id,
+                        'ruas_id': segmen.ruas_jalan.id,
                         'ruas_nama': segmen.ruas_jalan.nama_ruas,
                         'km_awal': float(segmen.km_awal),
                         'km_akhir': float(segmen.km_akhir),
+                        'panjang': float(segmen.panjang_segmen),
                         'kategori': kategori,
-                        'color': color
+                        'zscore': zscore,
+                        'color': color,
+                        'accident_count': accident_count,
+                        'nama_segmen': segmen.nama_segmen or f"Segmen {segmen.km_awal}-{segmen.km_akhir}",
+                        'keterangan': segmen.keterangan or '',
+                        'url': f'/kecelakaan/segmen/{segmen.id}/'
                     },
                     'geometry': {
                         'type': 'Point',
-                        'coordinates': mid_point
+                        'coordinates': start_point
                     }
                 }
-                features.append(feature_point)
+                features.append(feature_point_start)
+                marker_count += 1
+                
+                # Marker akhir segmen
+                feature_point_end = {
+                    'type': 'Feature',
+                    'id': f"point_end_{segmen.id}",
+                    'properties': {
+                        'type': 'segment_marker',
+                        'marker_type': 'end',
+                        'segmen_id': segmen.id,
+                        'ruas_id': segmen.ruas_jalan.id,
+                        'ruas_nama': segmen.ruas_jalan.nama_ruas,
+                        'km_awal': float(segmen.km_awal),
+                        'km_akhir': float(segmen.km_akhir),
+                        'panjang': float(segmen.panjang_segmen),
+                        'kategori': kategori,
+                        'zscore': zscore,
+                        'color': color,
+                        'accident_count': accident_count,
+                        'nama_segmen': segmen.nama_segmen or f"Segmen {segmen.km_awal}-{segmen.km_akhir}",
+                        'keterangan': segmen.keterangan or '',
+                        'url': f'/kecelakaan/segmen/{segmen.id}/'
+                    },
+                    'geometry': {
+                        'type': 'Point',
+                        'coordinates': end_point
+                    }
+                }
+                features.append(feature_point_end)
+                marker_count += 1
+        else:
+            print(f"❌ Segmen {segmen.id} ({segmen.ruas_jalan.nama_ruas}) - NO geometry available!")
+    
+    # Add markers untuk start/end dari setiap ruas jalan
+    ruas_segments = {}
+    for segmen in segmen_list:
+        if segmen.ruas_jalan.id not in ruas_segments:
+            ruas_segments[segmen.ruas_jalan.id] = []
+        ruas_segments[segmen.ruas_jalan.id].append(segmen)
+    
+    # Create markers untuk ruas jalan start/end
+    for ruas_id, segments in ruas_segments.items():
+        # Sort by km_awal to find first and last segment
+        sorted_segments = sorted(segments, key=lambda s: float(s.km_awal))
+        if sorted_segments:
+            ruas_jalan = sorted_segments[0].ruas_jalan
+            
+            # Marker untuk AWAL ruas jalan
+            first_segmen = sorted_segments[0]
+            if first_segmen.geometry:
+                try:
+                    geom = json.loads(first_segmen.geometry)
+                    if geom.get('type') == 'LineString' and geom.get('coordinates'):
+                        start_coord = geom['coordinates'][0]
+                        feature_ruas_start = {
+                            'type': 'Feature',
+                            'id': f"ruas_start_{ruas_id}",
+                            'properties': {
+                                'type': 'segment_marker',
+                                'marker_type': 'ruas_start',
+                                'ruas_id': ruas_id,
+                                'ruas_nama': ruas_jalan.nama_ruas,
+                                'label': f'Awal Ruas: {ruas_jalan.nama_ruas}'
+                            },
+                            'geometry': {
+                                'type': 'Point',
+                                'coordinates': start_coord
+                            }
+                        }
+                        features.append(feature_ruas_start)
+                        marker_count += 1
+                except Exception as e:
+                    print(f"⚠ Error creating ruas start marker for {ruas_jalan.nama_ruas}: {e}")
+            
+            # Marker untuk AKHIR ruas jalan
+            last_segmen = sorted_segments[-1]
+            if last_segmen.geometry:
+                try:
+                    geom = json.loads(last_segmen.geometry)
+                    if geom.get('type') == 'LineString' and geom.get('coordinates'):
+                        end_coord = geom['coordinates'][-1]
+                        feature_ruas_end = {
+                            'type': 'Feature',
+                            'id': f"ruas_end_{ruas_id}",
+                            'properties': {
+                                'type': 'segment_marker',
+                                'marker_type': 'ruas_end',
+                                'ruas_id': ruas_id,
+                                'ruas_nama': ruas_jalan.nama_ruas,
+                                'label': f'Akhir Ruas: {ruas_jalan.nama_ruas}'
+                            },
+                            'geometry': {
+                                'type': 'Point',
+                                'coordinates': end_coord
+                            }
+                        }
+                        features.append(feature_ruas_end)
+                        marker_count += 1
+                except Exception as e:
+                    print(f"⚠ Error creating ruas end marker for {ruas_jalan.nama_ruas}: {e}")
     
     geojson = {
         'type': 'FeatureCollection',
         'features': features
     }
     
+    print(f"✅ Response: {line_count} lines, {marker_count} markers - {len(features)} total features")
+    print(f"{'='*80}\n")
+    
     return Response(geojson)
+
+
+@api_view(['GET'])
+def api_threshold_data(request):
+    """API untuk mendapatkan threshold data per ruas jalan untuk dynamic legend"""
+    from django.db.models import Avg, StdDev
+    
+    tahun_raw = request.GET.get('tahun')
+    if not tahun_raw or tahun_raw == 'None':
+        tahun = timezone.now().year
+    else:
+        try:
+            tahun = int(tahun_raw)
+        except (ValueError, TypeError):
+            tahun = timezone.now().year
+    
+    # Ensure Z-Score calculation exists
+    if not AnalisisZScore.objects.filter(tahun=tahun).exists():
+        try:
+            AnalisisZScore.calculate_zscore(tahun)
+        except Exception as e:
+            print(f"Warning: Could not auto-calculate Z-Score: {e}")
+    
+    ruas_jalan_list = RuasJalan.objects.all().distinct()
+    threshold_data = {}
+    
+    for ruas_jalan in ruas_jalan_list:
+        segments_in_ruas = SegmenJalan.objects.filter(ruas_jalan=ruas_jalan)
+        
+        # Get all z-scores for this ruas jalan
+        analisis_list = AnalisisZScore.objects.filter(
+            tahun=tahun,
+            segmen_jalan__in=segments_in_ruas
+        )
+        
+        if analisis_list.exists():
+            zscore_values = [float(a.nilai_zscore) for a in analisis_list]
+            z_max = max(zscore_values)
+            z_min = min(zscore_values)
+            
+            # Calculate interval
+            if z_max != z_min:
+                interval = (z_max - z_min) / 5
+            else:
+                interval = 1
+            
+            # Calculate thresholds
+            t1 = z_min + (1 * interval)
+            t2 = z_min + (2 * interval)
+            t3 = z_min + (3 * interval)
+            t4 = z_min + (4 * interval)
+            
+            # Count segments per kategori
+            kategori_counts = {
+                'sangat_tinggi': analisis_list.filter(kategori='sangat_tinggi').count(),
+                'tinggi': analisis_list.filter(kategori='tinggi').count(),
+                'sedang': analisis_list.filter(kategori='sedang').count(),
+                'rendah': analisis_list.filter(kategori='rendah').count(),
+                'sangat_rendah': analisis_list.filter(kategori='sangat_rendah').count(),
+            }
+            
+            threshold_data[ruas_jalan.id] = {
+                'nama': ruas_jalan.nama_ruas,
+                'z_max': round(z_max, 3),
+                'z_min': round(z_min, 3),
+                'interval': round(interval, 3),
+                't4': round(t4, 3),  # sangat_tinggi threshold
+                't3': round(t3, 3),  # tinggi threshold
+                't2': round(t2, 3),  # sedang threshold
+                't1': round(t1, 3),  # rendah threshold
+                'kategori_counts': kategori_counts,
+                'total_segments': segments_in_ruas.count(),
+            }
+    
+    return Response({
+        'tahun': tahun,
+        'ruas_data': threshold_data
+    })
 
 
 @api_view(['GET'])
