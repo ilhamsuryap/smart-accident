@@ -354,9 +354,9 @@ class Kecelakaan(models.Model):
     id = models.AutoField(primary_key=True)
     tanggal = models.DateField()
     waktu = models.TimeField()
-    latitude = models.DecimalField(max_digits=30, decimal_places=20)
-    longitude = models.DecimalField(max_digits=30, decimal_places=20)
-    segmen_jalan = models.ForeignKey(SegmenJalan, on_delete=models.SET_NULL, null=True, blank=True,related_name='kecelakaan')
+    latitude = models.DecimalField(max_digits=30, decimal_places=20, help_text="Latitude koordinat kecelakaan")
+    longitude = models.DecimalField(max_digits=30, decimal_places=20, help_text="Longitude koordinat kecelakaan")
+    segmen_jalan = models.ForeignKey(SegmenJalan, on_delete=models.SET_NULL, null=True, blank=True, related_name='kecelakaan', help_text="Otomatis diassign ke segmen terdekat (threshold 5km) saat disimpan. Bisa diubah manual jika perlu.")
     korban_meninggal = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     korban_luka_berat = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     korban_luka_ringan = models.IntegerField(default=0, validators=[MinValueValidator(0)])
@@ -388,32 +388,41 @@ class Kecelakaan(models.Model):
             self.find_closest_segment()
     
     def find_closest_segment(self):
-        """Temukan segmen jalan terdekat menggunakan geopy"""
-        from django.db.models import F, FloatField, ExpressionWrapper
+        """Temukan segmen jalan terdekat berdasarkan lat/lon menggunakan geodesic distance"""
+        from geopy.distance import geodesic
         
         accident_point = (float(self.latitude), float(self.longitude))
         
-        # Hitung jarak ke setiap segmen (menggunakan rata2 km awal/akhir)
         min_distance = float('inf')
         closest_segmen = None
         
         # Iterasi semua segmen untuk hitung jarak
-        for segmen in SegmenJalan.objects.select_related('ruas_jalan'):
-            # Estimasi koordinat segmen menggunakan rata-rata km
-            # Dalam aplikasi nyata, sebaiknya simpan lat/lon di SegmenJalan juga
-            # Untuk saat ini, gunakan ruas_jalan reference
+        for segmen in SegmenJalan.objects.select_related('ruas_jalan').all():
+            if not (segmen.lat_awal and segmen.lon_awal and segmen.lat_akhir and segmen.lon_akhir):
+                continue
             
-            # Jarak dihitung ke center ruas jalan (simplified)
-            # Better: simpan start/end lat/lon untuk setiap segmen
-            distance = 0  # Default jika tidak ada data
+            # Hitung jarak ke titik awal segmen
+            start_point = (float(segmen.lat_awal), float(segmen.lon_awal))
+            distance_awal = geodesic(accident_point, start_point).kilometers
+            
+            # Hitung jarak ke titik akhir segmen
+            end_point = (float(segmen.lat_akhir), float(segmen.lon_akhir))
+            distance_akhir = geodesic(accident_point, end_point).kilometers
+            
+            # Gunakan jarak minimum ke salah satu titik
+            distance = min(distance_awal, distance_akhir)
             
             if distance < min_distance:
                 min_distance = distance
                 closest_segmen = segmen
         
-        if closest_segmen:
+        # Assign jika ditemukan segmen terdekat (threshold: 5 km)
+        if closest_segmen and min_distance <= 5.0:
             self.segmen_jalan = closest_segmen
+            print(f"✓ Assigned Kecelakaan {self.id} to {closest_segmen.nama_segmen} (distance: {min_distance:.3f} km)")
             super().save(update_fields=['segmen_jalan'])
+        elif not closest_segmen and min_distance > 5.0:
+            print(f"⚠ No segment found within 5 km threshold for Kecelakaan {self.id} (min: {min_distance:.3f} km)")
     
     @property
     def total_korban(self):
@@ -524,8 +533,8 @@ class AnalisisZScore(models.Model):
     
     @staticmethod
     def calculate_zscore(tahun=None):
-        """Hitung Z-Score untuk semua segmen"""
-        from django.db.models import Avg, StdDev
+        """Hitung Z-Score untuk setiap segmen PER RUAS JALAN dengan interval dinamis"""
+        from django.db.models import Avg, StdDev, Max, Min
         import decimal
         
         if tahun is None:
@@ -537,45 +546,102 @@ class AnalisisZScore(models.Model):
         # Hapus analisis lama
         AnalisisZScore.objects.filter(tahun=tahun).delete()
         
-        # Hitung mean dan std dev dari jumlah kecelakaan
-        stats = RekapSegmen.objects.filter(
-            periode_tahun=tahun
-        ).aggregate(
-            mean=Avg('jumlah_kecelakaan'),
-            stddev=StdDev('jumlah_kecelakaan')
-        )
+        # Get all ruas jalan
+        ruas_jalan_list = RuasJalan.objects.all().distinct()
         
-        mean = float(stats['mean'] or 0)
-        stddev = float(stats['stddev'] or 1)
+        print(f"\n📊 Calculating Z-Score for {tahun} - Per Ruas Jalan (Dynamic Intervals)")
+        print(f"{'='*80}")
         
-        # Hindari pembagian dengan 0
-        if stddev == 0:
-            stddev = 1
-        
-        # Hitung Z-Score untuk setiap segmen
-        rekap_list = RekapSegmen.objects.filter(periode_tahun=tahun)
-        
-        for rekap in rekap_list:
-            zscore = (float(rekap.jumlah_kecelakaan) - mean) / stddev
+        # Hitung Z-Score per ruas jalan
+        for ruas_jalan in ruas_jalan_list:
+            # Get all segments untuk ruas jalan ini
+            segments_in_ruas = SegmenJalan.objects.filter(ruas_jalan=ruas_jalan)
             
-            # Kategorisasi berdasarkan Z-Score
-            if zscore > 1.5:
-                kategori = 'sangat_tinggi'
-            elif zscore > 0.5:
-                kategori = 'tinggi'
-            elif zscore > -0.5:
-                kategori = 'sedang'
-            elif zscore > -1.5:
-                kategori = 'rendah'
-            else:
-                kategori = 'sangat_rendah'
-            
-            AnalisisZScore.objects.create(
-                segmen_jalan=rekap.segmen_jalan,
-                nilai_zscore=decimal.Decimal(str(round(zscore, 3))),
-                kategori=kategori,
-                tahun=tahun
+            # Get rekap untuk segments di ruas jalan ini untuk tahun tertentu
+            stats = RekapSegmen.objects.filter(
+                periode_tahun=tahun,
+                segmen_jalan__in=segments_in_ruas
+            ).aggregate(
+                mean=Avg('jumlah_kecelakaan'),
+                stddev=StdDev('jumlah_kecelakaan')
             )
+            
+            mean = float(stats['mean'] or 0)
+            stddev = float(stats['stddev'] or 1)
+            
+            # Hindari pembagian dengan 0
+            if stddev == 0:
+                stddev = 1
+            
+            # Pertama, hitung semua z-score untuk mendapatkan z_max dan z_min
+            zscore_dict = {}
+            rekap_list = RekapSegmen.objects.filter(
+                periode_tahun=tahun,
+                segmen_jalan__in=segments_in_ruas
+            )
+            
+            for rekap in rekap_list:
+                zscore = (float(rekap.jumlah_kecelakaan) - mean) / stddev
+                zscore_dict[rekap.segmen_jalan.id] = {
+                    'rekap': rekap,
+                    'zscore': zscore
+                }
+            
+            # Get Z_max dan Z_min
+            if zscore_dict:
+                zscore_values = [item['zscore'] for item in zscore_dict.values()]
+                z_max = max(zscore_values)
+                z_min = min(zscore_values)
+            else:
+                z_max = 0
+                z_min = 0
+            
+            # Hitung interval (I) untuk 5 klasifikasi
+            num_classifications = 5
+            if z_max != z_min:
+                interval = (z_max - z_min) / num_classifications
+            else:
+                interval = 1  # Default jika semua nilai sama
+            
+            # Hitung threshold untuk setiap klasifikasi
+            threshold_1 = z_min + (1 * interval)  # Batas antara sangat_kecil dan kecil
+            threshold_2 = z_min + (2 * interval)  # Batas antara kecil dan sedang
+            threshold_3 = z_min + (3 * interval)  # Batas antara sedang dan besar
+            threshold_4 = z_min + (4 * interval)  # Batas antara besar dan sangat_besar
+            
+            segmen_count = segments_in_ruas.count()
+            print(f"\n🛣️ Ruas: {ruas_jalan.nama_ruas} ({segmen_count} segmen)")
+            print(f"   Mean: {mean:.2f}, StdDev: {stddev:.2f}")
+            print(f"   Z_max: {z_max:.3f}, Z_min: {z_min:.3f}, Interval: {interval:.3f}")
+            print(f"   Thresholds: {threshold_1:.3f} | {threshold_2:.3f} | {threshold_3:.3f} | {threshold_4:.3f}")
+            
+            # Kategorisasi berdasarkan threshold dinamis
+            for segmen_id, data in zscore_dict.items():
+                rekap = data['rekap']
+                zscore = data['zscore']
+                
+                # Kategorisasi dinamis
+                if zscore >= threshold_4:
+                    kategori = 'sangat_tinggi'
+                elif zscore >= threshold_3:
+                    kategori = 'tinggi'
+                elif zscore >= threshold_2:
+                    kategori = 'sedang'
+                elif zscore >= threshold_1:
+                    kategori = 'rendah'
+                else:
+                    kategori = 'sangat_rendah'
+                
+                AnalisisZScore.objects.create(
+                    segmen_jalan=rekap.segmen_jalan,
+                    nilai_zscore=decimal.Decimal(str(round(zscore, 3))),
+                    kategori=kategori,
+                    tahun=tahun
+                )
+                
+                print(f"   ✓ {rekap.segmen_jalan.nama_segmen}: {rekap.jumlah_kecelakaan} accidents → Z={zscore:.3f} ({kategori})")
+        
+        print(f"\n{'='*80}\n")
     
     def get_kategori_display_color(self):
         """Dapatkan warna untuk kategori Z-Score"""
