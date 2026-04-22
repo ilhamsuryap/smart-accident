@@ -452,7 +452,7 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (_) { return null; }
     }
 
-    // ─── Click Handler (async) ────────────────────────────────────────────
+    // ─── 1. Click Handler (async) ────────────────────────────────────────────
     map.on('click', async function (e) {
         if (isFetching) return;
 
@@ -466,7 +466,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .addTo(map);
 
         if (isFirst) {
-            // ── Titik Pertama: tidak perlu fetch rute ──
+            // ── 1. Titik Pertama: tidak perlu fetch rute ──
             fullCoordinates = [[lon, lat]];
             splits = [{ km: 0, lat: lat, lon: lon }];
             markers.push(marker);
