@@ -68,6 +68,28 @@
         font-size: 0.8rem;
         color: #666;
     }
+
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -162,6 +184,8 @@
     
     let map;
     let segmenLayer, kecelakaanLayer;
+    let lastDataUpdateTime = null;  // Track last data update time
+    let updateCheckInterval = null;  // Store interval ID for cleanup
 
     // Initialize Map
     function initMap() {
@@ -179,6 +203,93 @@
         loadThresholdData();
         loadSegmenData();
         loadStatistik();
+        
+        // Start periodic update check - setiap 10 detik check apakah ada data baru
+        startUpdateCheck();
+    }
+
+    // ✅ NEW: Check untuk update data secara periodic
+    function startUpdateCheck() {
+        updateCheckInterval = setInterval(() => {
+            checkForDataUpdates();
+        }, 10000);  // Check setiap 10 detik
+        
+        console.log("🔄 Data update check started (interval: 10 seconds)");
+    }
+
+    // ✅ NEW: Check apakah ada data update
+    function checkForDataUpdates() {
+        if (!tahun || tahun === '') {
+            return;  // Skip jika tahun not selected
+        }
+
+        axios.get(`/api/segmen/check-update/?tahun=${tahun}`)
+            .then(response => {
+                const data = response.data;
+                
+                if (!data.last_data_update) {
+                    return;  // Tidak ada data
+                }
+
+                const currentUpdateTime = new Date(data.last_data_update * 1000).getTime();
+                
+                // Jika ini first check, just store timestamp
+                if (lastDataUpdateTime === null) {
+                    lastDataUpdateTime = currentUpdateTime;
+                    console.log(`📊 Initial update time recorded: ${new Date(currentUpdateTime)}`);
+                    return;
+                }
+
+                // Jika ada update lebih baru dari last known time
+                if (currentUpdateTime > lastDataUpdateTime) {
+                    console.log(`🔔 DATA UPDATE DETECTED!`);
+                    console.log(`   Old: ${new Date(lastDataUpdateTime)}`);
+                    console.log(`   New: ${new Date(currentUpdateTime)}`);
+                    
+                    // Update timestamp
+                    lastDataUpdateTime = currentUpdateTime;
+                    
+                    // Reload data
+                    console.log("🔄 Auto-refreshing map data...");
+                    loadThresholdData();
+                    loadSegmenData();
+                    loadStatistik();
+                    
+                    // Show notification
+                    showUpdateNotification();
+                }
+            })
+            .catch(error => {
+                console.warn('⚠️ Error checking for updates:', error);
+            });
+    }
+
+    // ✅ NEW: Tampilkan notifikasi update
+    function showUpdateNotification() {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 9999;
+            animation: slideIn 0.3s ease-out;
+        `;
+        notification.textContent = '✅ Data kecelakaan berhasil diperbarui! Peta sedang di-refresh...';
+        
+        document.body.appendChild(notification);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
     }
 
     // Load threshold data per ruas jalan
@@ -492,5 +603,13 @@
 
     // Init on page load
     document.addEventListener('DOMContentLoaded', initMap);
+
+    // ✅ NEW: Cleanup interval ketika page unload
+    window.addEventListener('beforeunload', () => {
+        if (updateCheckInterval) {
+            clearInterval(updateCheckInterval);
+            console.log("🛑 Update check interval cleared");
+        }
+    });
 </script>
 {% endblock %}
