@@ -27,10 +27,10 @@ class RuasJalan(models.Model):
     jenis_jalan = models.CharField(max_length=20, choices=JENIS_JALAN_CHOICES)
     wilayah = models.CharField(max_length=100)
     panjang_km = models.DecimalField(max_digits=10, decimal_places=3, validators=[MinValueValidator(0)])
-    lat_awal = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, help_text="Latitude titik awal ruas jalan")
-    lon_awal = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, help_text="Longitude titik awal ruas jalan")
-    lat_akhir = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, help_text="Latitude titik akhir ruas jalan")
-    lon_akhir = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, help_text="Longitude titik akhir ruas jalan")
+    lat_awal = models.DecimalField(max_digits=25, decimal_places=20, null=True, blank=True, help_text="Latitude titik awal ruas jalan")
+    lon_awal = models.DecimalField(max_digits=25, decimal_places=20, null=True, blank=True, help_text="Longitude titik awal ruas jalan")
+    lat_akhir = models.DecimalField(max_digits=25, decimal_places=20, null=True, blank=True, help_text="Latitude titik akhir ruas jalan")
+    lon_akhir = models.DecimalField(max_digits=25, decimal_places=20, null=True, blank=True, help_text="Longitude titik akhir ruas jalan")
     geometry = models.TextField(null=True, blank=True, help_text="GeoJSON LineString untuk seluruh ruas jalan")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -315,10 +315,10 @@ class SegmenJalan(models.Model):
     km_awal = models.DecimalField(max_digits=10, decimal_places=3)
     km_akhir = models.DecimalField(max_digits=10, decimal_places=3)
     panjang_segmen = models.DecimalField(max_digits=10, decimal_places=3)
-    lat_awal = models.DecimalField(max_digits=12, decimal_places=9, null=True, blank=True)
-    lon_awal = models.DecimalField(max_digits=12, decimal_places=9, null=True, blank=True)
-    lat_akhir = models.DecimalField(max_digits=12, decimal_places=9, null=True, blank=True)
-    lon_akhir = models.DecimalField(max_digits=12, decimal_places=9, null=True, blank=True)
+    lat_awal = models.DecimalField(max_digits=25, decimal_places=20, null=True, blank=True)
+    lon_awal = models.DecimalField(max_digits=25, decimal_places=20, null=True, blank=True)
+    lat_akhir = models.DecimalField(max_digits=25, decimal_places=20, null=True, blank=True)
+    lon_akhir = models.DecimalField(max_digits=25, decimal_places=20, null=True, blank=True)
     titik_awal = models.CharField(max_length=100, null=True, blank=True, help_text="Label titik awal (contoh: Titik 1)")
     titik_akhir = models.CharField(max_length=100, null=True, blank=True, help_text="Label titik akhir (contoh: Titik 2)")
     nama_segmen = models.CharField(max_length=255, null=True, blank=True, help_text="Nama segmen, bisa diubah dinamis")
@@ -386,43 +386,136 @@ class Kecelakaan(models.Model):
         # Otomatis assign segmen jalan terdekat
         if self.latitude and self.longitude and not self.segmen_jalan:
             self.find_closest_segment()
+            # Jika find_closest_segment berhasil assign, simpan perubahan
+            if self.segmen_jalan:
+                super().save(update_fields=['segmen_jalan'])
     
     def find_closest_segment(self):
-        """Temukan segmen jalan terdekat berdasarkan lat/lon menggunakan geodesic distance"""
-        from geopy.distance import geodesic
+        """
+        Temukan segmen jalan di mana titik kecelakaan berada TEPAT DI ANTARA
+        titik awal dan titik akhir segmen. Menggunakan proyeksi perpendicular
+        dari titik ke garis segmen untuk presisi maksimal.
         
-        accident_point = (float(self.latitude), float(self.longitude))
+        Algoritma:
+        1. Cek apakah titik ada dalam bounding box segmen
+        2. Hitung jarak perpendicular dari titik ke garis segmen
+        3. Jika jarak <= tolerance, assign ke segmen tersebut
+        """
+        import math
         
-        min_distance = float('inf')
-        closest_segmen = None
+        accident_lat = float(self.latitude)
+        accident_lon = float(self.longitude)
         
-        # Iterasi semua segmen untuk hitung jarak
+        # Tolerance untuk jarak perpendicular: ~50 meter
+        tolerance_km = 0.050
+        
+        best_match = None
+        smallest_distance = float('inf')
+        
+        # Iterasi semua segmen untuk cek titik
         for segmen in SegmenJalan.objects.select_related('ruas_jalan').all():
             if not (segmen.lat_awal and segmen.lon_awal and segmen.lat_akhir and segmen.lon_akhir):
                 continue
             
-            # Hitung jarak ke titik awal segmen
-            start_point = (float(segmen.lat_awal), float(segmen.lon_awal))
-            distance_awal = geodesic(accident_point, start_point).kilometers
+            s_lat_awal = float(segmen.lat_awal)
+            s_lon_awal = float(segmen.lon_awal)
+            s_lat_akhir = float(segmen.lat_akhir)
+            s_lon_akhir = float(segmen.lon_akhir)
             
-            # Hitung jarak ke titik akhir segmen
-            end_point = (float(segmen.lat_akhir), float(segmen.lon_akhir))
-            distance_akhir = geodesic(accident_point, end_point).kilometers
+            # 1. Cek bounding box dulu (quick check)
+            buffer = 0.001  # ~111 meter
+            min_lat = min(s_lat_awal, s_lat_akhir) - buffer
+            max_lat = max(s_lat_awal, s_lat_akhir) + buffer
+            min_lon = min(s_lon_awal, s_lon_akhir) - buffer
+            max_lon = max(s_lon_awal, s_lon_akhir) + buffer
             
-            # Gunakan jarak minimum ke salah satu titik
-            distance = min(distance_awal, distance_akhir)
+            if not (min_lat <= accident_lat <= max_lat and min_lon <= accident_lon <= max_lon):
+                continue
             
-            if distance < min_distance:
-                min_distance = distance
-                closest_segmen = segmen
+            # 2. Hitung jarak perpendicular dari titik ke garis segmen
+            perp_distance = self._calculate_perpendicular_distance(
+                accident_lat, accident_lon,
+                s_lat_awal, s_lon_awal,
+                s_lat_akhir, s_lon_akhir
+            )
+            
+            # 3. Jika jarak perpendicular <= tolerance, ini adalah match
+            if perp_distance is not None and perp_distance <= tolerance_km:
+                if perp_distance < smallest_distance:
+                    smallest_distance = perp_distance
+                    best_match = segmen
         
-        # Assign jika ditemukan segmen terdekat (threshold: 5 km)
-        if closest_segmen and min_distance <= 5.0:
-            self.segmen_jalan = closest_segmen
-            print(f"✓ Assigned Kecelakaan {self.id} to {closest_segmen.nama_segmen} (distance: {min_distance:.3f} km)")
-            super().save(update_fields=['segmen_jalan'])
-        elif not closest_segmen and min_distance > 5.0:
-            print(f"⚠ No segment found within 5 km threshold for Kecelakaan {self.id} (min: {min_distance:.3f} km)")
+        # Assign ke segmen terbaik jika ada match (tanpa save, dibiarkan parent save handle)
+        if best_match:
+            self.segmen_jalan = best_match
+            print(f"✓ Kecelakaan {self.id} → Segmen '{best_match.nama_segmen}' (jarak perp: {smallest_distance*1000:.1f}m)")
+        else:
+            print(f"⚠ Kecelakaan {self.id}: Tidak ada segmen yang sesuai (tolerance: {tolerance_km*1000:.0f}m)")
+    
+    def _calculate_perpendicular_distance(self, lat, lon, lat1, lon1, lat2, lon2):
+        """
+        Hitung jarak PERPENDICULAR dari titik (lat, lon) ke garis segmen
+        antara titik (lat1, lon1) dan (lat2, lon2).
+        
+        Mengembalikan:
+        - Jarak dalam km jika titik proyeksi ada dalam segmen
+        - None jika titik proyeksi diluar rentang segmen
+        """
+        import math
+        
+        # Convert ke radians
+        lat = math.radians(lat)
+        lon = math.radians(lon)
+        lat1 = math.radians(lat1)
+        lon1 = math.radians(lon1)
+        lat2 = math.radians(lat2)
+        lon2 = math.radians(lon2)
+        
+        R = 6371  # Earth radius in km
+        
+        # Angular distance dari start ke accident
+        dLat = lat - lat1
+        dLon = lon - lon1
+        a = math.sin(dLat/2)**2 + math.cos(lat1) * math.cos(lat) * math.sin(dLon/2)**2
+        c = 2 * math.asin(math.sqrt(a))
+        d13 = R * c
+        
+        # Bearing dari start ke end
+        dLon12 = lon2 - lon1
+        y = math.sin(dLon12) * math.cos(lat2)
+        x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dLon12)
+        theta12 = math.atan2(y, x)
+        
+        # Bearing dari start ke accident
+        dLon13 = lon - lon1
+        y13 = math.sin(dLon13) * math.cos(lat)
+        x13 = math.cos(lat1) * math.sin(lat) - math.sin(lat1) * math.cos(lat) * math.cos(dLon13)
+        theta13 = math.atan2(y13, x13)
+        
+        # Cross-track distance (perpendicular distance)
+        dXt = math.asin(math.sin(d13/R) * math.sin(theta13 - theta12))
+        cross_track_distance_km = abs(dXt * R)
+        
+        # Along-track distance (untuk cek apakah dalam rentang)
+        try:
+            dAt = math.acos(max(-1, min(1, math.cos(d13/R) / abs(math.cos(dXt)))))
+        except:
+            dAt = 0
+        
+        # Jarak dari start ke end
+        dLat12 = lat2 - lat1
+        dLon12_calc = lon2 - lon1
+        a12 = math.sin(dLat12/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dLon12_calc/2)**2
+        c12 = 2 * math.asin(math.sqrt(a12))
+        d12 = R * c12
+        
+        # Cek apakah proyeksi ada dalam rentang segmen
+        # Dengan toleransi kecil di ujung-ujung segmen
+        if -0.05 <= dAt <= (d12 + 0.05):
+            return cross_track_distance_km
+        else:
+            # Proyeksi di luar segmen, jadi tidak cocok
+            return None
     
     @property
     def total_korban(self):
@@ -468,11 +561,11 @@ class RekapSegmen(models.Model):
         # Hapus rekap lama
         RekapSegmen.objects.filter(periode_tahun=tahun).delete()
         
-        # Hitung ulang dari data kecelakaan
+        # Hitung ulang dari data kecelakaan preprocessing
         segmen_list = SegmenJalan.objects.all()
         
         for segmen in segmen_list:
-            kecelakaan_data = Kecelakaan.objects.filter(
+            kecelakaan_data = KecelakaanPreprosesing.objects.filter(
                 segmen_jalan=segmen,
                 tanggal__year=tahun
             ).aggregate(
@@ -540,24 +633,29 @@ class AnalisisZScore(models.Model):
         if tahun is None:
             tahun = timezone.now().year
         
-        # Pastikan rekap sudah update
+        # 1. Pastikan data rekapitulasi kecelakaan sudah diperbarui untuk tahun yang dipilih
         RekapSegmen.update_rekap(tahun)
         
-        # Hapus analisis lama
+        # 2. Hapus data analisis Z-Score lama untuk tahun tersebut agar tidak duplikat
         AnalisisZScore.objects.filter(tahun=tahun).delete()
         
-        # Get all ruas jalan
+        # 3. Ambil semua daftar ruas jalan yang unik
         ruas_jalan_list = RuasJalan.objects.all().distinct()
         
         print(f"\n📊 Calculating Z-Score for {tahun} - Per Ruas Jalan (Dynamic Intervals)")
         print(f"{'='*80}")
         
-        # Hitung Z-Score per ruas jalan
+        # 4. Iterasi setiap ruas jalan untuk menghitung Z-Score secara spesifik per ruas
         for ruas_jalan in ruas_jalan_list:
-            # Get all segments untuk ruas jalan ini
+            # Ambil semua segmen yang termasuk dalam ruas jalan ini
             segments_in_ruas = SegmenJalan.objects.filter(ruas_jalan=ruas_jalan)
             
-            # Get rekap untuk segments di ruas jalan ini untuk tahun tertentu
+            # Hitung statistik dasar (Rata-rata dan Standar Deviasi) dari jumlah kecelakaan di ruas ini
+            # StdDev (σ) mengukur seberapa jauh variasi data kecelakaan dari rata-ratanya
+            
+            # Standar Deviasi digunakan untuk memahami apakah angka kecelakaan di suatu 
+            # ruas jalan cenderung merata di semua segmen, atau hanya menumpuk di titik-titik tertentu saja.
+            # Nilai ini kemudian menjadi pembagi dalam rumus Z-Score untuk menentukan apakah sebuah angka kecelakaan di satu segmen termasuk "ekstrim" (rawan) atau masih dalam batas wajar.
             stats = RekapSegmen.objects.filter(
                 periode_tahun=tahun,
                 segmen_jalan__in=segments_in_ruas
@@ -569,11 +667,13 @@ class AnalisisZScore(models.Model):
             mean = float(stats['mean'] or 0)
             stddev = float(stats['stddev'] or 1)
             
-            # Hindari pembagian dengan 0
+            # Hindari pembagian dengan nol jika standar deviasi tidak terhitung
             if stddev == 0:
                 stddev = 1
             
-            # Pertama, hitung semua z-score untuk mendapatkan z_max dan z_min
+            # 5. Hitung nilai Z-Score mentah untuk setiap segmen
+            # Rumus: Z = (X - μ) / σ
+            # Di mana X = jumlah kecelakaan, μ = rata-rata, σ = standar deviasi
             zscore_dict = {}
             rekap_list = RekapSegmen.objects.filter(
                 periode_tahun=tahun,
@@ -587,7 +687,7 @@ class AnalisisZScore(models.Model):
                     'zscore': zscore
                 }
             
-            # Get Z_max dan Z_min
+            # 6. Tentukan nilai Z_max dan Z_min untuk menentukan rentang interval klasifikasi
             if zscore_dict:
                 zscore_values = [item['zscore'] for item in zscore_dict.values()]
                 z_max = max(zscore_values)
@@ -596,18 +696,19 @@ class AnalisisZScore(models.Model):
                 z_max = 0
                 z_min = 0
             
-            # Hitung interval (I) untuk 5 klasifikasi
+            # 7. Hitung Interval (I) untuk membagi data ke dalam 5 kategori klasifikasi
+            # Rumus Interval: I = (Z_max - Z_min) / Jumlah_Kelas
             num_classifications = 5
             if z_max != z_min:
                 interval = (z_max - z_min) / num_classifications
             else:
-                interval = 1  # Default jika semua nilai sama
+                interval = 1  # Default jika semua nilai Z-Score sama
             
-            # Hitung threshold untuk setiap klasifikasi
-            threshold_1 = z_min + (1 * interval)  # Batas antara sangat_kecil dan kecil
-            threshold_2 = z_min + (2 * interval)  # Batas antara kecil dan sedang
-            threshold_3 = z_min + (3 * interval)  # Batas antara sedang dan besar
-            threshold_4 = z_min + (4 * interval)  # Batas antara besar dan sangat_besar
+            # 8. Tentukan ambang batas (threshold) untuk setiap tingkatan kategori
+            threshold_1 = z_min + (1 * interval)  # Batas Sangat Rendah -> Rendah
+            threshold_2 = z_min + (2 * interval)  # Batas Rendah -> Sedang
+            threshold_3 = z_min + (3 * interval)  # Batas Sedang -> Tinggi
+            threshold_4 = z_min + (4 * interval)  # Batas Tinggi -> Sangat Tinggi
             
             segmen_count = segments_in_ruas.count()
             print(f"\n🛣️ Ruas: {ruas_jalan.nama_ruas} ({segmen_count} segmen)")
@@ -615,12 +716,12 @@ class AnalisisZScore(models.Model):
             print(f"   Z_max: {z_max:.3f}, Z_min: {z_min:.3f}, Interval: {interval:.3f}")
             print(f"   Thresholds: {threshold_1:.3f} | {threshold_2:.3f} | {threshold_3:.3f} | {threshold_4:.3f}")
             
-            # Kategorisasi berdasarkan threshold dinamis
+            # 9. Klasifikasikan setiap segmen ke dalam kategori berdasarkan threshold yang sudah dihitung
             for segmen_id, data in zscore_dict.items():
                 rekap = data['rekap']
                 zscore = data['zscore']
                 
-                # Kategorisasi dinamis
+                # Penentuan kategori secara dinamis
                 if zscore >= threshold_4:
                     kategori = 'sangat_tinggi'
                 elif zscore >= threshold_3:
@@ -632,6 +733,7 @@ class AnalisisZScore(models.Model):
                 else:
                     kategori = 'sangat_rendah'
                 
+                # 10. Simpan hasil analisis Z-Score ke database
                 AnalisisZScore.objects.create(
                     segmen_jalan=rekap.segmen_jalan,
                     nilai_zscore=decimal.Decimal(str(round(zscore, 3))),
@@ -642,6 +744,7 @@ class AnalisisZScore(models.Model):
                 print(f"   ✓ {rekap.segmen_jalan.nama_segmen}: {rekap.jumlah_kecelakaan} accidents → Z={zscore:.3f} ({kategori})")
         
         print(f"\n{'='*80}\n")
+
     
     def get_kategori_display_color(self):
         """Dapatkan warna untuk kategori Z-Score"""
@@ -653,6 +756,206 @@ class AnalisisZScore(models.Model):
             'sangat_rendah': '#388e3c',  # Hijau
         }
         return colors.get(self.kategori, '#999999')
+
+
+class KecelakaanRaw(models.Model):
+    """Model untuk data kecelakaan raw (data mentah dari upload)"""
+    id = models.BigAutoField(primary_key=True)
+    nomor_kecelakaan = models.CharField(max_length=50, null=True, blank=True, help_text='Nomor identitas kecelakaan')
+    tanggal = models.DateField()
+    waktu = models.TimeField()
+    latitude = models.DecimalField(max_digits=30, decimal_places=20)
+    longitude = models.DecimalField(max_digits=30, decimal_places=20)
+    korban_meninggal = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    korban_luka_berat = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    korban_luka_ringan = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    kerugian_materi = models.DecimalField(max_digits=15, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    desa = models.CharField(max_length=100)
+    kecamatan = models.CharField(max_length=100)
+    kabupaten_kota = models.CharField(max_length=100)
+    keterangan = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name_plural = 'Data Kecelakaan Raw'
+        ordering = ['-tanggal', '-waktu']
+    
+    @property
+    def total_korban(self):
+        return self.korban_meninggal + self.korban_luka_berat + self.korban_luka_ringan
+
+    def __str__(self):
+        return f"Raw {self.tanggal} - {self.kecamatan}"
+
+
+class KecelakaanPreprosesing(models.Model):
+    """Model untuk data kecelakaan yang sudah dipreproses (akan diassign ke segmen)"""
+    id = models.BigAutoField(primary_key=True)
+    nomor_kecelakaan = models.CharField(max_length=50, null=True, blank=True, help_text='Nomor identitas kecelakaan')
+    tanggal = models.DateField()
+    waktu = models.TimeField()
+    latitude = models.DecimalField(max_digits=30, decimal_places=20)
+    longitude = models.DecimalField(max_digits=30, decimal_places=20)
+    segmen_jalan = models.ForeignKey(SegmenJalan, on_delete=models.SET_NULL, null=True, blank=True, related_name='kecelakaan_preprosesing')
+    korban_meninggal = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    korban_luka_berat = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    korban_luka_ringan = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    kerugian_materi = models.DecimalField(max_digits=15, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    desa = models.CharField(max_length=100)
+    kecamatan = models.CharField(max_length=100)
+    kabupaten_kota = models.CharField(max_length=100)
+    keterangan = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name_plural = 'Data Kecelakaan Preprocessing'
+        ordering = ['-tanggal', '-waktu']
+    
+    @property
+    def total_korban(self):
+        return self.korban_meninggal + self.korban_luka_berat + self.korban_luka_ringan
+
+    def __str__(self):
+        return f"Preproses {self.tanggal} - {self.kecamatan}"
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        
+        # Otomatis assign segmen jalan terdekat
+        if self.latitude and self.longitude and not self.segmen_jalan:
+            self.find_closest_segment()
+            # Jika find_closest_segment berhasil assign, simpan perubahan
+            if self.segmen_jalan:
+                super().save(update_fields=['segmen_jalan'])
+    
+    def find_closest_segment(self):
+        """
+        Temukan segmen jalan di mana titik kecelakaan berada TEPAT DI ANTARA
+        titik awal dan titik akhir segmen. Menggunakan proyeksi perpendicular
+        dari titik ke garis segmen untuk presisi maksimal.
+        
+        Algoritma:
+        1. Cek apakah titik ada dalam bounding box segmen
+        2. Hitung jarak perpendicular dari titik ke garis segmen
+        3. Jika jarak <= tolerance, assign ke segmen tersebut
+        """
+        import math
+        
+        accident_lat = float(self.latitude)
+        accident_lon = float(self.longitude)
+        
+        # Tolerance untuk jarak perpendicular: ~50 meter
+        tolerance_km = 0.050
+        
+        best_match = None
+        smallest_distance = float('inf')
+        
+        # Iterasi semua segmen untuk cek titik
+        for segmen in SegmenJalan.objects.select_related('ruas_jalan').all():
+            if not (segmen.lat_awal and segmen.lon_awal and segmen.lat_akhir and segmen.lon_akhir):
+                continue
+            
+            s_lat_awal = float(segmen.lat_awal)
+            s_lon_awal = float(segmen.lon_awal)
+            s_lat_akhir = float(segmen.lat_akhir)
+            s_lon_akhir = float(segmen.lon_akhir)
+            
+            # 1. Cek bounding box dulu (quick check)
+            buffer = 0.001  # ~111 meter
+            min_lat = min(s_lat_awal, s_lat_akhir) - buffer
+            max_lat = max(s_lat_awal, s_lat_akhir) + buffer
+            min_lon = min(s_lon_awal, s_lon_akhir) - buffer
+            max_lon = max(s_lon_awal, s_lon_akhir) + buffer
+            
+            if not (min_lat <= accident_lat <= max_lat and min_lon <= accident_lon <= max_lon):
+                continue
+            
+            # 2. Hitung jarak perpendicular dari titik ke garis segmen
+            perp_distance = self._calculate_perpendicular_distance(
+                accident_lat, accident_lon,
+                s_lat_awal, s_lon_awal,
+                s_lat_akhir, s_lon_akhir
+            )
+            
+            # 3. Jika jarak perpendicular <= tolerance, ini adalah match
+            if perp_distance is not None and perp_distance <= tolerance_km:
+                if perp_distance < smallest_distance:
+                    smallest_distance = perp_distance
+                    best_match = segmen
+        
+        # Assign ke segmen terbaik jika ada match (tanpa save, dibiarkan parent save handle)
+        if best_match:
+            self.segmen_jalan = best_match
+            print(f"✓ KecelakaanPreprosesing {self.id} → Segmen '{best_match.nama_segmen}' (jarak perp: {smallest_distance*1000:.1f}m)")
+        else:
+            print(f"⚠ KecelakaanPreprosesing {self.id}: Tidak ada segmen yang sesuai (tolerance: {tolerance_km*1000:.0f}m)")
+    
+    def _calculate_perpendicular_distance(self, lat, lon, lat1, lon1, lat2, lon2):
+        """
+        Hitung jarak PERPENDICULAR dari titik (lat, lon) ke garis segmen
+        antara titik (lat1, lon1) dan (lat2, lon2).
+        
+        Mengembalikan:
+        - Jarak dalam km jika titik proyeksi ada dalam segmen
+        - None jika titik proyeksi diluar rentang segmen
+        """
+        import math
+        
+        # Convert ke radians
+        lat = math.radians(lat)
+        lon = math.radians(lon)
+        lat1 = math.radians(lat1)
+        lon1 = math.radians(lon1)
+        lat2 = math.radians(lat2)
+        lon2 = math.radians(lon2)
+        
+        R = 6371  # Earth radius in km
+        
+        # Angular distance dari start ke accident
+        dLat = lat - lat1
+        dLon = lon - lon1
+        a = math.sin(dLat/2)**2 + math.cos(lat1) * math.cos(lat) * math.sin(dLon/2)**2
+        c = 2 * math.asin(math.sqrt(a))
+        d13 = R * c
+        
+        # Bearing dari start ke end
+        dLon12 = lon2 - lon1
+        y = math.sin(dLon12) * math.cos(lat2)
+        x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dLon12)
+        theta12 = math.atan2(y, x)
+        
+        # Bearing dari start ke accident
+        dLon13 = lon - lon1
+        y13 = math.sin(dLon13) * math.cos(lat)
+        x13 = math.cos(lat1) * math.sin(lat) - math.sin(lat1) * math.cos(lat) * math.cos(dLon13)
+        theta13 = math.atan2(y13, x13)
+        
+        # Cross-track distance (perpendicular distance)
+        dXt = math.asin(math.sin(d13/R) * math.sin(theta13 - theta12))
+        cross_track_distance_km = abs(dXt * R)
+        
+        # Along-track distance (untuk cek apakah dalam rentang)
+        try:
+            dAt = math.acos(max(-1, min(1, math.cos(d13/R) / abs(math.cos(dXt)))))
+        except:
+            dAt = 0
+        
+        # Jarak dari start ke end
+        dLat12 = lat2 - lat1
+        dLon12_calc = lon2 - lon1
+        a12 = math.sin(dLat12/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dLon12_calc/2)**2
+        c12 = 2 * math.asin(math.sqrt(a12))
+        d12 = R * c12
+        
+        # Cek apakah proyeksi ada dalam rentang segmen
+        # Dengan toleransi kecil di ujung-ujung segmen
+        if -0.05 <= dAt <= (d12 + 0.05):
+            return cross_track_distance_km
+        else:
+            # Proyeksi di luar segmen, jadi tidak cocok
+            return None
     
     #=========================K-Means Location Models=========================
 class Kota(models.Model):

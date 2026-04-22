@@ -34,24 +34,17 @@ from django.shortcuts import render, redirect
 from io import StringIO
 from django.shortcuts import redirect
 
-
-
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import silhouette_score
 
-
-
-
-from .models import RuasJalan, SegmenJalan, Kecelakaan, RekapSegmen, AnalisisZScore
+from .models import RuasJalan, SegmenJalan, Kecelakaan, RekapSegmen, AnalisisZScore, KecelakaanRaw, KecelakaanPreprosesing
 from .forms import (
     UserRegistrationForm, RuasJalanForm, SegmenJalanForm, 
-    KecelakaanForm, RekapSegmenForm
+    KecelakaanForm, RekapSegmenForm, UploadKecelakaanRawForm, UploadKecelakaanPreprosesForm
 )
-
-
 # Helper function
 def is_admin(user):
     return user.is_staff or user.is_superuser
@@ -110,8 +103,8 @@ def homepage_view(request):
     context = {
         'total_ruas': RuasJalan.objects.count(),
         'total_segmen': SegmenJalan.objects.count(),
-        'total_kecelakaan': Kecelakaan.objects.count(),
-        'total_korban': Kecelakaan.objects.aggregate(
+        'total_kecelakaan': KecelakaanPreprosesing.objects.count(),
+        'total_korban': KecelakaanPreprosesing.objects.aggregate(
             total=Sum('korban_meninggal') + Sum('korban_luka_berat') + Sum('korban_luka_ringan')
         )['total'] or 0,
     }
@@ -125,15 +118,15 @@ def dashboard_view(request):
     context = {
         'total_ruas': RuasJalan.objects.count(),
         'total_segmen': SegmenJalan.objects.count(),
-        'total_kecelakaan': Kecelakaan.objects.count(),
-        'total_korban': Kecelakaan.objects.aggregate(
+        'total_kecelakaan': KecelakaanPreprosesing.objects.count(),
+        'total_korban': KecelakaanPreprosesing.objects.aggregate(
             total=Sum('korban_meninggal') + Sum('korban_luka_berat') + Sum('korban_luka_ringan')
         )['total'] or 0,
     }
     
     # Statistik tahun ini
     tahun_ini = timezone.now().year
-    context['kecelakaan_tahun_ini'] = Kecelakaan.objects.filter(
+    context['kecelakaan_tahun_ini'] = KecelakaanPreprosesing.objects.filter(
         tanggal__year=tahun_ini
     ).count()
     
@@ -298,8 +291,6 @@ def kecelakaan_detail(request, pk):
         'is_admin': is_admin(request.user)
     }
     return render(request, 'coreapp/kecelakaan/detail.html', context)
-
-
 @login_required(login_url='login')
 @user_passes_test(is_admin)
 def kecelakaan_update(request, pk):
@@ -330,9 +321,8 @@ def kecelakaan_delete(request, pk):
         messages.success(request, 'Data kecelakaan berhasil dihapus.')
         return redirect('kecelakaan_list')
     
-    context = {'kecelakaan': kecelakaan}
+    context = {'kecelakaan': kecelakaan, 'cancel_url': 'kecelakaan_list'}
     return render(request, 'coreapp/kecelakaan/confirm_delete.html', context)
-
 
 # Map Views
 @login_required(login_url='login')
@@ -420,25 +410,24 @@ def api_segmen_geojson(request):
     
     for segmen in segmen_list:
         # Hitung jumlah kecelakaan di segmen ini untuk tahun tertentu
-        accident_count = Kecelakaan.objects.filter(
+        accident_count = KecelakaanPreprosesing.objects.filter(
             segmen_jalan=segmen,
             tanggal__year=tahun
         ).count()
         
-        # Cari analisis Z-Score
-        try:
-            analisis = AnalisisZScore.objects.get(segmen_jalan=segmen, tahun=tahun)
-            kategori = analisis.kategori
-            zscore = float(analisis.nilai_zscore)
-            color = analisis.get_kategori_display_color()
-        except AnalisisZScore.DoesNotExist:
-            # Jika tidak ada Z-Score untuk tahun ini
-            if accident_count == 0:
-                # Tidak ada kecelakaan → gunakan biru (AMAN)
-                kategori = 'aman'
-                zscore = -2.0
-                color = '#1976d2'  # Blue
-            else:
+        # PENTING: Jika tidak ada kecelakaan, selalu set AMAN (ignore Z-Score jika ada)
+        if accident_count == 0:
+            kategori = 'aman'
+            zscore = -2.0
+            color = '#1976d2'  # Blue
+        else:
+            # Ada kecelakaan - cari analisis Z-Score
+            try:
+                analisis = AnalisisZScore.objects.get(segmen_jalan=segmen, tahun=tahun)
+                kategori = analisis.kategori
+                zscore = float(analisis.nilai_zscore)
+                color = analisis.get_kategori_display_color()
+            except AnalisisZScore.DoesNotExist:
                 # Ada kecelakaan tapi belum ada Z-Score → coba hitung
                 try:
                     AnalisisZScore.calculate_zscore(tahun)
@@ -756,7 +745,7 @@ def api_kecelakaan_geojson(request):
     """API untuk mendapatkan GeoJSON kecelakaan"""
     tahun = request.GET.get('tahun', timezone.now().year)
     
-    kecelakaan = Kecelakaan.objects.filter(
+    kecelakaan = KecelakaanPreprosesing.objects.filter(
         tanggal__year=tahun,
         latitude__isnull=False,
         longitude__isnull=False
@@ -895,6 +884,51 @@ def api_geoapify_reverse_geocoding(request):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 
+def api_data_update_check(request):
+    """
+    API untuk mengecek apakah ada update data terbaru
+    Mengembalikan timestamp dari last update KecelakaanPreprosesing
+    Frontend bisa compare dengan last known timestamp untuk trigger refresh
+    """
+    from django.db.models import Max
+    
+    tahun = request.GET.get('tahun')
+    if not tahun:
+        tahun = timezone.now().year
+    else:
+        try:
+            tahun = int(tahun)
+        except (ValueError, TypeError):
+            tahun = timezone.now().year
+    
+    try:
+        # Get latest updated_at from KecelakaanPreprosesing for this year
+        latest_kecelakaan = KecelakaanPreprosesing.objects.filter(
+            tanggal__year=tahun
+        ).aggregate(
+            latest_update=Max('updated_at'),
+            latest_create=Max('created_at')
+        )
+        
+        # Get latest update timestamp
+        latest_update = latest_kecelakaan['latest_update'] or latest_kecelakaan['latest_create']
+        
+        # Get latest AnalisisZScore calculation timestamp
+        latest_zscore = AnalisisZScore.objects.filter(tahun=tahun).values('id').last()
+        
+        return JsonResponse({
+            'status': 'success',
+            'tahun': tahun,
+            'last_data_update': latest_update.timestamp() if latest_update else None,
+            'has_zscore': latest_zscore is not None
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+
 @api_view(['GET'])
 @login_required(login_url='login')
 def api_analisis_statistik(request):
@@ -959,10 +993,20 @@ def segmen_kecelakaan_detail(request, segmen_id):
     segmen = get_object_or_404(SegmenJalan, pk=segmen_id)
     tahun = request.GET.get('tahun', timezone.now().year)
     
-    kecelakaan = Kecelakaan.objects.filter(
+    kecelakaan = KecelakaanPreprosesing.objects.filter(
         segmen_jalan=segmen,
         tanggal__year=tahun
     )
+    
+    # Calculate totals for the summary section
+    rekap = kecelakaan.aggregate(
+        total_meninggal=Sum('korban_meninggal'),
+        total_luka_berat=Sum('korban_luka_berat'),
+        total_luka_ringan=Sum('korban_luka_ringan')
+    )
+    
+    total_meninggal = rekap['total_meninggal'] or 0
+    total_luka = (rekap['total_luka_berat'] or 0) + (rekap['total_luka_ringan'] or 0)
     
     try:
         analisis = AnalisisZScore.objects.get(segmen_jalan=segmen, tahun=tahun)
@@ -973,10 +1017,52 @@ def segmen_kecelakaan_detail(request, segmen_id):
         'segmen': segmen,
         'kecelakaan': kecelakaan,
         'analisis': analisis,
-        'tahun': tahun
+        'tahun': tahun,
+        'tahun_options': range(2020, timezone.now().year + 1),
+        'total_meninggal': total_meninggal,
+        'total_luka': total_luka,
+        'is_admin': is_admin(request.user)
     }
     
     return render(request, 'coreapp/analisis/segmen_detail.html', context)
+
+
+@login_required(login_url='login')
+def kecelakaan_raw_detail(request, pk):
+    """Detail kecelakaan raw"""
+    kecelakaan = get_object_or_404(KecelakaanRaw, pk=pk)
+    return render(request, 'coreapp/kecelakaan/detail.html', {'kecelakaan': kecelakaan, 'type': 'Raw'})
+
+
+@login_required(login_url='login')
+def kecelakaan_preprosesing_detail(request, pk):
+    """Detail kecelakaan preprocessing"""
+    kecelakaan = get_object_or_404(KecelakaanPreprosesing, pk=pk)
+    return render(request, 'coreapp/kecelakaan/detail.html', {'kecelakaan': kecelakaan, 'type': 'Preprocessing'})
+
+
+@login_required(login_url='login')
+@user_passes_test(is_admin)
+def kecelakaan_raw_delete(request, pk):
+    """Hapus data kecelakaan raw"""
+    kecelakaan = get_object_or_404(KecelakaanRaw, pk=pk)
+    if request.method == 'POST':
+        kecelakaan.delete()
+        messages.success(request, 'Data kecelakaan raw berhasil dihapus.')
+        return redirect('kecelakaan_raw_list')
+    return render(request, 'coreapp/kecelakaan/confirm_delete.html', {'kecelakaan': kecelakaan, 'type': 'Raw', 'cancel_url': 'kecelakaan_raw_list'})
+
+
+@login_required(login_url='login')
+@user_passes_test(is_admin)
+def kecelakaan_preprosesing_delete(request, pk):
+    """Hapus data kecelakaan preprocessing"""
+    kecelakaan = get_object_or_404(KecelakaanPreprosesing, pk=pk)
+    if request.method == 'POST':
+        kecelakaan.delete()
+        messages.success(request, 'Data kecelakaan preprocessing berhasil dihapus.')
+        return redirect('kecelakaan_preprosesing_list')
+    return render(request, 'coreapp/kecelakaan/confirm_delete.html', {'kecelakaan': kecelakaan, 'type': 'Preprocessing', 'cancel_url': 'kecelakaan_preprosesing_list'})
 
 
 # Cluster K-Means Views
@@ -1820,5 +1906,245 @@ def reset_ahc(request):
 
     for key in keys_to_clear:
         request.session.pop(key, None)
+
+
+# ======================== Upload Kecelakaan Views ========================
+
+@login_required(login_url='login')
+@user_passes_test(is_admin)
+def upload_kecelakaan_raw(request):
+    """Upload data kecelakaan raw dari Excel/CSV"""
+    if request.method == 'POST':
+        form = UploadKecelakaanRawForm(request.POST, request.FILES)
+        if form.is_valid():
+            file = request.FILES['file']
+            try:
+                # Parse Excel/CSV file
+                if file.name.endswith('.csv'):
+                    df = pd.read_csv(file, encoding='utf-8-sig')
+                else:
+                    df = pd.read_excel(file)
+                
+                # Validasi kolom yang diperlukan
+                required_columns = ['tanggal', 'waktu', 'latitude', 'longitude', 
+                                   'korban_meninggal', 'korban_luka_berat', 
+                                   'korban_luka_ringan', 'kerugian_materi', 
+                                   'desa', 'kecamatan', 'kabupaten_kota', 'keterangan']
+                
+                missing_columns = [col for col in required_columns if col not in df.columns]
+                if missing_columns:
+                    messages.error(request, f'Kolom yang hilang: {", ".join(missing_columns)}')
+                    return render(request, 'coreapp/kecelakaan/upload_raw.html', {'form': form})
+                
+                # Check apakah nomor_kecelakaan ada (opsional)
+                has_nomor = 'nomor_kecelakaan' in df.columns
+                
+                # Import data
+                count = 0
+                errors = []
+                for idx, row in df.iterrows():
+                    try:
+                        # Parse waktu - handle berbagai format
+                        waktu_obj = None
+                        if pd.notna(row['waktu']):
+                            waktu_val = row['waktu']
+                            # Jika sudah dalam format time object
+                            if isinstance(waktu_val, type(pd.Timestamp.now().time())):
+                                waktu_obj = waktu_val
+                            # Jika string
+                            elif isinstance(waktu_val, str):
+                                try:
+                                    waktu_obj = pd.to_datetime(waktu_val).time()
+                                except:
+                                    raise ValueError(f"Format waktu '{waktu_val}' tidak valid (gunakan HH:MM:SS)")
+                            # Jika Timestamp/datetime
+                            else:
+                                try:
+                                    waktu_obj = pd.to_datetime(waktu_val).time()
+                                except:
+                                    raise ValueError(f"Kolom waktu berisi tanggal bukan jam. Gunakan format HH:MM:SS")
+                        
+                        # Build create dict with nomor_kecelakaan jika available
+                        create_data = {
+                            'tanggal': pd.to_datetime(row['tanggal']),
+                            'waktu': waktu_obj,
+                            'latitude': float(row['latitude']),
+                            'longitude': float(row['longitude']),
+                            'korban_meninggal': int(row['korban_meninggal']) if pd.notna(row['korban_meninggal']) else 0,
+                            'korban_luka_berat': int(row['korban_luka_berat']) if pd.notna(row['korban_luka_berat']) else 0,
+                            'korban_luka_ringan': int(row['korban_luka_ringan']) if pd.notna(row['korban_luka_ringan']) else 0,
+                            'kerugian_materi': float(row['kerugian_materi']) if pd.notna(row['kerugian_materi']) else 0,
+                            'desa': str(row['desa']) if pd.notna(row['desa']) else '',
+                            'kecamatan': str(row['kecamatan']) if pd.notna(row['kecamatan']) else '',
+                            'kabupaten_kota': str(row['kabupaten_kota']) if pd.notna(row['kabupaten_kota']) else '',
+                            'keterangan': str(row['keterangan']) if pd.notna(row['keterangan']) else ''
+                        }
+                        
+                        # Tambah nomor_kecelakaan jika ada di file
+                        if has_nomor and pd.notna(row['nomor_kecelakaan']):
+                            create_data['nomor_kecelakaan'] = str(row['nomor_kecelakaan']).strip()
+                        
+                        KecelakaanRaw.objects.create(**create_data)
+                        count += 1
+                    except Exception as e:
+                        errors.append(f"Baris {idx + 2}: {str(e)}")
+                
+                if errors and len(errors) <= 10:
+                    messages.warning(request, f'Berhasil import {count} data, tapi ada beberapa error:\n' + '\n'.join(errors[:5]))
+                else:
+                    messages.success(request, f'Berhasil import {count} data kecelakaan raw.')
+                
+                return redirect('kecelakaan_raw_list')
+            except Exception as e:
+                messages.error(request, f'Error saat memproses file: {str(e)}')
+    else:
+        form = UploadKecelakaanRawForm()
+    
+    return render(request, 'coreapp/kecelakaan/upload_raw.html', {'form': form})
+
+
+@login_required(login_url='login')
+def kecelakaan_raw_list(request):
+    """Daftar data kecelakaan raw"""
+    kecelakaan = KecelakaanRaw.objects.all()
+    
+    if request.GET.get('search'):
+        search = request.GET.get('search')
+        kecelakaan = kecelakaan.filter(
+            Q(desa__icontains=search) |
+            Q(kecamatan__icontains=search) |
+            Q(kabupaten_kota__icontains=search)
+        )
+    
+    if request.GET.get('tahun'):
+        tahun = request.GET.get('tahun')
+        kecelakaan = kecelakaan.filter(tanggal__year=tahun)
+    
+    context = {
+        'kecelakaan': kecelakaan[:100],
+        'is_admin': is_admin(request.user),
+        'tahun_options': range(2020, timezone.now().year + 1),
+        'title': 'Data Kecelakaan Raw'
+    }
+    return render(request, 'coreapp/kecelakaan/list_raw.html', context)
+
+
+@login_required(login_url='login')
+@user_passes_test(is_admin)
+def upload_kecelakaan_preprosesing(request):
+    """Upload data kecelakaan preprocessing dari Excel/CSV"""
+    if request.method == 'POST':
+        form = UploadKecelakaanPreprosesForm(request.POST, request.FILES)
+        if form.is_valid():
+            file = request.FILES['file']
+            try:
+                # Parse Excel/CSV file
+                if file.name.endswith('.csv'):
+                    df = pd.read_csv(file, encoding='utf-8-sig')
+                else:
+                    df = pd.read_excel(file)
+                
+                # Validasi kolom yang diperlukan
+                required_columns = ['tanggal', 'waktu', 'latitude', 'longitude', 
+                                   'korban_meninggal', 'korban_luka_berat', 
+                                   'korban_luka_ringan', 'kerugian_materi', 
+                                   'desa', 'kecamatan', 'kabupaten_kota', 'keterangan']
+                
+                missing_columns = [col for col in required_columns if col not in df.columns]
+                if missing_columns:
+                    messages.error(request, f'Kolom yang hilang: {", ".join(missing_columns)}')
+                    return render(request, 'coreapp/kecelakaan/upload_preprosesing.html', {'form': form})
+                
+                # Check apakah nomor_kecelakaan ada (opsional)
+                has_nomor = 'nomor_kecelakaan' in df.columns
+                
+                # Import data
+                count = 0
+                errors = []
+                for idx, row in df.iterrows():
+                    try:
+                        # Parse waktu - handle berbagai format
+                        waktu_obj = None
+                        if pd.notna(row['waktu']):
+                            waktu_val = row['waktu']
+                            # Jika sudah dalam format time object
+                            if isinstance(waktu_val, type(pd.Timestamp.now().time())):
+                                waktu_obj = waktu_val
+                            # Jika string
+                            elif isinstance(waktu_val, str):
+                                try:
+                                    waktu_obj = pd.to_datetime(waktu_val).time()
+                                except:
+                                    raise ValueError(f"Format waktu '{waktu_val}' tidak valid (gunakan HH:MM:SS)")
+                            # Jika Timestamp/datetime
+                            else:
+                                try:
+                                    waktu_obj = pd.to_datetime(waktu_val).time()
+                                except:
+                                    raise ValueError(f"Kolom waktu berisi tanggal bukan jam. Gunakan format HH:MM:SS")
+                        
+                        # Build create dict with nomor_kecelakaan jika available
+                        create_data = {
+                            'tanggal': pd.to_datetime(row['tanggal']),
+                            'waktu': waktu_obj,
+                            'latitude': float(row['latitude']),
+                            'longitude': float(row['longitude']),
+                            'korban_meninggal': int(row['korban_meninggal']) if pd.notna(row['korban_meninggal']) else 0,
+                            'korban_luka_berat': int(row['korban_luka_berat']) if pd.notna(row['korban_luka_berat']) else 0,
+                            'korban_luka_ringan': int(row['korban_luka_ringan']) if pd.notna(row['korban_luka_ringan']) else 0,
+                            'kerugian_materi': float(row['kerugian_materi']) if pd.notna(row['kerugian_materi']) else 0,
+                            'desa': str(row['desa']) if pd.notna(row['desa']) else '',
+                            'kecamatan': str(row['kecamatan']) if pd.notna(row['kecamatan']) else '',
+                            'kabupaten_kota': str(row['kabupaten_kota']) if pd.notna(row['kabupaten_kota']) else '',
+                            'keterangan': str(row['keterangan']) if pd.notna(row['keterangan']) else ''
+                        }
+                        
+                        # Tambah nomor_kecelakaan jika ada di file
+                        if has_nomor and pd.notna(row['nomor_kecelakaan']):
+                            create_data['nomor_kecelakaan'] = str(row['nomor_kecelakaan']).strip()
+                        
+                        KecelakaanPreprosesing.objects.create(**create_data)
+                        count += 1
+                    except Exception as e:
+                        errors.append(f"Baris {idx + 2}: {str(e)}")
+                
+                if errors and len(errors) <= 10:
+                    messages.warning(request, f'Berhasil import {count} data, tapi ada beberapa error:\n' + '\n'.join(errors[:5]))
+                else:
+                    messages.success(request, f'Berhasil import {count} data kecelakaan preprocessing.')
+                
+                return redirect('kecelakaan_preprosesing_list')
+            except Exception as e:
+                messages.error(request, f'Error saat memproses file: {str(e)}')
+    else:
+        form = UploadKecelakaanPreprosesForm()
+    
+    return render(request, 'coreapp/kecelakaan/upload_preprosesing.html', {'form': form})
+
+
+@login_required(login_url='login')
+def kecelakaan_preprosesing_list(request):
+    """Daftar data kecelakaan preprocessing"""
+    kecelakaan = KecelakaanPreprosesing.objects.all()
+    
+    if request.GET.get('search'):
+        search = request.GET.get('search')
+        kecelakaan = kecelakaan.filter(
+            Q(desa__icontains=search) |
+            Q(kecamatan__icontains=search) |
+            Q(kabupaten_kota__icontains=search)
+        )
+    
+    if request.GET.get('tahun'):
+        tahun = request.GET.get('tahun')
+        kecelakaan = kecelakaan.filter(tanggal__year=tahun)
+    
+    context = {
+        'kecelakaan': kecelakaan[:100],
+        'is_admin': is_admin(request.user),
+        'tahun_options': range(2020, timezone.now().year + 1),
+        'title': 'Data Kecelakaan Preprosesing'
+    }
+    return render(request, 'coreapp/kecelakaan/list_preprosesing.html', context)
 
     return redirect('ahc_proses')
