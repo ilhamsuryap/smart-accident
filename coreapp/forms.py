@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
-from .models import RuasJalan, SegmenJalan, Kecelakaan, RekapSegmen, AnalisisZScore
+from .models import RuasJalan, SegmenJalan, Kecelakaan, RekapSegmen, AnalisisZScore, KecelakaanRaw, KecelakaanPreprosesing
 
 
 class UserRegistrationForm(UserCreationForm):
@@ -75,7 +75,6 @@ class SegmenJalanForm(forms.ModelForm):
                 'placeholder': 'Km akhir'
             }),
         }
-    
     def clean(self):
         cleaned_data = super().clean()
         km_awal = cleaned_data.get('km_awal')
@@ -172,3 +171,29 @@ class RekapSegmenForm(forms.ModelForm):
                 'max': '2100'
             }),
         }
+
+
+class UploadKecelakaanRawForm(forms.Form):
+    """Form untuk upload data kecelakaan raw dari Excel/CSV"""
+    file = forms.FileField(
+        label='Upload File',
+        help_text='Format: Excel (.xlsx, .xls) atau CSV (.csv)',
+        widget=forms.FileInput(attrs={
+            'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500',
+            'accept': '.xlsx,.xls,.csv',
+            'id': 'id_file'
+        })
+    )
+
+
+class UploadKecelakaanPreprosesForm(forms.Form):
+    """Form untuk upload data kecelakaan preprocessing dari Excel/CSV"""
+    file = forms.FileField(
+        label='Upload File',
+        help_text='Format: Excel (.xlsx, .xls) atau CSV (.csv)',
+        widget=forms.FileInput(attrs={
+            'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500',
+            'accept': '.xlsx,.xls,.csv',
+            'id': 'id_file'
+        })
+    )
