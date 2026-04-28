@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="max-w-7xl mx-auto pt-6 pb-10">
+
+    <!-- TITLE -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">
+                Manajemen Data K-Means
+            </h1>
+            <p class="text-gray-500 mt-1">
+                Kelola data mentah kecelakaan untuk proses clustering
+            </p>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="document.getElementById('apiKeyModal').classList.remove('hidden')" class="bg-gray-800 hover:bg-black text-white px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 mr-8">
+                <i class="fas fa-key"></i> API Key
+            </button>
+            <button onclick="document.getElementById('importModal').classList.remove('hidden')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition flex items-center gap-2">
+                <i class="fas fa-file-excel"></i> Import Excel
+            </button>
+            <a href="{% url 'kmeans_data_tambah' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition flex items-center gap-2">
+                <i class="fas fa-plus"></i> Tambah Data
+            </a>
+        </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <p class="text-sm text-gray-500 font-medium">Total Data</p>
+            <p class="text-3xl font-bold text-blue-600">{{ total_data }}</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer" onclick="openDuplicateModal()">
+            <p class="text-sm text-gray-500 font-medium">Duplikasi Data</p>
+            <div class="flex items-end justify-between">
+                <p class="text-3xl font-bold text-orange-500">{{ jumlah_duplikat }}</p>
+                {% if jumlah_duplikat > 0 %}
+                <span class="text-xs text-orange-400 underline">Lihat Detail</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-500 font-medium">Hapus Semua</p>
+                <p class="text-xs text-red-400">Tindakan ini permanen</p>
+            </div>
+            <button onclick="showConfirmModal('Hapus Semua Data', 'PERINGATAN! Anda akan menghapus SELURUH data di database. Tindakan ini permanen dan tidak dapat dibatalkan.', '{% url 'kmeans_data_hapus_semua' %}')" class="text-red-600 hover:bg-red-50 p-2 rounded-lg transition">
+                <i class="fas fa-trash-alt text-xl"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left border-collapse">
+                <thead class="bg-gray-50 text-gray-700 border-b">
+                    <tr>
+                        <th class="px-6 py-4 font-bold">No</th>
+                        <th class="px-6 py-4 font-bold">Umur</th>
+                        <th class="px-6 py-4 font-bold">TKP</th>
+                        <th class="px-6 py-4 font-bold">Penyebab</th>
+                        <th class="px-6 py-4 font-bold">Hari</th>
+                        <th class="px-6 py-4 font-bold">Tanggal</th>
+                        <th class="px-6 py-4 font-bold">Jam</th>
+                        <th class="px-6 py-4 font-bold">Kendaraan</th>
+                        <th class="px-6 py-4 font-bold">Tipe</th>
+                        <th class="px-6 py-4 font-bold">Kerugian</th>
+                        <th class="px-6 py-4 font-bold text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for data in data_list %}
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-6 py-4">{{ data_list.start_index|add:forloop.counter0 }}</td>
+                        <td class="px-6 py-4 font-medium">{{ data.umur }}</td>
+                        <td class="px-6 py-4">{{ data.tkp }}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 bg-gray-100 rounded text-xs">{{ data.penyebab }}</span>
+                        </td>
+                        <td class="px-6 py-4">{{ data.hari }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">{{ data.tanggal|date:"d F Y" }}</td>
+                        <td class="px-6 py-4">{{ data.jam }}</td>
+                        <td class="px-6 py-4">{{ data.jenis_kendaraan }}</td>
+                        <td class="px-6 py-4">{{ data.tipe_kendaraan }}</td>
+                        <td class="px-6 py-4 text-red-600 font-medium">Rp {{ data.kerugian_material|floatformat:0 }}</td>
+                        <td class="px-6 py-4 text-center">
+                            <button onclick="showConfirmModal('Hapus Data', 'Apakah Anda yakin ingin menghapus data ini?', '{% url 'kmeans_data_hapus' data.pk %}')" class="text-red-500 hover:text-red-700 transition">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="11" class="px-6 py-10 text-center text-gray-500">
+                            <div class="flex flex-col items-center">
+                                <i class="fas fa-database text-4xl mb-3 text-gray-300"></i>
+                                <p>Belum ada data tersedia.</p>
+                                <a href="{% url 'kmeans_data_tambah' %}" class="mt-2 text-blue-600 hover:underline">Tambah data pertama</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- PAGINATION -->
+    {% if data_list.has_other_pages %}
+    <div class="mt-6 flex justify-center">
+        <nav class="flex items-center gap-1">
+            {% if data_list.has_previous %}
+                <a href="?page={{ data_list.previous_page_number }}" class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            {% endif %}
+
+            {% for i in data_list.paginator.page_range %}
+                {% if data_list.number == i %}
+                    <span class="px-4 py-2 bg-blue-600 border border-blue-600 rounded-lg text-sm text-white font-bold">{{ i }}</span>
+                {% elif i > data_list.number|add:'-3' and i < data_list.number|add:'3' %}
+                    <a href="?page={{ i }}" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">{{ i }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if data_list.has_next %}
+                <a href="?page={{ data_list.next_page_number }}" class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            {% endif %}
+        </nav>
+    </div>
+    <div class="text-center mt-2">
+        <p class="text-xs text-gray-500">Menampilkan halaman {{ data_list.number }} dari {{ data_list.paginator.num_pages }}</p>
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- IMPORT MODAL -->
+<div id="importModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-gray-800">Import Data Excel</h3>
+            <button onclick="document.getElementById('importModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form action="{% url 'kmeans_data_import' %}" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Pilih File Excel</label>
+                <div class="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center hover:border-blue-400 transition cursor-pointer" onclick="document.getElementById('fileInput').click()">
+                    <i class="fas fa-file-excel text-3xl text-green-500 mb-2"></i>
+                    <p class="text-sm text-gray-500" id="fileNameLabel">Klik untuk pilih file</p>
+                    <input type="file" name="file" id="fileInput" class="hidden" accept=".xlsx, .xls" onchange="document.getElementById('fileNameLabel').innerText = this.files[0].name">
+                </div>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button type="button" onclick="document.getElementById('importModal').classList.add('hidden')" class="px-4 py-2 text-gray-600 font-medium">Batal</button>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition">Upload & Import</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- API KEY MODAL -->
+<div id="apiKeyModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 border-t-4 border-gray-800">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <i class="fas fa-robot text-blue-500"></i> Konfigurasi AI
+            </h3>
+            <button onclick="document.getElementById('apiKeyModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form id="apiKeyForm">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Tipe Analisis</label>
+                <input type="text" name="tipe" value="kmeans" readonly class="w-full px-4 py-2 bg-gray-50 border rounded-lg text-gray-500 font-mono text-sm">
+            </div>
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Gemini API Key</label>
+                <div class="relative">
+                    <input type="password" name="api_key" id="apiKeyInput" value="{{ ai_config.api_key|default:'' }}" placeholder="Masukkan API Key..." 
+                           class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition font-mono">
+                    <button type="button" onclick="toggleApiKeyVisibility()" class="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-eye" id="apiKeyEyeIcon"></i>
+                    </button>
+                </div>
+                <p class="mt-2 text-[10px] text-gray-400">Key ini digunakan untuk fitur penjelasan grafik AI di halaman Hasil.</p>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button type="button" onclick="document.getElementById('apiKeyModal').classList.add('hidden')" class="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition">Batal</button>
+                <button type="submit" id="saveBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 shadow-md">
+                    <i class="fas fa-save"></i> Simpan Konfigurasi
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- DUPLICATE DATA MODAL -->
+<div id="duplicateModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-4xl w-full p-6 max-h-[90vh] flex flex-col">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h3 class="text-xl font-bold text-gray-800">Data Duplikat</h3>
+                <p class="text-sm text-gray-500">Ditemukan {{ jumlah_duplikat }} baris data yang identik</p>
+            </div>
+            <button onclick="document.getElementById('duplicateModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <div class="overflow-y-auto flex-1 mb-6 border rounded-xl">
+            <table class="w-full text-sm text-left border-collapse">
+                <thead class="bg-gray-50 text-gray-700 border-b sticky top-0">
+                    <tr>
+                        <th class="px-4 py-3 font-bold">Data</th>
+                        <th class="px-4 py-3 font-bold text-center">Jumlah</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for item in duplicate_data_details %}
+                    <tr>
+                        <td class="px-4 py-3">
+                            <div class="font-medium text-gray-800">{{ item.example.tkp }}</div>
+                            <div class="text-xs text-gray-500">
+                                {{ item.example.tanggal|date:"d M Y" }} | {{ item.example.jam }} | {{ item.example.umur }} Thn | {{ item.example.jenis_kendaraan }}
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-bold text-xs">
+                                {{ item.count }}x
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="2" class="px-4 py-10 text-center text-gray-500">
+                            Tidak ada data duplikat ditemukan.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="flex justify-between items-center bg-gray-50 p-4 rounded-xl">
+            <div class="text-sm text-gray-600">
+                <i class="fas fa-info-circle text-blue-500"></i> Sistem akan menyisakan satu data untuk setiap grup duplikat.
+            </div>
+            <div class="flex gap-3">
+                <button type="button" onclick="document.getElementById('duplicateModal').classList.add('hidden')" class="px-4 py-2 text-gray-600 font-medium">Tutup</button>
+                {% if jumlah_duplikat > 0 %}
+                <button type="button" onclick="showDuplicateConfirm()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold transition flex items-center gap-2">
+                    <i class="fas fa-trash-alt"></i> Hapus Semua Duplikat
+                </button>
+                <form id="deleteDuplicateForm" action="{% url 'kmeans_data_hapus_duplikat' %}" method="POST" class="hidden">
+                    {% csrf_token %}
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- UNIVERSAL CONFIRMATION MODAL -->
+<div id="confirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center transform transition-all">
+        <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-exclamation-triangle text-2xl"></i>
+        </div>
+        <h3 id="confirmTitle" class="text-xl font-bold text-gray-800 mb-2">Konfirmasi Hapus</h3>
+        <p id="confirmMessage" class="text-gray-500 mb-6 text-sm">Apakah Anda yakin ingin melakukan tindakan ini?</p>
+        
+        <div class="flex gap-3 justify-center">
+            <button onclick="closeConfirmModal()" class="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-xl transition">
+                Batal
+            </button>
+            <a id="confirmActionBtn" href="#" class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition">
+                Ya, Hapus
+            </a>
+            <button id="confirmSubmitBtn" onclick="submitConfirmForm()" class="hidden flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition">
+                Ya, Hapus
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleApiKeyVisibility() {
+    const input = document.getElementById('apiKeyInput');
+    const icon = document.getElementById('apiKeyEyeIcon');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+}
+
+document.getElementById('apiKeyForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('saveBtn');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+
+    const formData = new FormData(this);
+    fetch("{% url 'save_ai_config' %}", {
+        method: "POST",
+        body: formData,
+        headers: {
+            "X-CSRFToken": formData.get('csrfmiddlewaretoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert("API Key berhasil dikonfigurasi!");
+            document.getElementById('apiKeyModal').classList.add('hidden');
+        } else {
+            alert("Error: " + data.message);
+        }
+    })
+    .catch(error => alert("Terjadi kesalahan sistem."))
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    });
+});
+
+let activeFormId = null;
+
+function showConfirmModal(title, message, url, formId = null) {
+    document.getElementById('confirmTitle').innerText = title;
+    document.getElementById('confirmMessage').innerText = message;
+    
+    const actionBtn = document.getElementById('confirmActionBtn');
+    const submitBtn = document.getElementById('confirmSubmitBtn');
+    
+    if (formId) {
+        actionBtn.classList.add('hidden');
+        submitBtn.classList.remove('hidden');
+        activeFormId = formId;
+    } else {
+        actionBtn.classList.remove('hidden');
+        submitBtn.classList.add('hidden');
+        actionBtn.href = url;
+    }
+    
+    document.getElementById('confirmModal').classList.remove('hidden');
+}
+
+function closeConfirmModal() {
+    document.getElementById('confirmModal').classList.add('hidden');
+}
+
+function submitConfirmForm() {
+    if (activeFormId) {
+        document.getElementById(activeFormId).submit();
+    }
+}
+
+function showDuplicateConfirm() {
+    // Sembunyikan modal duplikat sementara
+    document.getElementById('duplicateModal').classList.add('hidden');
+    showConfirmModal(
+        'Hapus Semua Duplikat', 
+        'Sistem akan menghapus semua data yang identik dan hanya menyisakan satu data unik. Lanjutkan?', 
+        '#', 
+        'deleteDuplicateForm'
+    );
+}
+
+function openDuplicateModal() {
+    document.getElementById('duplicateModal').classList.remove('hidden');
+}
+</script>
+
+{% endblock %}

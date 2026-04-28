@@ -49,9 +49,25 @@ urlpatterns = [
     path('peta-user/', views.peta_user_view, name='peta_user'),
 
     # ================= KMEANS =================
-    path('kmeans/data/', views.kmeans_data, name='kmeans_data'),
-    path('kmeans/proses/', views.kmeans_proses, name='kmeans_proses'),
-    path('kmeans/hasil/', views.kmeans_hasil, name='kmeans_hasil'),
+    path('k-means/data/', views.kmeans_data_list, name='kmeans_data_list'),
+    path('k-means/data/tambah/', views.kmeans_data_tambah, name='kmeans_data_tambah'),
+    path('k-means/data/import/', views.kmeans_data_import, name='kmeans_data_import'),
+    path('k-means/data/hapus/<int:pk>/', views.kmeans_data_hapus, name='kmeans_data_hapus'),
+    path('k-means/data/hapus-duplikat/', views.kmeans_data_hapus_duplikat, name='kmeans_data_hapus_duplikat'),
+    path('k-means/data/hapus-semua/', views.kmeans_data_hapus_semua, name='kmeans_data_hapus_semua'),
+    path('k-means/proses/', views.proses_cluster, name='proses_cluster'),
+    path('k-means/preprocessing/', views.preprocessing, name='preprocessing'),
+    path('k-means/hasil/', views.hasil, name='hasil'),
+    path('k-means/rekomendasi/', views.rekomendasi_kebijakan, name='rekomendasi_kebijakan'),
+    path('k-means/ai-recommendation/', views.get_ai_recommendation, name='get_ai_recommendation'),
+    path('k-means/analyze-dashboard/', views.analyze_accident_clustering, name='analyze_dashboard'),
+    path('k-means/save-ai-config/', views.save_ai_config, name='save_ai_config'),
+    path('k-means/reset/', views.reset_k_means, name='reset_k_means'),
+
+    # path('tambah-data/', views.tambah_data, name='tambah_data'),
+    path('ajax/load-kecamatan/', views.load_kecamatan, name='ajax_load_kecamatan'),
+    path('ajax/load-kelurahan/', views.load_kelurahan, name='ajax_load_kelurahan'),
+   
 
     # ================= AHC =================   
 
@@ -62,20 +78,6 @@ urlpatterns = [
     path('ahc/hasil/', views.ahc_hasil, name='ahc_hasil'),
     path('proses-ahc/', views.proses_ahc, name='proses_ahc'),
     path('ahc/reset/', views.reset_ahc, name='reset_ahc'),
-  
-
-    
-    # Cluster K-Means
-    path('k-means/data_cluster/', views.cluster_data, name='cluster_data'),
-    path('k-means/tambah/', views.tambah_data, name='tambah_data'),
-    # path('k-means/hasil/', views.hasil_cluster, name='hasil_cluster'),
-    path('k-means/preprocessing/', views.preprocessing, name='preprocessing'),
-    path('k-means/hasil/', views.hasil, name='hasil'),
-    path('k-means/reset/', views.reset_k_means, name='reset_k_means'),
-
-    # path('tambah-data/', views.tambah_data, name='tambah_data'),
-    path('ajax/load-kecamatan/', views.load_kecamatan, name='ajax_load_kecamatan'),
-    path('ajax/load-kelurahan/', views.load_kelurahan, name='ajax_load_kelurahan'),
 
 
     # API
