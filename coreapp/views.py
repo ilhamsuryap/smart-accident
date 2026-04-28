@@ -37,24 +37,17 @@ from django.shortcuts import render, redirect
 from io import StringIO
 from django.shortcuts import redirect
 
-
-
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import silhouette_score
 
-
-
-
-from .models import RuasJalan, SegmenJalan, Kecelakaan, RekapSegmen, AnalisisZScore
+from .models import RuasJalan, SegmenJalan, Kecelakaan, RekapSegmen, AnalisisZScore, KecelakaanRaw, KecelakaanPreprosesing
 from .forms import (
     UserRegistrationForm, RuasJalanForm, SegmenJalanForm, 
-    KecelakaanForm, RekapSegmenForm
+    KecelakaanForm, RekapSegmenForm, UploadKecelakaanRawForm, UploadKecelakaanPreprosesForm
 )
-
-
 # Helper function
 def is_admin(user):
     return user.is_staff or user.is_superuser
@@ -107,22 +100,36 @@ def logout_view(request):
     return redirect('login')
 
 
-# Dashboard Views
-@login_required(login_url='login')
-def dashboard_view(request):
-    """Dashboard utama"""
+# Homepage View
+def homepage_view(request):
+    """Halaman homepage untuk user biasa"""
     context = {
         'total_ruas': RuasJalan.objects.count(),
         'total_segmen': SegmenJalan.objects.count(),
-        'total_kecelakaan': Kecelakaan.objects.count(),
-        'total_korban': Kecelakaan.objects.aggregate(
+        'total_kecelakaan': KecelakaanPreprosesing.objects.count(),
+        'total_korban': KecelakaanPreprosesing.objects.aggregate(
+            total=Sum('korban_meninggal') + Sum('korban_luka_berat') + Sum('korban_luka_ringan')
+        )['total'] or 0,
+    }
+    return render(request, 'homepage.html', context)
+
+
+# Dashboard Views
+@login_required(login_url='login')
+def dashboard_view(request):
+    """Dashboard utama - untuk admin/user yang login"""
+    context = {
+        'total_ruas': RuasJalan.objects.count(),
+        'total_segmen': SegmenJalan.objects.count(),
+        'total_kecelakaan': KecelakaanPreprosesing.objects.count(),
+        'total_korban': KecelakaanPreprosesing.objects.aggregate(
             total=Sum('korban_meninggal') + Sum('korban_luka_berat') + Sum('korban_luka_ringan')
         )['total'] or 0,
     }
     
     # Statistik tahun ini
     tahun_ini = timezone.now().year
-    context['kecelakaan_tahun_ini'] = Kecelakaan.objects.filter(
+    context['kecelakaan_tahun_ini'] = KecelakaanPreprosesing.objects.filter(
         tanggal__year=tahun_ini
     ).count()
     
@@ -287,8 +294,6 @@ def kecelakaan_detail(request, pk):
         'is_admin': is_admin(request.user)
     }
     return render(request, 'coreapp/kecelakaan/detail.html', context)
-
-
 @login_required(login_url='login')
 @user_passes_test(is_admin)
 def kecelakaan_update(request, pk):
@@ -319,19 +324,28 @@ def kecelakaan_delete(request, pk):
         messages.success(request, 'Data kecelakaan berhasil dihapus.')
         return redirect('kecelakaan_list')
     
-    context = {'kecelakaan': kecelakaan}
+    context = {'kecelakaan': kecelakaan, 'cancel_url': 'kecelakaan_list'}
     return render(request, 'coreapp/kecelakaan/confirm_delete.html', context)
-
 
 # Map Views
 @login_required(login_url='login')
 def map_view(request):
-    """Tampilkan peta interaktif"""
-    tahun = request.GET.get('tahun', timezone.now().year)
+    """Tampilkan peta interaktif untuk admin (dengan sidebar)"""
+    tahun_param = request.GET.get('tahun')
+    tahun = timezone.now().year
+    
+    if tahun_param:
+        try:
+            tahun = int(tahun_param)
+        except (ValueError, TypeError):
+            tahun = timezone.now().year
     
     # Hitung Z-Score jika belum ada
-    if not AnalisisZScore.objects.filter(tahun=tahun).exists():
-        AnalisisZScore.calculate_zscore(tahun)
+    try:
+        if not AnalisisZScore.objects.filter(tahun=tahun).exists():
+            AnalisisZScore.calculate_zscore(tahun)
+    except Exception as e:
+        print(f"Warning: Could not calculate Z-Score for {tahun}: {e}")
     
     context = {
         'tahun': tahun,
@@ -340,11 +354,35 @@ def map_view(request):
     return render(request, 'coreapp/map/map.html', context)
 
 
+def peta_user_view(request):
+    """Tampilkan peta interaktif untuk user biasa (tanpa sidebar, standalone)"""
+    tahun_param = request.GET.get('tahun')
+    tahun = timezone.now().year
+    
+    if tahun_param:
+        try:
+            tahun = int(tahun_param)
+        except (ValueError, TypeError):
+            tahun = timezone.now().year
+    
+    # Hitung Z-Score jika belum ada
+    try:
+        if not AnalisisZScore.objects.filter(tahun=tahun).exists():
+            AnalisisZScore.calculate_zscore(tahun)
+    except Exception as e:
+        print(f"Warning: Could not calculate Z-Score for {tahun}: {e}")
+    
+    context = {
+        'tahun': tahun,
+        'tahun_options': range(2020, timezone.now().year + 1)
+    }
+    return render(request, 'peta_user.html', context)
+
+
 # API Views
 @api_view(['GET'])
-@login_required(login_url='login')
 def api_segmen_geojson(request):
-    """API untuk mendapatkan GeoJSON segmen jalan"""
+    """API untuk mendapatkan GeoJSON segmen jalan dengan Z-Score atau default blue untuk no accidents"""
     tahun_raw = request.GET.get('tahun')
     if not tahun_raw or tahun_raw == 'None':
         tahun = timezone.now().year
@@ -354,36 +392,106 @@ def api_segmen_geojson(request):
         except (ValueError, TypeError):
             tahun = timezone.now().year
     
+    print(f"\n{'='*80}")
+    print(f"📍 API: api_segmen_geojson called for tahun={tahun}")
+    print(f"{'='*80}")
+    
+    # Ensure Z-Score calculation exists for this year
+    if not AnalisisZScore.objects.filter(tahun=tahun).exists():
+        try:
+            AnalisisZScore.calculate_zscore(tahun)
+            print(f"✓ Auto-calculated Z-Score for {tahun}")
+        except Exception as e:
+            print(f"⚠ Could not auto-calculate Z-Score: {e}")
+    
     segmen_list = SegmenJalan.objects.select_related('ruas_jalan').all()
+    print(f"📊 Found {segmen_list.count()} segments in database")
     
     features = []
+    line_count = 0
+    marker_count = 0
+    
     for segmen in segmen_list:
-        # Cari analisis Z-Score
-        try:
-            analisis = AnalisisZScore.objects.get(segmen_jalan=segmen, tahun=tahun)
-            kategori = analisis.kategori
-            zscore = float(analisis.nilai_zscore)
-            color = analisis.get_kategori_display_color()
-        except AnalisisZScore.DoesNotExist:
-            kategori = 'unknown'
-            zscore = 0
-            color = '#999999'
+        # Hitung jumlah kecelakaan di segmen ini untuk tahun tertentu
+        accident_count = KecelakaanPreprosesing.objects.filter(
+            segmen_jalan=segmen,
+            tanggal__year=tahun
+        ).count()
         
-        # Perbaikan otomatis: Jika geometry segmen kosong tapi geometry ruas ada, generate ulang
-        if not segmen.geometry and segmen.ruas_jalan.geometry:
+        # PENTING: Jika tidak ada kecelakaan, selalu set AMAN (ignore Z-Score jika ada)
+        if accident_count == 0:
+            kategori = 'aman'
+            zscore = -2.0
+            color = '#1976d2'  # Blue
+        else:
+            # Ada kecelakaan - cari analisis Z-Score
             try:
-                segmen.geometry = segmen.ruas_jalan._get_segment_geometry(float(segmen.km_awal), float(segmen.km_akhir))
-                segmen.save(update_fields=['geometry'])
-            except Exception as e:
-                print(f"Repair geometry error: {e}")
-
-        # Gunakan geometry yang tersimpan di model
+                analisis = AnalisisZScore.objects.get(segmen_jalan=segmen, tahun=tahun)
+                kategori = analisis.kategori
+                zscore = float(analisis.nilai_zscore)
+                color = analisis.get_kategori_display_color()
+            except AnalisisZScore.DoesNotExist:
+                # Ada kecelakaan tapi belum ada Z-Score → coba hitung
+                try:
+                    AnalisisZScore.calculate_zscore(tahun)
+                    analisis = AnalisisZScore.objects.get(segmen_jalan=segmen, tahun=tahun)
+                    kategori = analisis.kategori
+                    zscore = float(analisis.nilai_zscore)
+                    color = analisis.get_kategori_display_color()
+                except Exception:
+                    kategori = 'unknown'
+                    zscore = 0
+                    color = '#999999'
+        
+        # PENTING: Generate geometry dari lat/lon jika kosong
         geometry = None
         if segmen.geometry:
             try:
-                geometry = json.loads(segmen.geometry)
-            except:
-                pass
+                parsed_geom = json.loads(segmen.geometry)
+                # Convert MultiLineString to LineString untuk rendering yang lebih baik
+                if parsed_geom.get('type') == 'MultiLineString':
+                    coords = []
+                    for line in parsed_geom.get('coordinates', []):
+                        coords.extend(line)
+                    geometry = {'type': 'LineString', 'coordinates': coords}
+                    print(f"✓ Converted MultiLineString to LineString for segmen {segmen.id}")
+                else:
+                    geometry = parsed_geom
+            except Exception as e:
+                print(f"⚠ Error parsing geometry for segmen {segmen.id}: {e}")
+                geometry = None
+        
+        # Fallback: Jika geometry kosong, buat dari lat/lon awal-akhir
+        if not geometry:
+            if segmen.lat_awal and segmen.lon_awal and segmen.lat_akhir and segmen.lon_akhir:
+                geometry = {
+                    'type': 'LineString',
+                    'coordinates': [
+                        [float(segmen.lon_awal), float(segmen.lat_awal)],
+                        [float(segmen.lon_akhir), float(segmen.lat_akhir)]
+                    ]
+                }
+                print(f"✓ Generated fallback geometry for segmen {segmen.id} from lat/lon")
+            else:
+                # Coba ambil dari ruas_jalan geometry
+                if segmen.ruas_jalan.geometry:
+                    try:
+                        ruas_geom = json.loads(segmen.ruas_jalan.geometry)
+                        if ruas_geom.get('type') == 'Feature':
+                            ruas_geom = ruas_geom.get('geometry', {})
+                        
+                        if ruas_geom.get('type') == 'LineString':
+                            geometry = ruas_geom
+                        elif ruas_geom.get('type') == 'MultiLineString':
+                            coords = []
+                            for line in ruas_geom.get('coordinates', []):
+                                coords.extend(line)
+                            geometry = {'type': 'LineString', 'coordinates': coords}
+                        
+                        if geometry:
+                            print(f"✓ Generated geometry for segmen {segmen.id} from ruas_jalan")
+                    except Exception as e:
+                        print(f"⚠ Error getting ruas geometry for segmen {segmen.id}: {e}")
         
         if geometry:
             # 1. Feature LineString (Garis Jalan)
@@ -393,49 +501,245 @@ def api_segmen_geojson(request):
                 'properties': {
                     'type': 'line',
                     'segmen_id': segmen.id,
+                    'ruas_id': segmen.ruas_jalan.id,
                     'ruas_nama': segmen.ruas_jalan.nama_ruas,
                     'km_awal': float(segmen.km_awal),
                     'km_akhir': float(segmen.km_akhir),
+                    'panjang': float(segmen.panjang_segmen),
                     'kategori': kategori,
                     'zscore': zscore,
                     'color': color,
+                    'accident_count': accident_count,
+                    'nama_segmen': segmen.nama_segmen or f"Segmen {segmen.km_awal}-{segmen.km_akhir}",
+                    'keterangan': segmen.keterangan or '',
                     'url': f'/kecelakaan/segmen/{segmen.id}/'
                 },
                 'geometry': geometry
             }
             features.append(feature_line)
+            line_count += 1
 
-            # 2. Feature Point (Marker di tengah segmen)
-            if geometry.get('coordinates'):
+            # 2. Feature Point - Marker AWAL segmen
+            if geometry.get('coordinates') and len(geometry['coordinates']) > 0:
                 coords = geometry['coordinates']
-                mid_idx = len(coords) // 2
-                mid_point = coords[mid_idx]
+                start_point = coords[0]
+                end_point = coords[-1]
                 
-                feature_point = {
+                # Marker awal segmen
+                feature_point_start = {
                     'type': 'Feature',
-                    'id': f"point_{segmen.id}",
+                    'id': f"point_start_{segmen.id}",
                     'properties': {
-                        'type': 'marker',
+                        'type': 'segment_marker',
+                        'marker_type': 'start',
                         'segmen_id': segmen.id,
+                        'ruas_id': segmen.ruas_jalan.id,
                         'ruas_nama': segmen.ruas_jalan.nama_ruas,
                         'km_awal': float(segmen.km_awal),
                         'km_akhir': float(segmen.km_akhir),
+                        'panjang': float(segmen.panjang_segmen),
                         'kategori': kategori,
-                        'color': color
+                        'zscore': zscore,
+                        'color': color,
+                        'accident_count': accident_count,
+                        'nama_segmen': segmen.nama_segmen or f"Segmen {segmen.km_awal}-{segmen.km_akhir}",
+                        'keterangan': segmen.keterangan or '',
+                        'url': f'/kecelakaan/segmen/{segmen.id}/'
                     },
                     'geometry': {
                         'type': 'Point',
-                        'coordinates': mid_point
+                        'coordinates': start_point
                     }
                 }
-                features.append(feature_point)
+                features.append(feature_point_start)
+                marker_count += 1
+                
+                # Marker akhir segmen
+                feature_point_end = {
+                    'type': 'Feature',
+                    'id': f"point_end_{segmen.id}",
+                    'properties': {
+                        'type': 'segment_marker',
+                        'marker_type': 'end',
+                        'segmen_id': segmen.id,
+                        'ruas_id': segmen.ruas_jalan.id,
+                        'ruas_nama': segmen.ruas_jalan.nama_ruas,
+                        'km_awal': float(segmen.km_awal),
+                        'km_akhir': float(segmen.km_akhir),
+                        'panjang': float(segmen.panjang_segmen),
+                        'kategori': kategori,
+                        'zscore': zscore,
+                        'color': color,
+                        'accident_count': accident_count,
+                        'nama_segmen': segmen.nama_segmen or f"Segmen {segmen.km_awal}-{segmen.km_akhir}",
+                        'keterangan': segmen.keterangan or '',
+                        'url': f'/kecelakaan/segmen/{segmen.id}/'
+                    },
+                    'geometry': {
+                        'type': 'Point',
+                        'coordinates': end_point
+                    }
+                }
+                features.append(feature_point_end)
+                marker_count += 1
+        else:
+            print(f"❌ Segmen {segmen.id} ({segmen.ruas_jalan.nama_ruas}) - NO geometry available!")
+    
+    # Add markers untuk start/end dari setiap ruas jalan
+    ruas_segments = {}
+    for segmen in segmen_list:
+        if segmen.ruas_jalan.id not in ruas_segments:
+            ruas_segments[segmen.ruas_jalan.id] = []
+        ruas_segments[segmen.ruas_jalan.id].append(segmen)
+    
+    # Create markers untuk ruas jalan start/end
+    for ruas_id, segments in ruas_segments.items():
+        # Sort by km_awal to find first and last segment
+        sorted_segments = sorted(segments, key=lambda s: float(s.km_awal))
+        if sorted_segments:
+            ruas_jalan = sorted_segments[0].ruas_jalan
+            
+            # Marker untuk AWAL ruas jalan
+            first_segmen = sorted_segments[0]
+            if first_segmen.geometry:
+                try:
+                    geom = json.loads(first_segmen.geometry)
+                    if geom.get('type') == 'LineString' and geom.get('coordinates'):
+                        start_coord = geom['coordinates'][0]
+                        feature_ruas_start = {
+                            'type': 'Feature',
+                            'id': f"ruas_start_{ruas_id}",
+                            'properties': {
+                                'type': 'segment_marker',
+                                'marker_type': 'ruas_start',
+                                'ruas_id': ruas_id,
+                                'ruas_nama': ruas_jalan.nama_ruas,
+                                'label': f'Awal Ruas: {ruas_jalan.nama_ruas}'
+                            },
+                            'geometry': {
+                                'type': 'Point',
+                                'coordinates': start_coord
+                            }
+                        }
+                        features.append(feature_ruas_start)
+                        marker_count += 1
+                except Exception as e:
+                    print(f"⚠ Error creating ruas start marker for {ruas_jalan.nama_ruas}: {e}")
+            
+            # Marker untuk AKHIR ruas jalan
+            last_segmen = sorted_segments[-1]
+            if last_segmen.geometry:
+                try:
+                    geom = json.loads(last_segmen.geometry)
+                    if geom.get('type') == 'LineString' and geom.get('coordinates'):
+                        end_coord = geom['coordinates'][-1]
+                        feature_ruas_end = {
+                            'type': 'Feature',
+                            'id': f"ruas_end_{ruas_id}",
+                            'properties': {
+                                'type': 'segment_marker',
+                                'marker_type': 'ruas_end',
+                                'ruas_id': ruas_id,
+                                'ruas_nama': ruas_jalan.nama_ruas,
+                                'label': f'Akhir Ruas: {ruas_jalan.nama_ruas}'
+                            },
+                            'geometry': {
+                                'type': 'Point',
+                                'coordinates': end_coord
+                            }
+                        }
+                        features.append(feature_ruas_end)
+                        marker_count += 1
+                except Exception as e:
+                    print(f"⚠ Error creating ruas end marker for {ruas_jalan.nama_ruas}: {e}")
     
     geojson = {
         'type': 'FeatureCollection',
         'features': features
     }
     
+    print(f"✅ Response: {line_count} lines, {marker_count} markers - {len(features)} total features")
+    print(f"{'='*80}\n")
+    
     return Response(geojson)
+
+
+@api_view(['GET'])
+def api_threshold_data(request):
+    """API untuk mendapatkan threshold data per ruas jalan untuk dynamic legend"""
+    from django.db.models import Avg, StdDev
+    
+    tahun_raw = request.GET.get('tahun')
+    if not tahun_raw or tahun_raw == 'None':
+        tahun = timezone.now().year
+    else:
+        try:
+            tahun = int(tahun_raw)
+        except (ValueError, TypeError):
+            tahun = timezone.now().year
+    
+    # Ensure Z-Score calculation exists
+    if not AnalisisZScore.objects.filter(tahun=tahun).exists():
+        try:
+            AnalisisZScore.calculate_zscore(tahun)
+        except Exception as e:
+            print(f"Warning: Could not auto-calculate Z-Score: {e}")
+    
+    ruas_jalan_list = RuasJalan.objects.all().distinct()
+    threshold_data = {}
+    
+    for ruas_jalan in ruas_jalan_list:
+        segments_in_ruas = SegmenJalan.objects.filter(ruas_jalan=ruas_jalan)
+        
+        # Get all z-scores for this ruas jalan
+        analisis_list = AnalisisZScore.objects.filter(
+            tahun=tahun,
+            segmen_jalan__in=segments_in_ruas
+        )
+        
+        if analisis_list.exists():
+            zscore_values = [float(a.nilai_zscore) for a in analisis_list]
+            z_max = max(zscore_values)
+            z_min = min(zscore_values)
+            
+            # Calculate interval
+            if z_max != z_min:
+                interval = (z_max - z_min) / 5
+            else:
+                interval = 1
+            
+            # Calculate thresholds
+            t1 = z_min + (1 * interval)
+            t2 = z_min + (2 * interval)
+            t3 = z_min + (3 * interval)
+            t4 = z_min + (4 * interval)
+            
+            # Count segments per kategori
+            kategori_counts = {
+                'sangat_tinggi': analisis_list.filter(kategori='sangat_tinggi').count(),
+                'tinggi': analisis_list.filter(kategori='tinggi').count(),
+                'sedang': analisis_list.filter(kategori='sedang').count(),
+                'rendah': analisis_list.filter(kategori='rendah').count(),
+                'sangat_rendah': analisis_list.filter(kategori='sangat_rendah').count(),
+            }
+            
+            threshold_data[ruas_jalan.id] = {
+                'nama': ruas_jalan.nama_ruas,
+                'z_max': round(z_max, 3),
+                'z_min': round(z_min, 3),
+                'interval': round(interval, 3),
+                't4': round(t4, 3),  # sangat_tinggi threshold
+                't3': round(t3, 3),  # tinggi threshold
+                't2': round(t2, 3),  # sedang threshold
+                't1': round(t1, 3),  # rendah threshold
+                'kategori_counts': kategori_counts,
+                'total_segments': segments_in_ruas.count(),
+            }
+    
+    return Response({
+        'tahun': tahun,
+        'ruas_data': threshold_data
+    })
 
 
 @api_view(['GET'])
@@ -444,7 +748,7 @@ def api_kecelakaan_geojson(request):
     """API untuk mendapatkan GeoJSON kecelakaan"""
     tahun = request.GET.get('tahun', timezone.now().year)
     
-    kecelakaan = Kecelakaan.objects.filter(
+    kecelakaan = KecelakaanPreprosesing.objects.filter(
         tanggal__year=tahun,
         latitude__isnull=False,
         longitude__isnull=False
@@ -583,6 +887,51 @@ def api_geoapify_reverse_geocoding(request):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 
+def api_data_update_check(request):
+    """
+    API untuk mengecek apakah ada update data terbaru
+    Mengembalikan timestamp dari last update KecelakaanPreprosesing
+    Frontend bisa compare dengan last known timestamp untuk trigger refresh
+    """
+    from django.db.models import Max
+    
+    tahun = request.GET.get('tahun')
+    if not tahun:
+        tahun = timezone.now().year
+    else:
+        try:
+            tahun = int(tahun)
+        except (ValueError, TypeError):
+            tahun = timezone.now().year
+    
+    try:
+        # Get latest updated_at from KecelakaanPreprosesing for this year
+        latest_kecelakaan = KecelakaanPreprosesing.objects.filter(
+            tanggal__year=tahun
+        ).aggregate(
+            latest_update=Max('updated_at'),
+            latest_create=Max('created_at')
+        )
+        
+        # Get latest update timestamp
+        latest_update = latest_kecelakaan['latest_update'] or latest_kecelakaan['latest_create']
+        
+        # Get latest AnalisisZScore calculation timestamp
+        latest_zscore = AnalisisZScore.objects.filter(tahun=tahun).values('id').last()
+        
+        return JsonResponse({
+            'status': 'success',
+            'tahun': tahun,
+            'last_data_update': latest_update.timestamp() if latest_update else None,
+            'has_zscore': latest_zscore is not None
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+
 @api_view(['GET'])
 @login_required(login_url='login')
 def api_analisis_statistik(request):
@@ -647,10 +996,20 @@ def segmen_kecelakaan_detail(request, segmen_id):
     segmen = get_object_or_404(SegmenJalan, pk=segmen_id)
     tahun = request.GET.get('tahun', timezone.now().year)
     
-    kecelakaan = Kecelakaan.objects.filter(
+    kecelakaan = KecelakaanPreprosesing.objects.filter(
         segmen_jalan=segmen,
         tanggal__year=tahun
     )
+    
+    # Calculate totals for the summary section
+    rekap = kecelakaan.aggregate(
+        total_meninggal=Sum('korban_meninggal'),
+        total_luka_berat=Sum('korban_luka_berat'),
+        total_luka_ringan=Sum('korban_luka_ringan')
+    )
+    
+    total_meninggal = rekap['total_meninggal'] or 0
+    total_luka = (rekap['total_luka_berat'] or 0) + (rekap['total_luka_ringan'] or 0)
     
     try:
         analisis = AnalisisZScore.objects.get(segmen_jalan=segmen, tahun=tahun)
@@ -661,11 +1020,294 @@ def segmen_kecelakaan_detail(request, segmen_id):
         'segmen': segmen,
         'kecelakaan': kecelakaan,
         'analisis': analisis,
-        'tahun': tahun
+        'tahun': tahun,
+        'tahun_options': range(2020, timezone.now().year + 1),
+        'total_meninggal': total_meninggal,
+        'total_luka': total_luka,
+        'is_admin': is_admin(request.user)
     }
     
     return render(request, 'coreapp/analisis/segmen_detail.html', context)
 
+
+@login_required(login_url='login')
+def kecelakaan_raw_detail(request, pk):
+    """Detail kecelakaan raw"""
+    kecelakaan = get_object_or_404(KecelakaanRaw, pk=pk)
+    return render(request, 'coreapp/kecelakaan/detail.html', {'kecelakaan': kecelakaan, 'type': 'Raw'})
+
+
+@login_required(login_url='login')
+def kecelakaan_preprosesing_detail(request, pk):
+    """Detail kecelakaan preprocessing"""
+    kecelakaan = get_object_or_404(KecelakaanPreprosesing, pk=pk)
+    return render(request, 'coreapp/kecelakaan/detail.html', {'kecelakaan': kecelakaan, 'type': 'Preprocessing'})
+
+
+@login_required(login_url='login')
+@user_passes_test(is_admin)
+def kecelakaan_raw_delete(request, pk):
+    """Hapus data kecelakaan raw"""
+    kecelakaan = get_object_or_404(KecelakaanRaw, pk=pk)
+    if request.method == 'POST':
+        kecelakaan.delete()
+        messages.success(request, 'Data kecelakaan raw berhasil dihapus.')
+        return redirect('kecelakaan_raw_list')
+    return render(request, 'coreapp/kecelakaan/confirm_delete.html', {'kecelakaan': kecelakaan, 'type': 'Raw', 'cancel_url': 'kecelakaan_raw_list'})
+
+
+@login_required(login_url='login')
+@user_passes_test(is_admin)
+def kecelakaan_preprosesing_delete(request, pk):
+    """Hapus data kecelakaan preprocessing"""
+    kecelakaan = get_object_or_404(KecelakaanPreprosesing, pk=pk)
+    if request.method == 'POST':
+        kecelakaan.delete()
+        messages.success(request, 'Data kecelakaan preprocessing berhasil dihapus.')
+        return redirect('kecelakaan_preprosesing_list')
+    return render(request, 'coreapp/kecelakaan/confirm_delete.html', {'kecelakaan': kecelakaan, 'type': 'Preprocessing', 'cancel_url': 'kecelakaan_preprosesing_list'})
+
+
+# Cluster K-Means Views
+@login_required(login_url='login')
+def cluster_data(request):
+    data = Kecelakaan.objects.all()[:50]
+
+    context = {
+        'kecelakaan': data
+    }
+
+    return render(request, 'coreapp/k-means/data_cluster.html', context)
+
+
+
+
+# ================================
+# PREPROCESSING DATA
+# ================================
+@login_required(login_url='login')
+def preprocessing(request):
+
+    context = {}
+    df = None
+    hasil_cluster = None
+
+    # =========================
+    # 1️⃣ PROSES UPLOAD (POST)
+    # =========================
+    if request.method == "POST":
+        file = request.FILES.get('file')
+
+        if file:
+            # 🔥 RESET SEMUA SESSION LAMA (lebih lengkap)
+            for key in [
+                'hasil_cluster',
+                'summary_cluster',
+                'jumlah_cluster',
+                'jumlah_data',
+                'silhouette_score',
+                'X_scaled',
+                'summary_df',
+                'jumlah_data_asli'
+            ]:
+                request.session.pop(key, None)
+
+            # ✅ Simpan nama file aktif
+            request.session['uploaded_file_name'] = file.name
+        if file:
+            df = pd.read_excel(file)
+
+            df.replace('-', np.nan, inplace=True)
+
+            numeric_cols = ['Umur', 'Jumlah Kejadian']
+            numeric_cols = [c for c in numeric_cols if c in df.columns]
+
+            for col in numeric_cols:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+
+            # Handle 'Jumlah Kejadian' - if column doesn't exist, create it with default value 1
+            if 'Jumlah Kejadian' in df.columns:
+                df['Jumlah Kejadian'] = df['Jumlah Kejadian'].fillna(1)
+            else:
+                df['Jumlah Kejadian'] = 1
+
+            if 'Umur' in df.columns:
+                df = df[df['Umur'] > 0]
+
+            # 4️⃣ Konversi jam ke kategori waktu
+            def konversi_waktu(jam):
+                try:
+                    if isinstance(jam, str) and ':' in jam:
+                        jam = int(jam.split(':')[0])
+                    else:
+                        jam = int(jam)
+                except:
+                    return "Tidak Diketahui"
+
+                if 0 <= jam < 6:
+                    return "Dini Hari"
+                elif 6 <= jam < 12:
+                    return "Pagi Hari"
+                elif 12 <= jam < 18:
+                    return "Siang Hari"
+                elif 18 <= jam < 24:
+                    return "Malam Hari"
+                else:
+                    return "Tidak Diketahui"
+
+            if 'Jam' in df.columns:
+                df['Waktu Kejadian'] = df['Jam'].apply(konversi_waktu)
+            else:
+                df['Waktu Kejadian'] = 'Tidak Diketahui'
+
+            # 5️⃣ Dummy kendaraan (PERBAIKAN)
+            kendaraan_cols = ['Motor', 'Mobil', 'Truk/Bus']
+
+            for k in kendaraan_cols:
+                df[k] = 0
+
+            if 'Jenis Kendaraan' in df.columns:
+                jenis = df['Jenis Kendaraan'].astype(str).str.lower()
+
+                df.loc[jenis.str.contains('motor', na=False), 'Motor'] = df['Jumlah Kejadian']
+                df.loc[jenis.str.contains('mobil', na=False), 'Mobil'] = df['Jumlah Kejadian']
+                df.loc[jenis.str.contains('truk|bus', na=False), 'Truk/Bus'] = df['Jumlah Kejadian']
+
+            # 6️⃣ Faktor penyebab
+            if 'Penyebab' in df.columns:
+                df['Penyebab_clean'] = df['Penyebab'].str.strip().str.lower()
+            else:
+                df['Penyebab_clean'] = ''
+
+            df['Faktor Pengemudi'] = df['Jumlah Kejadian']
+            df['Faktor Jalan'] = 0
+            df['Faktor Kendaraan'] = 0
+            df['Faktor Lingkungan'] = 0
+
+            # 7️⃣ Dummy waktu
+            waktu_cols = ['Dini Hari', 'Pagi Hari', 'Siang Hari', 'Malam Hari']
+            for w in waktu_cols:
+                df[w] = (df['Waktu Kejadian'] == w).astype(int) * df['Jumlah Kejadian']
+
+            # 8️⃣ Group by umur dengan semua fitur
+            summary_cols = (
+                ['Jumlah Kejadian']
+                + kendaraan_cols
+                + ['Faktor Pengemudi', 'Faktor Jalan', 'Faktor Kendaraan', 'Faktor Lingkungan']
+                + waktu_cols
+            )
+
+            if 'Umur' in df.columns:
+                summary_df = df.groupby('Umur')[summary_cols].sum().reset_index()
+            else:
+                summary_df = df[summary_cols].sum().to_frame().T
+
+            summary_df = summary_df.round().astype(int)
+
+            # Simpan ke session
+            request.session['summary_df'] = summary_df.to_dict(orient='records')
+            request.session.modified = True
+
+            context['preview'] = summary_df.to_dict(orient='records')
+
+    # =========================
+    # 2️⃣ AMBIL DATA DARI SESSION
+    # =========================
+    summary_json = request.session.get('summary_df')
+
+    if summary_json:
+        # Handle both JSON string and list formats
+        if isinstance(summary_json, list):
+            df = pd.DataFrame(summary_json)
+        else:
+            try:
+                df = pd.read_json(StringIO(summary_json), orient='records')
+            except Exception:
+                df = pd.DataFrame(summary_json)
+        context['preview'] = df.to_dict(orient='records')
+
+    # 💾 LOAD HASIL CLUSTER DARI SESSION (JIKA ADA)
+    hasil_cluster_session = request.session.get('hasil_cluster')
+    k_session = request.session.get('k')
+    
+    if hasil_cluster_session and k_session:
+        context['hasil_cluster'] = hasil_cluster_session
+        context['k'] = k_session
+
+    # =========================
+    # 3️⃣ PROSES CLUSTERING (GET ?k=)
+    # =========================
+    if df is not None and 'k' in request.GET:
+
+        try:
+            k = int(request.GET.get('k', 3))
+        except ValueError:
+            k = 3
+
+        k = max(1, min(k, 3))
+
+        X = df.select_dtypes(include=['number'])
+
+        if not X.empty and len(X) >= k:
+
+            scaler = StandardScaler()
+            X_scaled = scaler.fit_transform(X)
+
+            model = KMeans(n_clusters=k, random_state=42, n_init=10)
+            model.fit(X_scaled)
+
+            df_cluster = df.copy()
+            df_cluster['Cluster'] = model.labels_ + 1  # Cluster mulai dari 1, 2, 3
+
+            hasil_cluster = df_cluster.to_dict(orient='records')
+            
+            # 💾 SIMPAN KE SESSION UNTUK HALAMAN HASIL
+            request.session['hasil_cluster'] = hasil_cluster
+            request.session['k'] = k
+            request.session.modified = True
+            
+            context['hasil_cluster'] = hasil_cluster
+            context['k'] = k
+
+    return render(request, 'coreapp/k-means/preprocessing.html', context)
+
+
+@login_required(login_url='login')
+def reset_k_means(request):
+    keys_to_clear = [
+        'hasil_cluster',
+        'summary_cluster',
+        'jumlah_cluster',
+        'jumlah_data',
+        'silhouette_score',
+        'X_scaled',
+        'summary_df',
+        'uploaded_file_name',
+        'jumlah_data_asli'
+    ]
+    for key in keys_to_clear:
+        request.session.pop(key, None)
+
+    return redirect('preprocessing')
+
+
+# ===============================
+# KMEANS VIEWS
+# ===============================
+
+@login_required(login_url='login')
+def kmeans_data(request):
+    return render(request, 'coreapp/kmeans/data.html')
+
+
+@login_required(login_url='login')
+def kmeans_proses(request):
+    return render(request, 'coreapp/kmeans/proses.html')
+
+
+@login_required(login_url='login')
+def kmeans_hasil(request):
+    return render(request, 'coreapp/kmeans/hasil.html')
 
 
 # ===============================
@@ -2078,5 +2720,245 @@ def reset_ahc(request):
 
     for key in keys_to_clear:
         request.session.pop(key, None)
+
+
+# ======================== Upload Kecelakaan Views ========================
+
+@login_required(login_url='login')
+@user_passes_test(is_admin)
+def upload_kecelakaan_raw(request):
+    """Upload data kecelakaan raw dari Excel/CSV"""
+    if request.method == 'POST':
+        form = UploadKecelakaanRawForm(request.POST, request.FILES)
+        if form.is_valid():
+            file = request.FILES['file']
+            try:
+                # Parse Excel/CSV file
+                if file.name.endswith('.csv'):
+                    df = pd.read_csv(file, encoding='utf-8-sig')
+                else:
+                    df = pd.read_excel(file)
+                
+                # Validasi kolom yang diperlukan
+                required_columns = ['tanggal', 'waktu', 'latitude', 'longitude', 
+                                   'korban_meninggal', 'korban_luka_berat', 
+                                   'korban_luka_ringan', 'kerugian_materi', 
+                                   'desa', 'kecamatan', 'kabupaten_kota', 'keterangan']
+                
+                missing_columns = [col for col in required_columns if col not in df.columns]
+                if missing_columns:
+                    messages.error(request, f'Kolom yang hilang: {", ".join(missing_columns)}')
+                    return render(request, 'coreapp/kecelakaan/upload_raw.html', {'form': form})
+                
+                # Check apakah nomor_kecelakaan ada (opsional)
+                has_nomor = 'nomor_kecelakaan' in df.columns
+                
+                # Import data
+                count = 0
+                errors = []
+                for idx, row in df.iterrows():
+                    try:
+                        # Parse waktu - handle berbagai format
+                        waktu_obj = None
+                        if pd.notna(row['waktu']):
+                            waktu_val = row['waktu']
+                            # Jika sudah dalam format time object
+                            if isinstance(waktu_val, type(pd.Timestamp.now().time())):
+                                waktu_obj = waktu_val
+                            # Jika string
+                            elif isinstance(waktu_val, str):
+                                try:
+                                    waktu_obj = pd.to_datetime(waktu_val).time()
+                                except:
+                                    raise ValueError(f"Format waktu '{waktu_val}' tidak valid (gunakan HH:MM:SS)")
+                            # Jika Timestamp/datetime
+                            else:
+                                try:
+                                    waktu_obj = pd.to_datetime(waktu_val).time()
+                                except:
+                                    raise ValueError(f"Kolom waktu berisi tanggal bukan jam. Gunakan format HH:MM:SS")
+                        
+                        # Build create dict with nomor_kecelakaan jika available
+                        create_data = {
+                            'tanggal': pd.to_datetime(row['tanggal']),
+                            'waktu': waktu_obj,
+                            'latitude': float(row['latitude']),
+                            'longitude': float(row['longitude']),
+                            'korban_meninggal': int(row['korban_meninggal']) if pd.notna(row['korban_meninggal']) else 0,
+                            'korban_luka_berat': int(row['korban_luka_berat']) if pd.notna(row['korban_luka_berat']) else 0,
+                            'korban_luka_ringan': int(row['korban_luka_ringan']) if pd.notna(row['korban_luka_ringan']) else 0,
+                            'kerugian_materi': float(row['kerugian_materi']) if pd.notna(row['kerugian_materi']) else 0,
+                            'desa': str(row['desa']) if pd.notna(row['desa']) else '',
+                            'kecamatan': str(row['kecamatan']) if pd.notna(row['kecamatan']) else '',
+                            'kabupaten_kota': str(row['kabupaten_kota']) if pd.notna(row['kabupaten_kota']) else '',
+                            'keterangan': str(row['keterangan']) if pd.notna(row['keterangan']) else ''
+                        }
+                        
+                        # Tambah nomor_kecelakaan jika ada di file
+                        if has_nomor and pd.notna(row['nomor_kecelakaan']):
+                            create_data['nomor_kecelakaan'] = str(row['nomor_kecelakaan']).strip()
+                        
+                        KecelakaanRaw.objects.create(**create_data)
+                        count += 1
+                    except Exception as e:
+                        errors.append(f"Baris {idx + 2}: {str(e)}")
+                
+                if errors and len(errors) <= 10:
+                    messages.warning(request, f'Berhasil import {count} data, tapi ada beberapa error:\n' + '\n'.join(errors[:5]))
+                else:
+                    messages.success(request, f'Berhasil import {count} data kecelakaan raw.')
+                
+                return redirect('kecelakaan_raw_list')
+            except Exception as e:
+                messages.error(request, f'Error saat memproses file: {str(e)}')
+    else:
+        form = UploadKecelakaanRawForm()
+    
+    return render(request, 'coreapp/kecelakaan/upload_raw.html', {'form': form})
+
+
+@login_required(login_url='login')
+def kecelakaan_raw_list(request):
+    """Daftar data kecelakaan raw"""
+    kecelakaan = KecelakaanRaw.objects.all()
+    
+    if request.GET.get('search'):
+        search = request.GET.get('search')
+        kecelakaan = kecelakaan.filter(
+            Q(desa__icontains=search) |
+            Q(kecamatan__icontains=search) |
+            Q(kabupaten_kota__icontains=search)
+        )
+    
+    if request.GET.get('tahun'):
+        tahun = request.GET.get('tahun')
+        kecelakaan = kecelakaan.filter(tanggal__year=tahun)
+    
+    context = {
+        'kecelakaan': kecelakaan[:100],
+        'is_admin': is_admin(request.user),
+        'tahun_options': range(2020, timezone.now().year + 1),
+        'title': 'Data Kecelakaan Raw'
+    }
+    return render(request, 'coreapp/kecelakaan/list_raw.html', context)
+
+
+@login_required(login_url='login')
+@user_passes_test(is_admin)
+def upload_kecelakaan_preprosesing(request):
+    """Upload data kecelakaan preprocessing dari Excel/CSV"""
+    if request.method == 'POST':
+        form = UploadKecelakaanPreprosesForm(request.POST, request.FILES)
+        if form.is_valid():
+            file = request.FILES['file']
+            try:
+                # Parse Excel/CSV file
+                if file.name.endswith('.csv'):
+                    df = pd.read_csv(file, encoding='utf-8-sig')
+                else:
+                    df = pd.read_excel(file)
+                
+                # Validasi kolom yang diperlukan
+                required_columns = ['tanggal', 'waktu', 'latitude', 'longitude', 
+                                   'korban_meninggal', 'korban_luka_berat', 
+                                   'korban_luka_ringan', 'kerugian_materi', 
+                                   'desa', 'kecamatan', 'kabupaten_kota', 'keterangan']
+                
+                missing_columns = [col for col in required_columns if col not in df.columns]
+                if missing_columns:
+                    messages.error(request, f'Kolom yang hilang: {", ".join(missing_columns)}')
+                    return render(request, 'coreapp/kecelakaan/upload_preprosesing.html', {'form': form})
+                
+                # Check apakah nomor_kecelakaan ada (opsional)
+                has_nomor = 'nomor_kecelakaan' in df.columns
+                
+                # Import data
+                count = 0
+                errors = []
+                for idx, row in df.iterrows():
+                    try:
+                        # Parse waktu - handle berbagai format
+                        waktu_obj = None
+                        if pd.notna(row['waktu']):
+                            waktu_val = row['waktu']
+                            # Jika sudah dalam format time object
+                            if isinstance(waktu_val, type(pd.Timestamp.now().time())):
+                                waktu_obj = waktu_val
+                            # Jika string
+                            elif isinstance(waktu_val, str):
+                                try:
+                                    waktu_obj = pd.to_datetime(waktu_val).time()
+                                except:
+                                    raise ValueError(f"Format waktu '{waktu_val}' tidak valid (gunakan HH:MM:SS)")
+                            # Jika Timestamp/datetime
+                            else:
+                                try:
+                                    waktu_obj = pd.to_datetime(waktu_val).time()
+                                except:
+                                    raise ValueError(f"Kolom waktu berisi tanggal bukan jam. Gunakan format HH:MM:SS")
+                        
+                        # Build create dict with nomor_kecelakaan jika available
+                        create_data = {
+                            'tanggal': pd.to_datetime(row['tanggal']),
+                            'waktu': waktu_obj,
+                            'latitude': float(row['latitude']),
+                            'longitude': float(row['longitude']),
+                            'korban_meninggal': int(row['korban_meninggal']) if pd.notna(row['korban_meninggal']) else 0,
+                            'korban_luka_berat': int(row['korban_luka_berat']) if pd.notna(row['korban_luka_berat']) else 0,
+                            'korban_luka_ringan': int(row['korban_luka_ringan']) if pd.notna(row['korban_luka_ringan']) else 0,
+                            'kerugian_materi': float(row['kerugian_materi']) if pd.notna(row['kerugian_materi']) else 0,
+                            'desa': str(row['desa']) if pd.notna(row['desa']) else '',
+                            'kecamatan': str(row['kecamatan']) if pd.notna(row['kecamatan']) else '',
+                            'kabupaten_kota': str(row['kabupaten_kota']) if pd.notna(row['kabupaten_kota']) else '',
+                            'keterangan': str(row['keterangan']) if pd.notna(row['keterangan']) else ''
+                        }
+                        
+                        # Tambah nomor_kecelakaan jika ada di file
+                        if has_nomor and pd.notna(row['nomor_kecelakaan']):
+                            create_data['nomor_kecelakaan'] = str(row['nomor_kecelakaan']).strip()
+                        
+                        KecelakaanPreprosesing.objects.create(**create_data)
+                        count += 1
+                    except Exception as e:
+                        errors.append(f"Baris {idx + 2}: {str(e)}")
+                
+                if errors and len(errors) <= 10:
+                    messages.warning(request, f'Berhasil import {count} data, tapi ada beberapa error:\n' + '\n'.join(errors[:5]))
+                else:
+                    messages.success(request, f'Berhasil import {count} data kecelakaan preprocessing.')
+                
+                return redirect('kecelakaan_preprosesing_list')
+            except Exception as e:
+                messages.error(request, f'Error saat memproses file: {str(e)}')
+    else:
+        form = UploadKecelakaanPreprosesForm()
+    
+    return render(request, 'coreapp/kecelakaan/upload_preprosesing.html', {'form': form})
+
+
+@login_required(login_url='login')
+def kecelakaan_preprosesing_list(request):
+    """Daftar data kecelakaan preprocessing"""
+    kecelakaan = KecelakaanPreprosesing.objects.all()
+    
+    if request.GET.get('search'):
+        search = request.GET.get('search')
+        kecelakaan = kecelakaan.filter(
+            Q(desa__icontains=search) |
+            Q(kecamatan__icontains=search) |
+            Q(kabupaten_kota__icontains=search)
+        )
+    
+    if request.GET.get('tahun'):
+        tahun = request.GET.get('tahun')
+        kecelakaan = kecelakaan.filter(tanggal__year=tahun)
+    
+    context = {
+        'kecelakaan': kecelakaan[:100],
+        'is_admin': is_admin(request.user),
+        'tahun_options': range(2020, timezone.now().year + 1),
+        'title': 'Data Kecelakaan Preprosesing'
+    }
+    return render(request, 'coreapp/kecelakaan/list_preprosesing.html', context)
 
     return redirect('ahc_proses')

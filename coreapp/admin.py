@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import RuasJalan, SegmenJalan, Kecelakaan, RekapSegmen, AnalisisZScore
+from .models import RuasJalan, SegmenJalan, Kecelakaan, RekapSegmen, AnalisisZScore, KecelakaanRaw, KecelakaanPreprosesing
 
 
 @admin.register(RuasJalan)
@@ -98,3 +98,63 @@ class AnalisisZScoreAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+
+@admin.register(KecelakaanRaw)
+class KecelakaanRawAdmin(admin.ModelAdmin):
+    list_display = ['tanggal', 'waktu', 'kecamatan', 'total_korban']
+    list_filter = ['tanggal', 'kecamatan', 'kabupaten_kota']
+    search_fields = ['desa', 'kecamatan', 'kabupaten_kota']
+    readonly_fields = ['created_at', 'updated_at']
+    fieldsets = (
+        ('Waktu', {
+            'fields': ('tanggal', 'waktu')
+        }),
+        ('Lokasi', {
+            'fields': ('latitude', 'longitude', 'desa', 'kecamatan', 'kabupaten_kota')
+        }),
+        ('Data Korban', {
+            'fields': ('korban_meninggal', 'korban_luka_berat', 'korban_luka_ringan')
+        }),
+        ('Kerugian & Keterangan', {
+            'fields': ('kerugian_materi', 'keterangan')
+        }),
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def total_korban(self, obj):
+        return obj.korban_meninggal + obj.korban_luka_berat + obj.korban_luka_ringan
+    total_korban.short_description = 'Total Korban'
+
+
+@admin.register(KecelakaanPreprosesing)
+class KecelakaanPreprosessingAdmin(admin.ModelAdmin):
+    list_display = ['tanggal', 'waktu', 'kecamatan', 'segmen_jalan', 'total_korban']
+    list_filter = ['tanggal', 'kecamatan', 'kabupaten_kota', 'segmen_jalan__ruas_jalan']
+    search_fields = ['desa', 'kecamatan', 'kabupaten_kota', 'segmen_jalan__nama_segmen']
+    readonly_fields = ['created_at', 'updated_at']
+    fieldsets = (
+        ('Waktu', {
+            'fields': ('tanggal', 'waktu')
+        }),
+        ('Lokasi', {
+            'fields': ('latitude', 'longitude', 'desa', 'kecamatan', 'kabupaten_kota', 'segmen_jalan')
+        }),
+        ('Data Korban', {
+            'fields': ('korban_meninggal', 'korban_luka_berat', 'korban_luka_ringan')
+        }),
+        ('Kerugian & Keterangan', {
+            'fields': ('kerugian_materi', 'keterangan')
+        }),
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def total_korban(self, obj):
+        return obj.korban_meninggal + obj.korban_luka_berat + obj.korban_luka_ringan
+    total_korban.short_description = 'Total Korban'
