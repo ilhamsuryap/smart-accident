@@ -13,3 +13,4 @@ django-allauth==0.57.0
 requests==2.31.0
 scikit-learn
 pandas
+openpyxl

@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block title %}Data Kecelakaan Raw - Smart Accident{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow p-6">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Data Kecelakaan Raw</h1>
+            <p class="text-gray-600 text-sm mt-1">Data kecelakaan mentah yang telah diupload</p>
+        </div>
+        {% if is_admin %}
+        <a href="{% url 'upload_kecelakaan_raw' %}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+            <i class="fas fa-upload mr-2"></i>Upload Data Raw
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Filter -->
+    <div class="mb-6 flex flex-col md:flex-row gap-3">
+        <form method="get" class="flex gap-2 flex-1">
+            <input type="text" name="search" placeholder="Cari desa, kecamatan, atau kota..." 
+                   value="{{ request.GET.search }}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                <i class="fas fa-search"></i>
+            </button>
+        </form>
+        <select name="tahun" onchange="window.location.href='?tahun=' + this.value" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+            <option value="">-- Semua Tahun --</option>
+            {% for year in tahun_options %}
+            <option value="{{ year }}" {% if request.GET.tahun|stringformat:"s" == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Table -->
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-100 border-b border-gray-300">
+                <tr>
+                    <th class="px-4 py-2 text-left text-gray-700 font-semibold">No. Kecelakaan</th>
+                    <th class="px-4 py-2 text-left text-gray-700 font-semibold">Tanggal</th>
+                    <th class="px-4 py-2 text-left text-gray-700 font-semibold">Waktu</th>
+                    <th class="px-4 py-2 text-left text-gray-700 font-semibold">Lokasi</th>
+                    <th class="px-4 py-2 text-left text-gray-700 font-semibold">Korban</th>
+                    <th class="px-4 py-2 text-left text-gray-700 font-semibold">Lat/Lon</th>
+                    <th class="px-4 py-2 text-center text-gray-700 font-semibold">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if kecelakaan %}
+                    {% for k in kecelakaan %}
+                    <tr class="border-b border-gray-200 hover:bg-gray-50">
+                        <td class="px-4 py-2 text-gray-900 font-mono text-sm font-bold text-blue-600">{{ k.nomor_kecelakaan|default:"--" }}</td>
+                        <td class="px-4 py-2 text-gray-900">{{ k.tanggal|date:"d M Y" }}</td>
+                        <td class="px-4 py-2 text-gray-900">{{ k.waktu|default:"--" }}</td>
+                        <td class="px-4 py-2 text-gray-900">
+                            <div class="text-sm font-medium">{{ k.kecamatan }}</div>
+                            <div class="text-xs text-gray-500">{{ k.kabupaten_kota }}</div>
+                        </td>
+                        <td class="px-4 py-2 text-gray-900">
+                            <div class="text-sm">
+                                {% if k.korban_meninggal > 0 %}<span class="text-red-600">💀{{ k.korban_meninggal }}</span>{% endif %}
+                                {% if k.korban_luka_berat > 0 %}<span class="text-orange-600">🤕{{ k.korban_luka_berat }}</span>{% endif %}
+                                {% if k.korban_luka_ringan > 0 %}<span class="text-yellow-600">⚠{{ k.korban_luka_ringan }}</span>{% endif %}
+                            </div>
+                        </td>
+                        <td class="px-4 py-2 text-gray-900 text-xs font-mono">
+                            {{ k.latitude|floatformat:4 }},<br>{{ k.longitude|floatformat:4 }}
+                        </td>
+                        <td class="px-4 py-2 text-center">
+                            <div class="flex justify-center gap-1">
+                                <a href="{% url 'kecelakaan_raw_detail' k.id %}" class="p-1.5 bg-blue-100 text-blue-600 rounded hover:bg-blue-200" title="Lihat Detail">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if is_admin %}
+                                <a href="{% url 'kecelakaan_raw_delete' k.id %}" class="p-1.5 bg-red-100 text-red-600 rounded hover:bg-red-200" title="Hapus">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+                            <i class="fas fa-inbox mr-2"></i>Tidak ada data
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if kecelakaan %}
+    <div class="mt-4 text-sm text-gray-600">
+        Menampilkan {{ kecelakaan|length }} dari total data
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
