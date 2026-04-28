@@ -26,3 +26,6 @@ db.sqlite3  # abaikan jika suatu saat pakai sqlite
 # OS files
 .DS_Store
 Thumbs.db
+
+#other
+backup.zip
