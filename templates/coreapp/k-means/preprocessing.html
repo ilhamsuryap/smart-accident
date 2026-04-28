@@ -62,11 +62,17 @@
                 <p class="text-sm text-gray-500 mt-2">Memproses preprocessing...</p>
             </div>
 
-            <button type="submit"
-                class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition">
-                <i class="fas fa-sync-alt mr-2"></i>
-                Mulai Preprocessing
-            </button>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                <button type="submit" id="submitBtn"
+                    class="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition">
+                    <i class="fas fa-sync-alt mr-2"></i>
+                    Mulai Preprocessing
+                </button>
+                <a href="?use_db=1" class="bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-medium transition text-center flex items-center justify-center gap-2">
+                    <i class="fas fa-database"></i>
+                    Gunakan Data Database
+                </a>
+            </div>
         </form>
     </div>
 
@@ -86,10 +92,23 @@
 
     <!-- PREVIEW HASIL PREPROCESSING -->
     {% if preview %}
-    <div class="bg-white rounded-xl shadow-md p-6 w-full">
-        <h2 class="font-semibold text-gray-800 mb-4">
-            Preview Hasil Preprocessing (Summary per Umur)
-        </h2>
+    <div class="bg-white rounded-xl shadow-md p-6 w-full mb-8">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="font-semibold text-gray-800">
+                Preview Hasil Preprocessing
+            </h2>
+            {% if jumlah_data_bersih > 10 %}
+                {% if is_full_preview %}
+                    <a href="?show_all=0{% if is_full_hasil %}&show_all_hasil=1{% endif %}{% if k %}&k={{ k }}{% endif %}" class="text-blue-600 hover:text-blue-800 text-sm font-medium transition">
+                        <i class="fas fa-compress-alt mr-1"></i> Sembunyikan
+                    </a>
+                {% else %}
+                    <a href="?show_all=1{% if is_full_hasil %}&show_all_hasil=1{% endif %}{% if k %}&k={{ k }}{% endif %}" class="text-blue-600 hover:text-blue-800 text-sm font-medium transition">
+                        <i class="fas fa-expand-alt mr-1"></i> Tampilkan Semua ({{ jumlah_data_bersih }} data)
+                    </a>
+                {% endif %}
+            {% endif %}
+        </div>
 
         <div class="w-full overflow-x-auto">
             <table class="w-full table-auto text-sm text-left border border-gray-200">
@@ -115,57 +134,71 @@
                 </tbody>
             </table>
         </div>
+        
+        {% if not is_full_preview and jumlah_data_bersih > 10 %}
+        <div class="mt-4 text-center">
+            <p class="text-xs text-gray-500 mb-2">Menampilkan 10 data pertama dari total {{ jumlah_data_bersih }} data</p>
+            <a href="?show_all=1" class="inline-block bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition">
+                Tampilkan Semua
+            </a>
+        </div>
+        {% endif %}
     </div>
     {% endif %}
 
 
 <!-- FORM PROSES CLUSTERING -->
 {% if preview %}
-<div class="bg-white rounded-xl shadow-md p-6">
+<div class="mt-8 bg-white rounded-xl shadow-md p-6">
     <h2 class="font-semibold text-gray-800 mb-4">
         Proses K-Means Clustering
     </h2>
 
-    <!-- TANPA ACTION -->
-    <form method="get"
-          class="flex flex-col md:flex-row gap-4 items-center">
-
-        <div class="flex items-center gap-3">
-            <label class="text-sm font-medium text-gray-700">
-                Jumlah Cluster:
-            </label>
-            <input type="number"
-                name="k"
-                min="1"
-                max="3"
-                value="3"
-                required
-                class="border px-4 py-2 rounded-lg w-24 focus:ring-2 focus:ring-green-500">
+    <form method="get" action="{% url 'proses_cluster' %}" class="flex flex-col md:flex-row gap-4 items-center">
+        <!-- Hidden input k=3 -->
+        <input type="hidden" name="k" value="3">
+        
+        <div class="bg-blue-50 border border-blue-100 rounded-lg px-4 py-2 flex items-center gap-3">
+            <i class="fas fa-info-circle text-blue-500"></i>
+            <p class="text-sm text-blue-700">
+                Clustering akan diproses dengan <strong>3 Cluster</strong> (Rendah, Sedang, Tinggi)
+            </p>
         </div>
 
         <button type="submit"
-                class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition">
+                class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-bold shadow-lg transform hover:scale-105 transition duration-200">
             <i class="fas fa-project-diagram mr-2"></i>
-            Proses Clustering
+            Proses Cluster
         </button>
     </form>
 </div>
 {% endif %}
+
 {% if hasil_cluster %}
 <div class="bg-white rounded-xl shadow-md p-6 mt-8">
     <div class="flex justify-between items-center mb-4">
         <h2 class="font-semibold text-gray-800">
-            Hasil Clustering (K={{ k }})
+            Hasil Clustering 
         </h2>
-       
+        {% if jumlah_data_bersih > 10 %}
+            {% if is_full_hasil %}
+                <a href="?k=3&show_all_hasil=0{% if is_full_preview %}&show_all=1{% endif %}" class="text-blue-600 hover:text-blue-800 text-sm font-medium transition">
+                    <i class="fas fa-compress-alt mr-1"></i> Sembunyikan
+                </a>
+            {% else %}
+                <a href="?k=3&show_all_hasil=1{% if is_full_preview %}&show_all=1{% endif %}" class="text-blue-600 hover:text-blue-800 text-sm font-medium transition">
+                    <i class="fas fa-expand-alt mr-1"></i> Tampilkan Semua ({{ jumlah_data_bersih }} data)
+                </a>
+            {% endif %}
+        {% endif %}
     </div>
 
-    <div class="w-full overflow-x-auto">
-        <table class="w-full table-auto text-sm text-left border border-gray-200">
+    <div class="overflow-x-auto relative shadow-inner border rounded-lg">
+        <table class="min-w-full text-sm text-left border-collapse">
             <thead class="bg-gray-100 text-gray-700">
                 <tr>
                     {% for key in hasil_cluster.0.keys %}
-                        <th class="px-4 py-2 border whitespace-nowrap font-semibold">
+                        <th class="px-4 py-3 border whitespace-nowrap {% if key == 'Cluster' %}sticky right-0 bg-gray-200 z-20 border-l-2 border-gray-300 shadow-[-4px_0_10px_rgba(0,0,0,0.1)]{% endif %}">
                             {{ key }}
                         </th>
                     {% endfor %}
@@ -174,18 +207,24 @@
             <tbody>
                 {% for row in hasil_cluster %}
                 <tr class="hover:bg-gray-50 border-b">
-                    {% for value in row.values %}
-                        <td class="px-4 py-2 border whitespace-nowrap">
-                            {% if value == 0 %}
-                                <span class="text-gray-400">{{ value }}</span>
-                            {% elif value == 1 %}
-                                <span class="text-blue-600 font-medium">{{ value }}</span>
-                            {% elif value == 2 %}
-                                <span class="text-green-600 font-medium">{{ value }}</span>
-                            {% elif value == 3 %}
-                                <span class="text-red-600 font-medium">{{ value }}</span>
+                    {% for key, value in row.items %}
+                        <td class="px-4 py-2 border whitespace-nowrap {% if key == 'Cluster' %}sticky right-0 bg-gray-50 z-10 border-l-2 border-gray-300 shadow-[-4px_0_10px_rgba(0,0,0,0.1)]{% endif %}">
+                            {% if key == "Cluster" %}
+                                {% if value == 1 %}
+                                    <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-semibold">
+                                        Cluster 1
+                                    </span>
+                                {% elif value == 2 %}
+                                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full font-semibold">
+                                        Cluster 2
+                                    </span>
+                                {% elif value == 3 %}
+                                    <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full font-semibold">
+                                        Cluster 3
+                                    </span>
+                                {% endif %}
                             {% else %}
-                                <span>{{ value }}</span>
+                                {{ value }}
                             {% endif %}
                         </td>
                     {% endfor %}
@@ -193,15 +232,24 @@
                 {% endfor %}
             </tbody>
         </table>
-      
     </div>
-    <div class="flex justify-center mt-4">
-    <a href="{% url 'hasil' %}" 
-       class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition flex items-center gap-2">
-        <i class="fas fa-chart-bar"></i>
-        Lihat Analisis Lengkap
-    </a>
-</div>
+    
+    {% if not is_full_hasil and jumlah_data_bersih > 10 %}
+    <div class="mt-4 text-center">
+        <p class="text-xs text-gray-500 mb-2">Menampilkan 10 data pertama dari hasil clustering</p>
+        <a href="?k=3&show_all_hasil=1{% if is_full_preview %}&show_all=1{% endif %}" class="inline-block bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition">
+            Tampilkan Semua
+        </a>
+    </div>
+    {% endif %}
+
+    <div class="flex justify-center mt-6">
+        <a href="{% url 'hasil' %}" 
+           class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition flex items-center gap-2">
+            <i class="fas fa-chart-bar"></i>
+            Lihat Analisis Lengkap
+        </a>
+    </div>
 </div>
 {% endif %}
 
@@ -215,6 +263,7 @@ function showFileName(input) {
     document.getElementById("fileName").innerText = file.name;
     document.getElementById("fileSize").innerText =
         (file.size / 1024 / 1024).toFixed(2) + " MB";
+    // Tombol tetap terlihat — user harus klik sendiri
 }
 
 function removeFile() {
@@ -223,7 +272,7 @@ function removeFile() {
     document.getElementById("fileInfo").classList.add("hidden");
 }
 
-// Progress hanya muncul saat upload form disubmit
+// Progress muncul saat upload form disubmit
 document.getElementById("uploadForm").addEventListener("submit", function () {
     const container = document.getElementById("progressContainer");
     const bar = document.getElementById("progressBar");

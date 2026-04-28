@@ -977,3 +977,36 @@ class Kelurahan(models.Model):
 
     def __str__(self):
         return self.nama
+
+class KMeansData(models.Model):
+    """Model untuk data mentah yang digunakan dalam proses K-Means"""
+    no_referensi = models.CharField(max_length=50, blank=True, null=True)
+    umur = models.IntegerField()
+    tkp = models.CharField(max_length=255)
+    penyebab = models.CharField(max_length=255)
+    hari = models.CharField(max_length=20)
+    tanggal = models.DateField()
+    jam = models.CharField(max_length=10) # Format "19.00"
+    jenis_kendaraan = models.CharField(max_length=100)
+    tipe_kendaraan = models.CharField(max_length=100)
+    kerugian_material = models.DecimalField(max_digits=15, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name_plural = "K-Means Data"
+        ordering = ['-tanggal', '-jam']
+
+    def __str__(self):
+        return f"{self.tanggal} - {self.tkp}"
+
+class AIConfig(models.Model):
+    """Model untuk menyimpan konfigurasi API Key AI"""
+    tipe = models.CharField(max_length=50, unique=True, default='kmeans')
+    api_key = models.CharField(max_length=255)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = "AI Config"
+
+    def __str__(self):
+        return f"Config {self.tipe}"
