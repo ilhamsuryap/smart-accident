@@ -1,82 +1,175 @@
 {% extends "base.html" %}
 {% block content %}
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<!-- <script src="https://cdn.plot.ly/plotly-latest.min.js"></script> -->
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+<style>
+    .loading-skeleton {
+        background: linear-gradient(90deg, #f0f2f5 25%, #e0e4e8 50%, #f0f2f5 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite linear;
+    }
+
+    @keyframes shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    .glass-loading {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .ai-justify p {
+        text-align: justify;
+    }
+</style>
 
 <div class="max-w-6xl mx-auto pt-6 pb-10">
 
-    <!-- HEADER -->
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-800">
-            Hasil Clustering AHC
-        </h1>
-        <p class="text-gray-500 mt-1">
-            Menggunakan Metode Agglomerative Hierarchical Clustering (Ward)
-        </p>
+    <!-- HEADER (Matching K-Means) -->
+    <div class="bg-white rounded-xl shadow-md p-6 mb-8 border-l-8 border-blue-600">
+        <div class="flex justify-between items-center">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">
+                    Hasil Analisis Clustering AHC
+                </h2>
+                <p class="text-gray-500 text-sm mt-1 flex items-center gap-2">
+                    <i class="fas fa-microchip text-blue-600"></i>
+                    Menggunakan Metode Agglomerative Hierarchical Clustering (Ward)
+                </p>
+            </div>
+        </div>
 
         {% if belum_clustering %}
-        <p class="text-red-500 mt-2 text-sm">
-            Data belum tersedia, silahkan lakukan proses clustering dahulu.
-        </p>
+        <div class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-center gap-2">
+            <i class="fas fa-exclamation-triangle"></i>
+            Data belum tersedia, silakan lakukan proses clustering terlebih dahulu.
+        </div>
         {% endif %}
     </div>
 
     {% if not belum_clustering %}
 
-    <!--AI GLOBAL INSIGHT -->
-    <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mb-6">
-        <h2 class="text-xl font-bold text-yellow-700 mb-2">
-            Insight AI
-        </h2>
-
-        <p class="text-gray-700 text-sm whitespace-pre-line">
-            {{ ai_global }}
-        </p>
-    </div>
-
-    <!-- INFO RINGKAS -->
-    <div class="grid grid-cols-3 gap-4 mb-6 text-center">
-        <div class="bg-blue-50 p-4 rounded-lg shadow">
-        <p class="text-gray-500 text-sm">Total Kejadian Kecelakaan</p>
-        <p class="text-2xl font-bold text-blue-700">{{ total_kejadian }}</p>
+    <!-- INFO RINGKAS (Matching K-Means) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 shadow-sm">
+            <p class="text-sm text-gray-500 font-medium">Total Kejadian</p>
+            <p class="text-3xl font-black text-blue-700">{{ total_kejadian }}</p>
         </div>
-
-        <div class="bg-green-50 p-4 rounded-lg shadow">
-            <p class="text-gray-500 text-sm">Jumlah Cluster</p>
-            <p class="text-2xl font-bold text-green-700">{{ jumlah_cluster }}</p>
+        <div class="bg-green-50 border border-green-200 rounded-xl p-6 shadow-sm">
+            <p class="text-sm text-gray-500 font-medium">Jumlah Klaster</p>
+            <p class="text-3xl font-black text-green-700">{{ jumlah_cluster }}</p>
         </div>
-
-        <div class="bg-purple-50 p-4 rounded-lg shadow">
-            <p class="text-gray-500 text-sm">Silhouette Score</p>
-            <p class="text-2xl font-bold text-purple-700">{{ silhouette_score }}</p>
+        <div class="bg-purple-50 border border-purple-200 rounded-xl p-6 shadow-sm">
+            <p class="text-sm text-gray-500 font-medium">Silhouette Score</p>
+            <p class="text-3xl font-black text-purple-700">{{ silhouette_score }}</p>
         </div>
     </div>
 
-    <!-- DETAIL DATA -->
-    <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-        <h2 class="text-xl font-bold mb-4 text-gray-700">
-            Detail Data Cluster
-        </h2>
+    <!-- AI GLOBAL INSIGHT (Matching Diagram AI Style) -->
+    <div class="bg-blue-50 border border-blue-100 rounded-xl p-6 shadow-sm mb-10">
+        <h4 class="font-bold text-blue-900 mb-3 flex items-center gap-2 text-sm uppercase">
+            <i class="fas fa-robot"></i> Analisis Klaster
+        </h4>
+        <div class="text-blue-800 text-sm leading-relaxed ai-justify">
+            {{ ai_global|safe }}
+        </div>
+    </div>
 
-        <div class="overflow-x-auto">
-            <table class="min-w-full text-sm border border-gray-200">
-                <thead class="bg-gray-100 text-gray-700">
+    <!-- RINGKASAN CLUSTER (Matching K-Means Info Table Style) -->
+    <div class="bg-white rounded-xl shadow-md border border-gray-100 p-8 mb-10">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="bg-gray-100 p-2 rounded-lg">
+                <i class="fas fa-list-ul text-gray-600"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800">Ringkasan Karakteristik Klaster</h3>
+        </div>
+
+        <div class="overflow-x-auto rounded-xl border border-gray-100">
+            <table class="min-w-full text-sm">
+                <thead class="bg-gray-50 text-gray-700 font-bold uppercase text-[10px] tracking-widest">
                     <tr>
+                        <th class="px-6 py-4 border-b text-left">Klaster</th>
+                        <th class="px-6 py-4 border-b text-left">Populasi</th>
+                        <th class="px-6 py-4 border-b text-left">Persentase (%)</th>
+                        <th class="px-6 py-4 border-b text-left">Rata-rata Umur</th>
+                        <th class="px-6 py-4 border-b text-left">Faktor Dominan</th>
+                        <th class="px-6 py-4 border-b text-left">Waktu Dominan</th>
+                        <th class="px-6 py-4 border-b text-left">Hari Dominan</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    {% for s in summary_cluster %}
+                    <tr class="hover:bg-blue-50/50 transition-colors">
+                        <td class="px-6 py-4 font-bold text-blue-700">Klaster {{ s.cluster }}</td>
+                        <td class="px-6 py-4">{{ s.jumlah }} <span class="text-gray-400 text-xs">kasus</span></td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-16 bg-gray-200 h-1.5 rounded-full overflow-hidden">
+                                    <div class="bg-blue-600 h-full" style="width: {{ s.persentase }}%"></div>
+                                </div>
+                                <span class="font-bold">{{ s.persentase }}%</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">{{ s.rata_umur }} <span class="text-gray-400 text-xs">Tahun</span></td>
+                        <td class="px-6 py-4 font-semibold text-blue-800">{{ s.faktor_dominan }}</td>
+                        <td class="px-6 py-4 text-purple-700">{{ s.waktu_dominan }}</td>
+                        <td class="px-6 py-4">
+                            {% if s.hari_dominan == 'Weekend' %}
+                            <span class="text-rose-600 font-bold"><i class="fas fa-calendar-day mr-1"></i>Akhir Pekan</span>
+                            {% else %}
+                            <span class="text-emerald-600 font-bold"><i class="fas fa-briefcase mr-1"></i>Hari Kerja</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- DETAIL DATA CLUSTER (Collapsible Style) -->
+    <div class="bg-white rounded-xl shadow-md p-8 mb-10 border border-gray-100">
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-100 p-2 rounded-lg">
+                    <i class="fas fa-database text-blue-600"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Detail Rekaman Data</h3>
+            </div>
+            {% if hasil_cluster|length > 10 %}
+            <button id="toggleRows" onclick="toggleAllRows()" class="bg-gray-50 hover:bg-gray-100 text-blue-600 font-bold py-2 px-6 rounded-xl border border-blue-100 transition-all text-sm">
+                Tampilkan Semua ({{ hasil_cluster|length }} data)
+            </button>
+            {% endif %}
+        </div>
+
+        <div class="overflow-x-auto rounded-xl border border-gray-100">
+            <table class="min-w-full text-xs" id="detailTable">
+                <thead class="bg-gray-50 text-gray-700 font-bold uppercase text-[10px] tracking-widest">
+                    <tr>
+                        <th class="px-4 py-3 border-b text-left">#</th>
                         {% if hasil_cluster %}
                             {% for col in hasil_cluster.0.keys %}
-                            <th class="px-4 py-2 border">{{ col }}</th>
+                            <th class="px-4 py-3 border-b text-left">{{ col }}</th>
                             {% endfor %}
                         {% endif %}
                     </tr>
                 </thead>
-
-                <tbody>
+                <tbody class="divide-y divide-gray-50">
                     {% for row in hasil_cluster %}
-                    <tr class="hover:bg-yellow-50 border-l-4 border-yellow-400">
-                        {% for value in row.values %}
-                        <td class="px-4 py-2 border">{{ value }}</td>
+                    <tr class="hover:bg-blue-50/30 transition-colors {% if forloop.counter > 10 %}hidden extra-row{% endif %}">
+                        <td class="px-4 py-3 border-b font-bold text-blue-600">{{ forloop.counter }}</td>
+                        {% for key, value in row.items %}
+                            {% if key == 'Cluster' or key == 'Kluster' or key == 'cluster' or key == 'kluster' %}
+                            <td class="px-4 py-3 border-b font-bold text-purple-700 bg-purple-50">{{ value }}</td>
+                            {% else %}
+                            <td class="px-4 py-3 border-b">{{ value }}</td>
+                            {% endif %}
                         {% endfor %}
                     </tr>
                     {% endfor %}
@@ -85,285 +178,324 @@
         </div>
     </div>
 
-    <!-- RINGKASAN -->
-    <div class="bg-white rounded-xl shadow-md p-6 mb-10">
-        <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">
-            Ringkasan Cluster
-        </h2>
-
-        <div class="overflow-x-auto">
-            <table class="min-w-full text-sm border border-gray-200">
-                <thead class="bg-gray-100 text-gray-700">
-                    <tr>
-                        <th class="px-4 py-2 border">Cluster</th>
-                        <th class="px-4 py-2 border">Jumlah Kejadian</th>
-                        <th class="px-4 py-2 border">Persentase (%)</th>
-                        <th class="px-4 py-2 border">Rentang Umur</th>
-                        <th class="px-4 py-2 border">Faktor Dominan</th>
-                        <th class="px-4 py-2 border">Waktu Dominan</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    {% for s in summary_cluster %}
-                    <tr>
-                        <td class="px-4 py-2 border font-semibold">
-                            Cluster {{ s.cluster }}
-                        </td>
-                        <td class="px-4 py-2 border">{{ s.jumlah }}</td>
-                        <td class="px-4 py-2 border">{{ s.persentase }}%</td>
-                        <td class="px-4 py-2 border">{{ s.rata_umur }}</td>
-                        <td class="px-4 py-2 border text-blue-700 font-medium">
-                            {{ s.faktor_dominan }}
-                        </td>
-                        <td class="px-4 py-2 border text-purple-700 font-medium">
-                            {{ s.waktu_dominan }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- SCATTER PCA -->
+    <!-- VISUALISASI PCA -->
     {% if scatter_html %}
-    <div class="bg-white rounded-xl shadow-md p-6 mb-10">
-        <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">
-            Visualisasi Cluster (PCA Interaktif)
-        </h2>
+    <div class="bg-white rounded-xl shadow-md p-8 mb-10 border border-gray-100">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="bg-indigo-100 p-2 rounded-lg">
+                <i class="fas fa-braille text-indigo-600"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800">Visualisasi Sebaran Klaster (PCA)</h3>
+        </div>
 
-        <div class="w-full overflow-x-auto">
+        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
             {{ scatter_html|safe }}
         </div>
 
-        <div class="flex justify-center gap-6 mt-4 text-sm">
-            <div><span style="color:#22c55e">●</span> Cluster 1</div>
-            <div><span style="color:#eab308">●</span> Cluster 2</div>
-            <div><span style="color:#ef4444">●</span> Cluster 3</div>
-        </div>
-
-        <p class="text-center text-gray-500 text-sm mt-3">
-            Titik menunjukkan data. Warna menunjukkan cluster. Hover untuk detail.
-        </p>
-
-        <!--AI PCA -->
-        <div class="mt-4 text-sm text-gray-700 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg leading-relaxed">
-            <div class="flex items-center mb-2">
-                <span class="bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full">
-                    AI Insight
-                </span>
+        <!-- PCA Axis Hint -->
+        <div class="mt-4 p-4 bg-indigo-50 border border-indigo-100 rounded-lg text-[11px] text-indigo-900 leading-relaxed ai-justify shadow-sm">
+            <p class="font-bold mb-1"><i class="fas fa-info-circle mr-1"></i> Penjelasan Sumbu PCA:</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <span class="font-bold text-indigo-700">Sumbu X (PC1):</span> Mewakili fitur dengan varians terbesar (biasanya Umur dan Faktor Dominan). Posisi horizontal menunjukkan kemiripan utama antar kejadian.
+                </div>
+                <div>
+                    <span class="font-bold text-indigo-700">Sumbu Y (PC2):</span> Mewakili fitur sekunder (Sesi Waktu dan Hari). Membantu memisahkan data yang tumpang tindih pada sumbu X berdasarkan waktu kejadian.
+                </div>
             </div>
-            {{ ai_pca|safe }}
         </div>
+
+        <div class="flex justify-center gap-6 mt-6 text-xs font-bold uppercase tracking-wider">
+            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full" style="background-color:#22c55e"></span> Klaster 1</div>
+            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full" style="background-color:#a855f7"></span> Klaster 2</div>
+            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full" style="background-color:#ef4444"></span> Klaster 3</div>
+        </div>
+
+        <!-- AI PCA -->
+        <div class="mt-8 bg-blue-50 border border-blue-100 rounded-xl p-6 shadow-sm min-h-[150px] relative overflow-hidden">
+            <!-- Loading State -->
+            <div id="ai-pca-loading" class="absolute inset-0 glass-loading z-10 flex flex-col items-center justify-center p-8 text-center rounded-xl {% if ai_explain_cache %}hidden{% endif %}">
+                <p class="text-blue-600 font-bold text-[10px] uppercase tracking-[0.2em] mb-4">Menganalisis Pola Klaster...</p>
+                <div class="w-full max-w-[200px] space-y-3">
+                    <div class="h-1.5 w-full loading-skeleton rounded-full"></div>
+                    <div class="h-1.5 w-2/3 mx-auto loading-skeleton rounded-full"></div>
+                </div>
+            </div>
+
+            <h4 class="font-bold text-blue-900 mb-3 flex items-center gap-2 text-sm uppercase">
+                <i class="fas fa-chart-line"></i> Analisis Visualisasi PCA
+            </h4>
+            <div id="ai-pca-container" class="text-blue-800 text-sm leading-relaxed ai-justify opacity-0 transition-opacity duration-500">
+                <div id="ai-pca-paragraphs"></div>
+                <div id="ai-pca-poin"></div>
+            </div>
+        </div>
+    </div>
     {% endif %}
 
     <!-- DENDROGRAM -->
     {% if dendrogram_html %}
-    <div class="bg-white rounded-xl shadow-md p-6 mb-10">
-        <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">
-            Dendrogram Hierarchical Clustering
-        </h2>
+    <div class="bg-white rounded-xl shadow-md p-8 mb-10 border border-gray-100">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="bg-emerald-100 p-2 rounded-lg">
+                <i class="fas fa-project-diagram text-emerald-600"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800">Struktur Hierarki Klaster (Dendrogram)</h3>
+        </div>
 
-        <div class="w-full overflow-x-auto">
+        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 overflow-x-auto">
             {{ dendrogram_html|safe }}
         </div>
 
-        <p class="text-center text-gray-500 text-sm mt-3">
-            Menunjukkan proses penggabungan cluster berdasarkan jarak.
-        </p>
-
-            <!-- AI DENDROGRAM -->
-            <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-
-                <div class="flex items-center mb-3">
-                    <span class="bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full">
-                        AI Insight
-                    </span>
+        <!-- AI DENDROGRAM -->
+        <div class="mt-8 bg-blue-50 border border-blue-100 rounded-xl p-6 shadow-sm min-h-[150px] relative overflow-hidden">
+            <!-- Loading State -->
+            <div id="ai-dendro-loading" class="absolute inset-0 glass-loading z-10 flex flex-col items-center justify-center p-8 text-center rounded-xl {% if ai_explain_cache %}hidden{% endif %}">
+                <p class="text-blue-600 font-bold text-[10px] uppercase tracking-[0.2em] mb-4">Menganalisis Hierarki...</p>
+                <div class="w-full max-w-[200px] space-y-3">
+                    <div class="h-1.5 w-full loading-skeleton rounded-full"></div>
+                    <div class="h-1.5 w-2/3 mx-auto loading-skeleton rounded-full"></div>
                 </div>
-
-                <div class="text-gray-700 text-sm leading-relaxed">
-                    {{ ai_dendrogram|safe }}
-                </div>
-
             </div>
+
+            <h4 class="font-bold text-blue-900 mb-3 flex items-center gap-2 text-sm uppercase">
+                <i class="fas fa-sitemap"></i> Analisis Struktur Hierarki
+            </h4>
+            <div id="ai-dendro-container" class="text-blue-800 text-sm leading-relaxed ai-justify opacity-0 transition-opacity duration-500">
+                <div id="ai-dendro-paragraphs"></div>
+                <div id="ai-dendro-poin"></div>
+            </div>
+        </div>
+    </div>
     {% endif %}
 
-    <!-- BAR CHART -->
-    <div class="bg-white rounded-xl shadow-md p-6 mb-10">
-        <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">
-            Bar Chart Jumlah Cluster
-        </h2>
+    <!-- FAKTOR GLOBAL -->
+    <div class="bg-white rounded-xl shadow-md p-8 mb-10 border border-gray-100">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="bg-rose-100 p-2 rounded-lg">
+                <i class="fas fa-bullseye text-rose-600"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800">Faktor Penyebab (Global)</h3>
+        </div>
+        <div style="height: 350px;">
+            <canvas id="faktorChart"></canvas>
+        </div>
+        <!-- AI FAKTOR -->
+        <div class="mt-8 bg-blue-50 border border-blue-100 rounded-xl p-6 shadow-sm min-h-[150px] relative overflow-hidden">
+            <!-- Loading State -->
+            <div id="ai-faktor-loading" class="absolute inset-0 glass-loading z-10 flex flex-col items-center justify-center p-8 text-center rounded-xl {% if ai_explain_cache %}hidden{% endif %}">
+                <p class="text-blue-600 font-bold text-[10px] uppercase tracking-[0.2em] mb-4">Menganalisis Faktor Utama...</p>
+                <div class="w-full max-w-[200px] space-y-3">
+                    <div class="h-1.5 w-full loading-skeleton rounded-full"></div>
+                    <div class="h-1.5 w-2/3 mx-auto loading-skeleton rounded-full"></div>
+                </div>
+            </div>
 
-        <canvas id="clusterChart"></canvas>
-        
-        <!-- MODAL DETAIL CLUSTER -->
-            <div id="modalCluster" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50">
-                
-                <div class="bg-white w-[600px] max-h-[80vh] rounded-xl shadow-lg overflow-hidden">
+            <h4 class="font-bold text-blue-900 mb-3 flex items-center gap-2 text-sm uppercase">
+                <i class="fas fa-triangle-exclamation"></i> Analisis Faktor Global
+            </h4>
+            <div id="ai-faktor-container" class="text-blue-800 text-sm leading-relaxed ai-justify opacity-0 transition-opacity duration-500">
+                <div id="ai-faktor-paragraphs"></div>
+                <div id="ai-faktor-penutup"></div>
+            </div>
+        </div>
+    </div>
 
-                    <!-- HEADER -->
-                    <div class="flex justify-between items-center p-4 border-b bg-yellow-50 border-l-4 border-yellow-400">
-                        <h2 id="modalTitle" class="font-bold text-lg">Cluster</h2>
-                        <button onclick="closeModal()" class="text-gray-500 hover:text-red-500 text-xl">
-                            &times;
-                        </button>
-                    </div>
-
-        <!-- CONTENT -->
-        <div id="modalContent" class="p-4 overflow-y-auto space-y-3 text-sm max-h-[60vh]">
-            <!-- isi dari JS -->
+    <!-- BOXPLOT UMUR -->
+    {% if boxplot_html %}
+    <div class="bg-white rounded-xl shadow-md p-8 mb-10 border border-gray-100">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="bg-violet-100 p-2 rounded-lg">
+                <i class="fas fa-box-open text-violet-600"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800">Distribusi Umur per Klaster (Boxplot)</h3>
         </div>
 
+        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 overflow-x-auto">
+            {{ boxplot_html|safe }}
+        </div>
+
+        <!-- AI BOXPLOT -->
+        <div class="mt-8 bg-blue-50 border border-blue-100 rounded-xl p-6 shadow-sm min-h-[150px] relative overflow-hidden">
+            <!-- Loading State -->
+            <div id="ai-boxplot-loading" class="absolute inset-0 glass-loading z-10 flex flex-col items-center justify-center p-8 text-center rounded-xl {% if ai_explain_cache %}hidden{% endif %}">
+                <p class="text-blue-600 font-bold text-[10px] uppercase tracking-[0.2em] mb-4">Menganalisis Sebaran Umur...</p>
+                <div class="w-full max-w-[200px] space-y-3">
+                    <div class="h-1.5 w-full loading-skeleton rounded-full"></div>
+                    <div class="h-1.5 w-2/3 mx-auto loading-skeleton rounded-full"></div>
+                </div>
+            </div>
+
+            <h4 class="font-bold text-blue-900 mb-3 flex items-center gap-2 text-sm uppercase">
+                <i class="fas fa-chart-area"></i> Analisis Boxplot Umur
+            </h4>
+            <div id="ai-boxplot-container" class="text-blue-800 text-sm leading-relaxed ai-justify opacity-0 transition-opacity duration-500">
+                <div id="ai-boxplot-paragraphs"></div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- UMUR VS FAKTOR -->
+    <div class="bg-white rounded-xl shadow-md p-8 mb-10 border border-gray-100">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="bg-amber-100 p-2 rounded-lg">
+                <i class="fas fa-users text-amber-600"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800">Analisis Faktor Berdasarkan Kelompok Umur</h3>
+        </div>
+        <div style="height: 450px;">
+            <canvas id="umurFaktorChart"></canvas>
+        </div>
+        <!-- AI UMUR -->
+        <div class="mt-8 bg-blue-50 border border-blue-100 rounded-xl p-6 shadow-sm min-h-[150px] relative overflow-hidden">
+            <!-- Loading State -->
+            <div id="ai-umur-loading" class="absolute inset-0 glass-loading z-10 flex flex-col items-center justify-center p-8 text-center rounded-xl {% if ai_explain_cache %}hidden{% endif %}">
+                <p class="text-blue-600 font-bold text-[10px] uppercase tracking-[0.2em] mb-4">Menganalisis Profil Umur...</p>
+                <div class="w-full max-w-[200px] space-y-3">
+                    <div class="h-1.5 w-full loading-skeleton rounded-full"></div>
+                    <div class="h-1.5 w-2/3 mx-auto loading-skeleton rounded-full"></div>
+                </div>
+            </div>
+
+            <h4 class="font-bold text-blue-900 mb-3 flex items-center gap-2 text-sm uppercase">
+                <i class="fas fa-id-card-clip"></i> Analisis Korelasi Umur & Perilaku
+            </h4>
+            <div id="ai-umur-container" class="text-blue-800 text-sm leading-relaxed ai-justify opacity-0 transition-opacity duration-500">
+                <div id="ai-umur-paragraphs"></div>
+                <div id="ai-umur-kesimpulan"></div>
+            </div>
+        </div>
+
+        <!-- RETRY BOX -->
+        <div id="ai-retry-box" class="hidden mt-6 bg-gray-50 border border-gray-100 p-4 rounded-xl text-center">
+            <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-3">Analisis mendalam tidak dapat dimuat</p>
+            <button onclick="loadAiExplanations()" class="bg-white border border-gray-200 text-gray-700 px-6 py-2 rounded-lg text-[10px] font-bold hover:bg-gray-50 transition-all inline-flex items-center gap-2 uppercase tracking-widest shadow-sm">
+                <i class="fas fa-sync-alt"></i> Hubungkan Ulang AI
+            </button>
+        </div>
+    </div>
+
+    <!-- SECTION REKOMENDASI (Matching YOLA Style) -->
+    <div class="mt-12 bg-white border border-blue-100 rounded-2xl p-10 shadow-sm text-center">
+        <div class="max-w-2xl mx-auto">
+            <h3 class="text-xl font-black text-gray-800 mb-3 uppercase tracking-tight">
+                Perumusan Strategi Penanganan & Pencegahan Kecelakaan
+            </h3>
+            <p class="text-gray-600 mb-8 text-sm md:text-base leading-relaxed ai-justify">
+                Berdasarkan hasil analisis pola klasterisasi hierarki (AHC) yang telah dilakukan, sistem akan merumuskan usulan langkah taktis dan strategi mitigasi guna menekan angka fatalitas kecelakaan di wilayah Kota Madiun secara terukur.
+            </p>
+            
+            <div id="rekomendasi-btn-container" class="flex flex-col items-center">
+                <button onclick="generateRekomendasi()" id="btn-rekomendasi" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-all hover:scale-105 flex items-center justify-center gap-3 mx-auto">
+                    <i id="btn-icon" class="fas fa-file-signature"></i>
+                    <span id="btn-text">Rumuskan Langkah Penanganan & Strategi Terukur</span>
+                    <i id="btn-spinner" class="fas fa-circle-notch fa-spin hidden"></i>
+                </button>
+                
+                <div id="rekomendasi-error" class="hidden mt-6 p-4 bg-red-50 border border-red-100 rounded-xl text-red-700 text-[10px] font-bold uppercase tracking-widest">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Gagal merumuskan strategi.</span>
+                    <button onclick="generateRekomendasi()" class="ml-2 text-red-800 underline">Coba Lagi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% endif %}
+
+</div>
+
+<script>
+    function generateRekomendasi() {
+        const btn = document.getElementById('btn-rekomendasi');
+        const text = document.getElementById('btn-text');
+        const icon = document.getElementById('btn-icon');
+        const spinner = document.getElementById('btn-spinner');
+        const errorBox = document.getElementById('rekomendasi-error');
+
+        // Loading State
+        btn.disabled = true;
+        btn.classList.add('opacity-90', 'cursor-not-allowed');
+        text.innerText = 'Merumuskan Strategi...';
+        icon.classList.add('hidden');
+        spinner.classList.remove('hidden');
+        errorBox.classList.add('hidden');
+
+        fetch("{% url 'ahc_rekomendasi' %}", {
+            method: "POST",
+            headers: { 
+                "X-CSRFToken": document.querySelector('#csrf-container [name=csrfmiddlewaretoken]').value,
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        })
+        .then(res => res.json())
+        .then(json => {
+            if (json.status === 'ok') {
+                // Success -> Redirect to Recommendation Page
+                window.location.href = "{% url 'ahc_rekomendasi' %}";
+            } else {
+                throw new Error(json.message);
+            }
+        })
+        .catch(err => {
+            console.error("Rekomendasi Error:", err);
+            // Error State
+            btn.disabled = false;
+            btn.classList.remove('opacity-90', 'cursor-not-allowed');
+            text.innerText = 'Rumuskan Ulang';
+            icon.classList.remove('hidden');
+            spinner.classList.add('hidden');
+            errorBox.classList.remove('hidden');
+        });
+    }
+</script>
+
+<!-- MODAL DETAIL CLUSTER -->
+<div id="modalCluster" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white w-full max-w-xl max-h-[80vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+        <div class="flex justify-between items-center p-5 border-b bg-blue-50">
+            <h2 id="modalTitle" class="font-bold text-lg text-blue-900">Cluster</h2>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-red-500 text-2xl font-light">
+                &times;
+            </button>
+        </div>
+        <div id="modalContent" class="p-6 overflow-y-auto space-y-3 text-sm flex-1">
+            <!-- content by js -->
+        </div>
     </div>
 </div>
 
-        <!-- AI BAR -->
-        <div class="mt-4 text-sm text-gray-700 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg leading-relaxed">
-            <div class="flex items-center mb-2">
-                <span class="bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full">
-                    AI Insight
-                </span>
-            </div>
-            {{ ai_bar|safe }}
-        </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-        <!-- BAR CHART FAKTOR PENYEBAB -->
-        <div class="bg-white rounded-xl shadow-md p-6 mb-10">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">
-                Faktor Penyebab Kecelakaan (Global)
-            </h2>
+    <!-- Data for Charts -->
+    {{ cluster_labels|json_script:"cluster_labels_data" }}
+    {{ cluster_counts|json_script:"cluster_counts_data" }}
+    {{ cluster_detail|json_script:"cluster_detail_data" }}
+    {{ faktor_labels|json_script:"faktor_labels_data" }}
+    {{ faktor_values|json_script:"faktor_values_data" }}
+    {{ umur_labels|json_script:"umur_labels_data" }}
+    {{ faktor_kelalaian|json_script:"faktor_kelalaian_data" }}
+    {{ faktor_pelanggaran|json_script:"faktor_pelanggaran_data" }}
+    {{ faktor_teknis|json_script:"faktor_teknis_data" }}
+    <div id="csrf-container" class="hidden">{% csrf_token %}</div>
+    <span id="data-length" data-value="{{ hasil_cluster|length }}" class="hidden"></span>
 
-            <canvas id="faktorChart"></canvas>
+    <script>
+    const labels = JSON.parse(document.getElementById('cluster_labels_data').textContent) || [];
+    const counts = JSON.parse(document.getElementById('cluster_counts_data').textContent) || [];
+    const clusterDetail = JSON.parse(document.getElementById('cluster_detail_data').textContent) || {};
+    const faktorLabels = JSON.parse(document.getElementById('faktor_labels_data').textContent) || [];
+    const faktorValues = JSON.parse(document.getElementById('faktor_values_data').textContent) || [];
+    const umurLabels = JSON.parse(document.getElementById('umur_labels_data').textContent) || [];
+    const faktorKelalaian = JSON.parse(document.getElementById('faktor_kelalaian_data').textContent) || [];
+    const faktorPelanggaran = JSON.parse(document.getElementById('faktor_pelanggaran_data').textContent) || [];
+    const faktorTeknis = JSON.parse(document.getElementById('faktor_teknis_data').textContent) || [];
 
-            <p class="text-center text-gray-500 text-sm mt-3">
-                Grafik ini menunjukkan faktor yang paling dominan menyebabkan kecelakaan.
-            </p>
-        </div>
 
-        <p class="text-center text-gray-500 text-sm mt-3">
-    Grafik ini menunjukkan faktor yang paling dominan menyebabkan kecelakaan.
-</p>
 
-        <!-- 🔥 AI FAKTOR -->
-            <div class="mt-4 text-sm text-gray-700 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg whitespace-pre-line leading-relaxed">
-                <div class="flex items-center mb-3">
-                    <span class="bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full">
-                        AI Insight
-                    </span>
-                </div>
-                {{ ai_faktor|safe }}
-            </div>
-
-                    <!-- GROUPED BAR CHART -->
-            <div class="bg-white rounded-xl shadow-md p-6 mb-10">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">
-                    Analisis Faktor Berdasarkan Kelompok Umur
-                </h2>
-
-                <canvas id="umurFaktorChart"></canvas>
-
-                <p class="text-center text-gray-500 text-sm mt-3">
-                    Grafik menunjukkan hubungan antara umur dan faktor penyebab kecelakaan.
-                </p>
-            </div>
-
-            <!-- 🔥 AI UMUR -->
-            <div class="mt-4 text-sm text-gray-600 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg whitespace-pre-line leading-relaxed">
-                <div class="flex items-center mb-2">
-                    <span class="bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full">
-                        AI Insight
-                    </span>
-                </div>
-                {{ ai_umur|safe }}
-            </div>
-
-            {% endif %}         
-
-<script>
-const labels = {{ cluster_labels|default:"[]"|safe }};
-const counts = {{ cluster_counts|default:"[]"|safe }};
-const clusterDetail = {{ cluster_detail|default:"{}"|safe }};
-
-const ctx = document.getElementById('clusterChart');
-
-if (ctx) {
-    const chart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Jumlah Kejadian',
-                data: counts,
-                backgroundColor: ['#22c55e','#eab308','#ef4444'],
-                borderRadius: 6
-            }]
-        },
-
-                options: {
-                    plugins: {
-                        legend: {
-                            display: false   // 🔥 ini yang menghilangkan kotak hijau
-                        }
-                    },
-
-                    onClick: (evt, elements) => {
-                        if (elements.length > 0) {
-                            const index = elements[0].index;
-                            const clusterName = labels[index];
-                            const detail = clusterDetail[clusterName];
-
-                            const modal = document.getElementById("modalCluster");
-                            const modalTitle = document.getElementById("modalTitle");
-                            const modalContent = document.getElementById("modalContent");
-
-                            modalTitle.innerText = `${clusterName} (${detail.length} data)`;
-                            modalContent.innerHTML = "";
-
-                            if (detail) {
-                                detail.forEach((item, i) => {
-                                    modalContent.innerHTML += `
-                                        <div class="rounded-lg p-3 bg-gray-100 shadow-sm">
-                                            <p class="font-semibold text-gray-700">
-                                                Data ${i + 1}
-                                            </p>
-                                            <p class="text-gray-600">
-                                                ${item.replace("Jumlah:", "Jumlah Kejadian:")}
-                                            </p>
-                                        </div>
-                                    `;
-                                });
-                            } else {
-                                modalContent.innerHTML = `
-                                    <p class="text-gray-500">Tidak ada data.</p>
-                                `;
-                            }
-
-                            modal.classList.remove("hidden");
-                            modal.classList.add("flex");
-                        }
-                    }
-                }
-    });
-}
-    function closeModal() {
-        const modal = document.getElementById("modalCluster");
-        modal.classList.add("hidden");
-        modal.classList.remove("flex");
-    }
-
-    // OPTIONAL (klik luar untuk close)
-    document.getElementById("modalCluster").addEventListener("click", function(e) {
-        if (e.target === this) {
-            closeModal();
-        }
-    });
-
-    const faktorLabels = {{ faktor_labels|default:"[]"|safe }};
-    const faktorValues = {{ faktor_values|default:"[]"|safe }};
-
+    // 2. Faktor Global Chart
     const ctxFaktor = document.getElementById('faktorChart');
-
     if (ctxFaktor) {
         new Chart(ctxFaktor, {
             type: 'bar',
@@ -373,48 +505,242 @@ if (ctx) {
                     label: 'Jumlah Kejadian',
                     data: faktorValues,
                     backgroundColor: ['#3b82f6','#22c55e','#f59e0b','#ef4444'],
-                    borderRadius: 6
+                    borderRadius: 8,
+                    barThickness: 35
                 }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { 
+                    y: { beginAtZero: true, grid: { borderDash: [5, 5] } },
+                    x: { grid: { display: false } }
+                }
             }
         });
     }
 
-        //
-    const umurLabels = {{ umur_labels|default:"[]"|safe }};
-    const faktorPengemudi = {{ faktor_pengemudi|default:"[]"|safe }};
-    const faktorJalan = {{ faktor_jalan|default:"[]"|safe }};
-    const faktorKendaraan = {{ faktor_kendaraan|default:"[]"|safe }};
-    const faktorLingkungan = {{ faktor_lingkungan|default:"[]"|safe }};
-
+    // 3. Umur vs Faktor Chart
     const ctxUmur = document.getElementById('umurFaktorChart');
-
     if (ctxUmur) {
         new Chart(ctxUmur, {
             type: 'bar',
             data: {
                 labels: umurLabels,
                 datasets: [
-                    {
-                        label: 'Pengemudi',
-                        data: faktorPengemudi
-                    },
-                    {
-                        label: 'Jalan',
-                        data: faktorJalan
-                    },
-                    {
-                        label: 'Kendaraan',
-                        data: faktorKendaraan
-                    },
-                    {
-                        label: 'Lingkungan',
-                        data: faktorLingkungan
-                    }
+                    { label: 'Kelalaian', data: faktorKelalaian, backgroundColor: '#3b82f6', borderRadius: 4 },
+                    { label: 'Pelanggaran', data: faktorPelanggaran, backgroundColor: '#22c55e', borderRadius: 4 },
+                    { label: 'Teknis', data: faktorTeknis, backgroundColor: '#f59e0b', borderRadius: 4 }
                 ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } },
+                scales: { 
+                    y: { grid: { borderDash: [5, 5] } },
+                    x: { grid: { display: false } }
+                }
             }
         });
     }
 </script>
 
+    {{ ai_explain_cache|json_script:"ai_explain_cache_data" }}
+    {{ ai_pca|json_script:"ai_pca_fallback_data" }}
+    {{ ai_dendrogram|json_script:"ai_dendro_fallback_data" }}
+    {{ ai_bar|json_script:"ai_bar_fallback_data" }}
+    {{ ai_faktor|json_script:"ai_faktor_fallback_data" }}
+    {{ ai_umur|json_script:"ai_umur_fallback_data" }}
+
+    <script>
+    // Fallback content (rule-based)
+    const fallbackData = {
+        pca: { paragraphs: JSON.parse(document.getElementById('ai_pca_fallback_data').textContent) || "", poin_penting: "" },
+        dendrogram: { paragraphs: JSON.parse(document.getElementById('ai_dendro_fallback_data').textContent) || "", hal_penting: "" },
+        distribusi: { paragraphs: JSON.parse(document.getElementById('ai_bar_fallback_data').textContent) || "" },
+        faktor_global: { paragraphs: JSON.parse(document.getElementById('ai_faktor_fallback_data').textContent) || "", penutup: "" },
+        umur_faktor: { paragraphs: JSON.parse(document.getElementById('ai_umur_fallback_data').textContent) || "", kesimpulan: "" }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const cacheEl = document.getElementById('ai_explain_cache_data');
+        const sessionAiCache = cacheEl ? JSON.parse(cacheEl.textContent) : null;
+
+        if (sessionAiCache && Object.keys(sessionAiCache).length > 0) {
+            console.log("DEBUG: Menggunakan cache dari server (Instant Render)");
+            setLoadingState(false);
+            renderAiContent(sessionAiCache);
+        } else {
+            console.log("DEBUG: Cache kosong, memanggil AI via AJAX...");
+            loadAiExplanations();
+        }
+    });
+
+    function showAiError(msg) {
+        const boxes = ['pca', 'dendro', 'boxplot', 'faktor', 'umur'];
+        boxes.forEach(key => {
+            const container = document.getElementById(`ai-${key}-container`);
+            if (container) {
+                container.classList.remove('opacity-0');
+                container.innerHTML = `
+                    <div class="bg-red-50 border border-red-100 p-5 rounded-xl text-center my-2">
+                        <div class="flex flex-col items-center gap-3">
+                            <div class="w-10 h-10 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-1">
+                                <i class="fas fa-exclamation-circle text-lg"></i>
+                            </div>
+                            <p class="text-red-800 text-[10px] font-bold uppercase tracking-widest leading-relaxed ai-justify">
+                                Analisis Gagal Dimuat
+                            </p>
+                            <p class="text-red-600 text-[11px] leading-relaxed ai-justify max-w-[250px]">
+                                ${msg || "Koneksi ke AI terputus atau server sedang sibuk."}
+                            </p>
+                            <button onclick="loadAiExplanations(true)" class="mt-2 bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg text-[10px] font-bold transition-all flex items-center gap-2 shadow-sm uppercase tracking-widest">
+                                <i class="fas fa-redo-alt"></i> Coba Request Ulang
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+    }
+
+    function loadAiExplanations(force = false) {
+        setLoadingState(true);
+        
+        // Bersihkan konten lama agar tidak "nyangkut"
+        const boxes = ['pca', 'dendro', 'boxplot', 'faktor', 'umur'];
+        boxes.forEach(key => {
+            const p = document.getElementById(`ai-${key}-paragraphs`);
+            const b = document.getElementById(`ai-${key}-poin`);
+            const c = document.getElementById(`ai-${key}-container`);
+            if(p) p.innerHTML = "";
+            if(b) b.innerHTML = "";
+        });
+
+        // Pola Final YOLA: AJAX POST dengan body force
+        fetch("{% url 'ahc_ai_explain' %}", {
+            method: "POST",
+            headers: { 
+                "X-CSRFToken": "{{ csrf_token }}",
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `force=${force ? '1' : '0'}`
+        })
+        .then(res => {
+            if (!res.ok) return res.json().then(err => { throw new Error(err.message) });
+            return res.json();
+        })
+        .then(json => {
+            if (json.status === 'ok') {
+                console.log("DEBUG: Berhasil mendapatkan data AI (Source: " + (json.source || 'API') + ")");
+                renderAiContent(json.data);
+            } else {
+                throw new Error(json.message);
+            }
+        })
+        .catch(err => {
+            console.error("AI Explain Error:", err);
+            showAiError(err.message);
+        })
+        .finally(() => {
+            setLoadingState(false); // Selalu matikan loading di akhir
+        });
+    }
+
+    function setLoadingState(isLoading) {
+        const boxes = ['pca', 'dendro', 'boxplot', 'faktor', 'umur'];
+        
+        boxes.forEach(key => {
+            const loadingEl = document.getElementById(`ai-${key}-loading`);
+            const containerEl = document.getElementById(`ai-${key}-container`);
+            
+            if (isLoading) {
+                if(loadingEl) loadingEl.classList.remove('hidden');
+                if(containerEl) containerEl.classList.add('opacity-0');
+            } else {
+                if(loadingEl) loadingEl.classList.add('hidden');
+                if(containerEl) containerEl.classList.remove('opacity-0');
+            }
+        });
+    }
+
+    function renderAiContent(data) {
+        // PCA
+        if(data.pca) {
+            const p = document.getElementById('ai-pca-paragraphs');
+            const b = document.getElementById('ai-pca-poin');
+            if(p) p.innerHTML = data.pca.paragraphs;
+            if(b) b.innerHTML = data.pca.poin_penting || "";
+        }
+        // Dendrogram
+        if(data.dendrogram) {
+            const p = document.getElementById('ai-dendro-paragraphs');
+            const b = document.getElementById('ai-dendro-poin');
+            if(p) p.innerHTML = data.dendrogram.paragraphs;
+            if(b) b.innerHTML = data.dendrogram.hal_penting || "";
+        }
+        // Boxplot
+        if(data.boxplot) {
+            const c = document.getElementById('ai-boxplot-container');
+            if(c) c.innerHTML = data.boxplot.paragraphs || data.boxplot;
+        }
+        // Faktor
+        if(data.faktor_global) {
+            const p = document.getElementById('ai-faktor-paragraphs');
+            const b = document.getElementById('ai-faktor-penutup');
+            if(p) p.innerHTML = data.faktor_global.paragraphs;
+            if(b) b.innerHTML = data.faktor_global.penutup || "";
+        }
+        // Umur
+        if(data.umur_faktor) {
+            const p = document.getElementById('ai-umur-paragraphs');
+            const b = document.getElementById('ai-umur-kesimpulan');
+            if(p) p.innerHTML = data.umur_faktor.paragraphs;
+            if(b) b.innerHTML = data.umur_faktor.kesimpulan || "";
+        }
+    }
+
+    function showModal(title, detail) {
+        const modal = document.getElementById("modalCluster");
+        const modalTitle = document.getElementById("modalTitle");
+        const modalContent = document.getElementById("modalContent");
+        modalTitle.innerText = `${title} (${detail.length} data)`;
+        modalContent.innerHTML = "";
+        detail.forEach((item, i) => {
+            modalContent.innerHTML += `
+                <div class="rounded-xl p-4 bg-gray-50 border border-gray-100 hover:bg-blue-50 transition-colors">
+                    <p class="font-bold text-blue-900 mb-1 text-xs">Data #${i + 1}</p>
+                    <p class="text-gray-600 text-xs leading-relaxed ai-justify">${item}</p>
+                </div>
+            `;
+        });
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+    }
+
+    function closeModal() {
+        const modal = document.getElementById("modalCluster");
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+    }
+
+    document.getElementById("modalCluster").addEventListener("click", function(e) {
+        if (e.target === this) closeModal();
+    });
+
+    function toggleAllRows() {
+        const extraRows = document.querySelectorAll('.extra-row');
+        const btn = document.getElementById('toggleRows');
+        const isHidden = extraRows[0].classList.contains('hidden');
+        extraRows.forEach(row => {
+            if (isHidden) row.classList.remove('hidden');
+            else row.classList.add('hidden');
+        });
+        const totalData = document.getElementById('data-length').dataset.value;
+        btn.innerText = isHidden ? 'Sembunyikan' : `Tampilkan Semua (${totalData} data)`;
+    }
+</script>
 
 {% endblock %}

@@ -1,122 +1,122 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="w-full">
+<div class="max-w-7xl mx-auto pt-6 pb-10">
 
-<!-- ================= HEADER ================= -->
-<div class="mb-8">
-
-    <!-- Judul -->
-    <div>
-        <h1 class="text-3xl font-bold text-gray-800 mb-4">
-            Manajemen Data Kecelakaan
-        </h1>
+    <!-- TITLE -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">
+                Manajemen Data AHC
+            </h1>
+            <p class="text-gray-500 mt-1">
+                Kelola data mentah kecelakaan untuk proses clustering Agglomerative Hierarchical
+            </p>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'cluster_data_list' %}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition flex items-center gap-2">
+                <i class="fas fa-arrow-left"></i> Kembali ke K-Means
+            </a>
+            <a href="{% url 'cluster_data_tambah' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition flex items-center gap-2">
+                <i class="fas fa-plus"></i> Tambah Data
+            </a>
+        </div>
     </div>
 
-    <!-- Tombol Tambah Data di kanan bawah -->
-    <div class="flex justify-end">
-        <a href="#"
-           class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition">
-            Tambah Data
-        </a>
-    </div>
-
-</div>
-
-    <!-- ================= STAT CARDS ================= -->
-    <!-- Semua nilai default 0 karena belum ada data -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-
-        <div class="bg-white rounded-xl shadow p-6 text-center">
-            <p class="text-gray-500 text-sm uppercase">Meninggal Dunia</p>
-            <p class="text-2xl font-bold text-gray-800 mt-2">0</p>
+    <!-- STATS -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <p class="text-sm text-gray-500 font-medium">Total Data</p>
+            <p class="text-3xl font-bold text-blue-600">{{ total_data }}</p>
         </div>
-
-        <div class="bg-white rounded-xl shadow p-6 text-center">
-            <p class="text-gray-500 text-sm uppercase">Luka Berat</p>
-            <p class="text-2xl font-bold text-gray-800 mt-2">0</p>
-        </div>
-
-        <div class="bg-white rounded-xl shadow p-6 text-center">
-            <p class="text-gray-500 text-sm uppercase">Luka Ringan</p>
-            <p class="text-2xl font-bold text-gray-800 mt-2">0</p>
-        </div>
-
-        <div class="bg-white rounded-xl shadow p-6 text-center">
-            <p class="text-gray-500 text-sm uppercase">Total Kerugian</p>
-            <p class="text-2xl font-bold text-gray-800 mt-2">Rp 0</p>
-        </div>
-
-    </div>
-
-    <!-- ================= TABLE CARD ================= -->
-    <div class="bg-white rounded-xl shadow">
-
-        <!-- Filter -->
-        <div class="flex justify-between items-center p-4 border-b">
-
-            <div class="relative w-64">
-                <input type="text"
-                       placeholder="Cari berdasarkan tanggal"
-                       class="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-500 font-medium">Pengelolaan Data</p>
+                <p class="text-xs text-gray-400">Gunakan menu K-Means untuk fitur Import & Hapus Duplikat</p>
             </div>
-
-            <div class="flex space-x-2">
-                <select class="border rounded-lg px-3 py-2 text-sm">
-                        <option value="">Pilih Tahun</option>
-                        <option value="2020">2020</option>
-                        <option value="2021">2021</option>
-                        <option value="2022">2022</option>
-                        <option value="2023">2023</option>
-                        <option value="2024">2024</option>
-                        <option value="2025">2025</option>
-                </select>
-                <select class="border rounded-lg px-3 py-2 text-sm">
-                        <option value="">Pilih Bulan</option>
-                        <option value="Januari">Januari</option>
-                        <option value="Februari">Februari</option>
-                        <option value="Maret">Maret</option>
-                        <option value="April">April</option>
-                        <option value="Mei">Mei</option>
-                        <option value="Juni">Juni</option>
-                        <option value="Juli">Juli</option>
-                        <option value="Agustus">Agustus</option>
-                        <option value="September">September</option>
-                        <option value="Oktober">Oktober</option>
-                        <option value="November">November</option>
-                        <option value="Desember">Desember</option>
-                </select>
-            </div>
-
+            <i class="fas fa-info-circle text-gray-300 text-2xl"></i>
         </div>
+    </div>
 
-        <!-- Table -->
+    <!-- TABLE -->
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="min-w-full text-sm text-left">
-                <thead class="bg-gray-50 border-b">
+            <table class="w-full text-sm text-left border-collapse">
+                <thead class="bg-gray-50 text-gray-700 border-b">
                     <tr>
-                        <th class="px-6 py-3">No</th>
-                        <th class="px-6 py-3">Tanggal & Waktu</th>
-                        <th class="px-6 py-3">Lokasi Kejadian</th>
-                        <th class="px-6 py-3">Penyebab</th>
-                        <th class="px-6 py-3">Korban (MD/LB/LR)</th>
-                        <th class="px-6 py-3">Kerugian</th>
-                        <th class="px-6 py-3 text-center">Aksi</th>
+                        <th class="px-6 py-4 font-bold">No</th>
+                        <th class="px-6 py-4 font-bold">Umur</th>
+                        <th class="px-6 py-4 font-bold">TKP</th>
+                        <th class="px-6 py-4 font-bold">Penyebab</th>
+                        <th class="px-6 py-4 font-bold">Hari</th>
+                        <th class="px-6 py-4 font-bold">Tanggal</th>
+                        <th class="px-6 py-4 font-bold">Jam</th>
+                        <th class="px-6 py-4 font-bold">Kendaraan</th>
+                        <th class="px-6 py-4 font-bold">Tipe</th>
+                        <th class="px-6 py-4 font-bold">Kerugian</th>
                     </tr>
                 </thead>
-
-                <tbody>
+                <tbody class="divide-y divide-gray-100">
+                    {% for data in data_list %}
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-6 py-4">{{ data_list.start_index|add:forloop.counter0 }}</td>
+                        <td class="px-6 py-4 font-medium">{{ data.umur }}</td>
+                        <td class="px-6 py-4">{{ data.tkp }}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 bg-gray-100 rounded text-xs">{{ data.penyebab }}</span>
+                        </td>
+                        <td class="px-6 py-4">{{ data.hari }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">{{ data.tanggal|date:"d F Y" }}</td>
+                        <td class="px-6 py-4">{{ data.jam }}</td>
+                        <td class="px-6 py-4">{{ data.jenis_kendaraan }}</td>
+                        <td class="px-6 py-4">{{ data.tipe_kendaraan }}</td>
+                        <td class="px-6 py-4 text-red-600 font-medium">Rp {{ data.kerugian_material|floatformat:0 }}</td>
+                    </tr>
+                    {% empty %}
                     <tr>
-                        <td colspan="7" class="px-6 py-12 text-center text-gray-500">
-                            Belum ada data kecelakaan
+                        <td colspan="10" class="px-6 py-10 text-center text-gray-500">
+                            <div class="flex flex-col items-center">
+                                <i class="fas fa-database text-4xl mb-3 text-gray-300"></i>
+                                <p>Belum ada data tersedia.</p>
+                                <a href="{% url 'cluster_data_tambah' %}" class="mt-2 text-blue-600 hover:underline">Tambah data pertama</a>
+                            </div>
                         </td>
                     </tr>
+                    {% endfor %}
                 </tbody>
-
             </table>
         </div>
-
     </div>
+
+    <!-- PAGINATION -->
+    {% if data_list.has_other_pages %}
+    <div class="mt-6 flex justify-center">
+        <nav class="flex items-center gap-1">
+            {% if data_list.has_previous %}
+                <a href="?page={{ data_list.previous_page_number }}" class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            {% endif %}
+
+            {% for i in data_list.paginator.page_range %}
+                {% if data_list.number == i %}
+                    <span class="px-4 py-2 bg-blue-600 border border-blue-600 rounded-lg text-sm text-white font-bold">{{ i }}</span>
+                {% elif i > data_list.number|add:'-3' and i < data_list.number|add:'3' %}
+                    <a href="?page={{ i }}" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">{{ i }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if data_list.has_next %}
+                <a href="?page={{ data_list.next_page_number }}" class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            {% endif %}
+        </nav>
+    </div>
+    <div class="text-center mt-2">
+        <p class="text-xs text-gray-500">Menampilkan halaman {{ data_list.number }} dari {{ data_list.paginator.num_pages }}</p>
+    </div>
+    {% endif %}
 
 </div>
 
