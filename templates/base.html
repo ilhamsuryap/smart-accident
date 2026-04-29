@@ -341,11 +341,22 @@
             </div>
         </div>
 
+        <!-- ================= MANAJEMEN CLUSTER ================= -->
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-section-label">Manajemen Cluster</div>
+
+        <!-- Cluster Data (Previously KMeans Data) -->
+        <a class="sidebar-link {% if current == 'cluster_data_list' or current == 'cluster_data_tambah' %}active{% endif %}" 
+           href="{% url 'cluster_data_list' %}">
+            <i class="fas fa-database icon-left"></i>
+            <span>Cluster Data</span>
+        </a>
+
         <!-- ================= KMEANS ================= -->
         <div>
             <button type="button" id="btnKmeans" onclick="toggleSidebar('kmeansDropdown','btnKmeans')"
                 class="sidebar-link
-                {% if current == 'kmeans_data_list' or current == 'kmeans_data_tambah' or current == 'preprocessing' or current == 'hasil' or current == 'proses_cluster' or current == 'rekomendasi_kebijakan' %} active dropdown-open {% endif %}">
+                {% if current == 'preprocessing' or current == 'hasil' or current == 'proses_cluster' or current == 'rekomendasi_kebijakan' %} active dropdown-open {% endif %}">
                 <i class="fas fa-project-diagram icon-left"></i>
                 <span>Cluster K-Means</span>
                 <i class="fas fa-chevron-down sidebar-chevron"></i>
@@ -353,13 +364,8 @@
 
             <div id="kmeansDropdown"
                 class="sidebar-dropdown
-                {% if current == 'kmeans_data_list' or current == 'kmeans_data_tambah' or current == 'preprocessing' or current == 'hasil' or current == 'proses_cluster' or current == 'rekomendasi_kebijakan' %} open {% endif %}">
+                {% if current == 'preprocessing' or current == 'hasil' or current == 'proses_cluster' or current == 'rekomendasi_kebijakan' %} open {% endif %}">
                 <div class="sidebar-dropdown-inner">
-                    <a class="sidebar-link {% if current == 'kmeans_data_list' or current == 'kmeans_data_tambah' %}active{% endif %}" 
-                       href="{% url 'kmeans_data_list' %}">
-                        <i class="fas fa-database icon-left"></i>
-                        <span>Data</span>
-                    </a>
                     <a class="sidebar-link {% if current == 'preprocessing' or current == 'proses_cluster' %}active{% endif %}" 
                        href="{% url 'preprocessing' %}">
                         <i class="fas fa-cogs icon-left"></i>
@@ -393,11 +399,6 @@
                 class="sidebar-dropdown
                 {% if 'ahc' in current or current == 'preprocessing_data' or current == 'proses_ahc' %} open {% endif %}">
                 <div class="sidebar-dropdown-inner">
-                    <a class="sidebar-link {% if current == 'ahc_data' %}active{% endif %}" 
-                       href="{% url 'ahc_data' %}">
-                        <i class="fas fa-database icon-left"></i>
-                        <span>Data</span>
-                    </a>
                     <a class="sidebar-link {% if current == 'ahc_proses' or current == 'preprocessing_data' or current == 'proses_ahc' %}active{% endif %}" 
                        href="{% url 'ahc_proses' %}">
                         <i class="fas fa-cogs icon-left"></i>
@@ -407,6 +408,11 @@
                        href="{% url 'ahc_hasil' %}">
                         <i class="fas fa-chart-bar icon-left"></i>
                         <span>Hasil</span>
+                    </a>
+                    <a class="sidebar-link {% if current == 'ahc_rekomendasi' %}active{% endif %}" 
+                       href="{% url 'ahc_rekomendasi' %}">
+                        <i class="fas fa-lightbulb icon-left"></i>
+                        <span>Rekomendasi</span>
                     </a>
                 </div>
             </div>

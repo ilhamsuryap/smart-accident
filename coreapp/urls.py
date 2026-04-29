@@ -49,12 +49,14 @@ urlpatterns = [
     path('peta-user/', views.peta_user_view, name='peta_user'),
 
     # ================= KMEANS =================
-    path('k-means/data/', views.kmeans_data_list, name='kmeans_data_list'),
-    path('k-means/data/tambah/', views.kmeans_data_tambah, name='kmeans_data_tambah'),
-    path('k-means/data/import/', views.kmeans_data_import, name='kmeans_data_import'),
-    path('k-means/data/hapus/<int:pk>/', views.kmeans_data_hapus, name='kmeans_data_hapus'),
-    path('k-means/data/hapus-duplikat/', views.kmeans_data_hapus_duplikat, name='kmeans_data_hapus_duplikat'),
-    path('k-means/data/hapus-semua/', views.kmeans_data_hapus_semua, name='kmeans_data_hapus_semua'),
+    # ================= CLUSTER DATA (Unified) =================
+    path('cluster-data/', views.cluster_data_list, name='cluster_data_list'),
+    path('cluster-data/tambah/', views.cluster_data_tambah, name='cluster_data_tambah'),
+    path('cluster-data/edit/<int:pk>/', views.cluster_data_edit, name='cluster_data_edit'),
+    path('cluster-data/import/', views.cluster_data_import, name='cluster_data_import'),
+    path('cluster-data/hapus/<int:pk>/', views.cluster_data_hapus, name='cluster_data_hapus'),
+    path('cluster-data/hapus-duplikat/', views.cluster_data_hapus_duplikat, name='cluster_data_hapus_duplikat'),
+    path('cluster-data/hapus-semua/', views.cluster_data_hapus_semua, name='cluster_data_hapus_semua'),
     path('k-means/proses/', views.proses_cluster, name='proses_cluster'),
     path('k-means/preprocessing/', views.preprocessing, name='preprocessing'),
     path('k-means/hasil/', views.hasil, name='hasil'),
@@ -78,6 +80,8 @@ urlpatterns = [
     path('ahc/hasil/', views.ahc_hasil, name='ahc_hasil'),
     path('proses-ahc/', views.proses_ahc, name='proses_ahc'),
     path('ahc/reset/', views.reset_ahc, name='reset_ahc'),
+    path('ahc/ai-explain/', views.ahc_ai_explain, name='ahc_ai_explain'),
+    path('ahc/rekomendasi/', views.ahc_rekomendasi, name='ahc_rekomendasi'),
 
 
     # API

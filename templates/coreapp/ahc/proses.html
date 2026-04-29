@@ -63,11 +63,17 @@
                 <p class="text-sm text-gray-500 mt-2">Memproses preprocessing...</p>
             </div>
 
-            <button type="submit" onclick="startProcess()"
-                class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition">
-                <i class="fas fa-sync-alt mr-2"></i>
-                Mulai Preprocessing
-            </button>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                <button type="submit" onclick="startProcess()"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition">
+                    <i class="fas fa-sync-alt mr-2"></i>
+                    Mulai Preprocessing
+                </button>
+                <a href="{% url 'preprocessing_data' %}?use_db=1" onclick="startProcess()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-medium transition text-center flex items-center justify-center gap-2">
+                    <i class="fas fa-database"></i>
+                    Gunakan Data Database
+                </a>
+            </div>
         </form>
     </div>
 
@@ -79,7 +85,7 @@
             <p class="text-2xl font-bold text-blue-700">{{ jumlah_data_asli }}</p>
         </div>
         <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-            <p class="text-sm text-gray-500">Jumlah Data Setelah Grouping</p>
+            <p class="text-sm text-gray-500">Jumlah Data Kejadian (Valid)</p>
             <p class="text-2xl font-bold text-green-700">{{ jumlah_data }}</p>
         </div>
     </div>
@@ -88,12 +94,19 @@
     <!-- PREVIEW -->
     {% if preview %}
     <div class="bg-white rounded-xl shadow-md p-6 mb-8 w-full overflow-hidden">
-        <h2 class="font-semibold text-gray-800 mb-4">
-            Preview Hasil Preprocessing (Summary per Umur)
-        </h2>
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="font-semibold text-gray-800">
+                Preview Hasil Preprocessing (Data Kejadian - Row Level)
+            </h2>
+            {% if preview|length > 20 %}
+            <button onclick="toggleTableRows('previewTable', this)" class="text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-full border border-blue-100 font-bold hover:bg-blue-100 transition-all">
+                Tampilkan Seluruh Data
+            </button>
+            {% endif %}
+        </div>
 
         <div class="w-full max-w-full overflow-x-auto">
-            <table class="w-full text-xs text-left border border-gray-200">
+            <table class="w-full text-xs text-left border border-gray-200" id="previewTable">
                 <thead class="bg-gray-100 text-gray-700">
                     <tr>
                         {% for col in preview.0.keys %}
@@ -105,7 +118,7 @@
                 </thead>
                 <tbody>
                     {% for row in preview %}
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-gray-50 {% if forloop.counter > 20 %}hidden extra-row{% endif %}">
                         {% for value in row.values %}
                             <td class="px-3 py-2 border whitespace-nowrap">
                                 {{ value }}
@@ -152,12 +165,19 @@
     <!-- HASIL CLUSTERING -->
     {% if hasil_cluster and hasil_cluster|length > 0 %}
     <div class="bg-white rounded-xl shadow-md p-6 mt-8 w-full">
-        <h2 class="text-xl font-bold text-gray-800 mb-4">
-            Hasil Clustering
-        </h2>
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-gray-800">
+                Hasil Clustering
+            </h2>
+            {% if hasil_cluster|length > 20 %}
+            <button onclick="toggleTableRows('hasilTable', this)" class="text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-full border border-blue-100 font-bold hover:bg-blue-100 transition-all">
+                Tampilkan Seluruh Data
+            </button>
+            {% endif %}
+        </div>
 
         <div class="overflow-x-auto">
-            <table class="min-w-full text-sm text-left border border-gray-200">
+            <table class="min-w-full text-sm text-left border border-gray-200" id="hasilTable">
                 <thead class="bg-gray-100 text-gray-700">
                     <tr>
                         {% for col in hasil_cluster.0.keys %}
@@ -167,7 +187,7 @@
                 </thead>
                 <tbody>
                     {% for row in hasil_cluster %}
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-gray-50 {% if forloop.counter > 20 %}hidden extra-row{% endif %}">
                         {% for value in row.values %}
                             <td class="px-4 py-2 border">{{ value }}</td>
                         {% endfor %}
@@ -189,6 +209,18 @@
 </div>
 
 <script>
+function toggleTableRows(tableId, btn) {
+    const table = document.getElementById(tableId);
+    const extraRows = table.querySelectorAll('.extra-row');
+    const isHidden = extraRows[0].classList.contains('hidden');
+
+    extraRows.forEach(row => {
+        if (isHidden) row.classList.remove('hidden');
+        else row.classList.add('hidden');
+    });
+
+    btn.innerText = isHidden ? 'Sembunyikan' : 'Tampilkan Seluruh Data';
+}
 function showFileName(input) {
     const file = input.files[0];
     if (!file) return;
