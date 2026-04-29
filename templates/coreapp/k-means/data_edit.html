@@ -5,46 +5,46 @@
     <!-- TITLE -->
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-800">
-            Tambah Data Kecelakaan
+            Edit Data Kecelakaan
         </h1>
         <p class="text-gray-500 mt-1">
-            Input data baru untuk analisis
+            Edit data untuk analisis K-Means
         </p>
     </div>
 
     <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100">
-        <form action="{% url 'cluster_data_tambah' %}" method="POST" class="p-8">
+        <form action="{% url 'cluster_data_edit' data.pk %}" method="POST" class="p-8">
             {% csrf_token %}
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- UMUR -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Umur</label>
-                    <input type="number" name="umur" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Contoh: 50">
+                    <input type="number" name="umur" value="{{ data.umur }}" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Contoh: 50">
                 </div>
 
                 <!-- TANGGAL -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Tanggal Kejadian</label>
-                    <input type="date" name="tanggal" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                    <input type="date" name="tanggal" value="{{ data.tanggal|date:'Y-m-d' }}" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
                 </div>
 
                 <!-- JAM -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Jam (Format: 19.00)</label>
-                    <input type="text" name="jam" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Contoh: 19.00">
+                    <input type="text" name="jam" value="{{ data.jam }}" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Contoh: 19.00">
                 </div>
 
                 <!-- KERUGIAN MATERIAL -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Kerugian Material (Rp)</label>
-                    <input type="text" name="kerugian_material" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Contoh: 500000">
+                    <input type="text" name="kerugian_material" value="{{ data.kerugian_material }}" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Contoh: 500000">
                 </div>
 
                 <!-- TKP -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">TKP (Lokasi)</label>
-                    <input list="tkp_list" name="tkp" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Input atau pilih dari database">
+                    <input list="tkp_list" name="tkp" value="{{ data.tkp }}" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Input atau pilih dari database">
                     <datalist id="tkp_list">
                         {% for choice in tkp_choices %}
                         <option value="{{ choice }}">
@@ -55,7 +55,7 @@
                 <!-- PENYEBAB -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Penyebab</label>
-                    <input list="penyebab_list" name="penyebab" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Input atau pilih dari database">
+                    <input list="penyebab_list" name="penyebab" value="{{ data.penyebab }}" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Input atau pilih dari database">
                     <datalist id="penyebab_list">
                         {% for choice in penyebab_choices %}
                         <option value="{{ choice }}">
@@ -66,7 +66,7 @@
                 <!-- JENIS KENDARAAN -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Jenis Kendaraan</label>
-                    <input list="jenis_list" name="jenis_kendaraan" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Contoh: Motor">
+                    <input list="jenis_list" name="jenis_kendaraan" value="{{ data.jenis_kendaraan }}" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Contoh: Motor">
                     <datalist id="jenis_list">
                         {% for choice in jenis_choices %}
                         <option value="{{ choice }}">
@@ -77,7 +77,7 @@
                 <!-- TIPE KENDARAAN -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Tipe Kendaraan</label>
-                    <input list="tipe_list" name="tipe_kendaraan" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Contoh: Beat">
+                    <input list="tipe_list" name="tipe_kendaraan" value="{{ data.tipe_kendaraan }}" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Contoh: Beat">
                     <datalist id="tipe_list">
                         {% for choice in tipe_choices %}
                         <option value="{{ choice }}">

@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Rekomendasi Kebijakan AHC - Smart Accident{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 px-4" id="recommendationArea">
+    
+    <!-- PAGE HEADER -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b pb-6 print:hidden">
+        <div class="flex items-center gap-4">
+            <div class="bg-blue-600 p-3 rounded-xl shadow-lg shadow-blue-200">
+                <i class="fas fa-file-invoice text-white text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900 tracking-tight">
+                    Rekomendasi Penanganan (AHC)
+                </h1>
+                <p class="text-sm text-gray-500 mt-0.5">Strategi berbasis hierarki klaster kerawanan kecelakaan.</p>
+            </div>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="window.print()" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-5 py-2.5 rounded-xl font-semibold shadow-sm transition flex items-center gap-2">
+                <i class="fas fa-print"></i> Cetak Dokumen
+            </button>
+        </div>
+    </div>
+
+    {% if belum_clustering %}
+    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-r-xl shadow-sm mb-8 print:hidden">
+        <div class="flex items-center gap-4">
+            <i class="fas fa-exclamation-triangle text-3xl text-yellow-500"></i>
+            <div>
+                <h3 class="font-bold text-yellow-800">Analisis AHC Belum Tersedia</h3>
+                <p class="text-yellow-700 text-sm">Silakan lakukan proses clustering AHC terlebih dahulu untuk menghasilkan rekomendasi yang akurat.</p>
+                <a href="{% url 'ahc_proses' %}" class="inline-block mt-3 text-blue-600 font-bold hover:underline">Ke Halaman Proses AHC &rarr;</a>
+            </div>
+        </div>
+    </div>
+    {% elif belum_ai %}
+    <div class="bg-blue-50 border-l-4 border-blue-400 p-6 rounded-r-xl shadow-sm mb-8 print:hidden">
+        <div class="flex items-center gap-4">
+            <i class="fas fa-info-circle text-3xl text-blue-500"></i>
+            <div>
+                <h3 class="font-bold text-blue-800">Rekomendasi Belum Dibuat</h3>
+                <p class="text-blue-700 text-sm">Sistem perlu melakukan komputasi rekomendasi berbasis AI untuk hasil clustering AHC Anda.</p>
+                <a href="{% url 'ahc_hasil' %}" class="inline-block mt-3 bg-blue-600 text-white px-5 py-2 rounded-xl text-sm font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition">
+                    Klik Tombol Penanganan di Halaman Hasil &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+
+    <!-- RINGKASAN EKSEKUTIF -->
+    <div class="bg-white border rounded-2xl shadow-sm p-8 mb-10 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full opacity-50"></div>
+        <div class="relative z-10">
+            <div class="flex items-center gap-2 mb-4">
+                <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest">Executive Summary</span>
+            </div>
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Ringkasan Strategi Analisis AHC</h2>
+            <div class="prose prose-blue max-w-none text-gray-700 leading-relaxed text-base">
+                {{ ai_data.ringkasan|linebreaks }}
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+        <!-- PRIORITAS TINGGI -->
+        <div class="lg:col-span-2 space-y-8">
+            <div class="bg-white rounded-2xl shadow-sm border overflow-hidden">
+                <div class="p-5 border-b bg-gray-50 flex justify-between items-center">
+                    <h3 class="font-bold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-exclamation-circle text-red-500"></i>
+                        Matriks Intervensi per Klaster
+                    </h3>
+                </div>
+                <div class="p-6 space-y-6">
+                    {% for p in ai_data.prioritas_tinggi %}
+                    <div class="border border-gray-200 bg-white p-5 rounded-2xl hover:border-blue-300 transition-colors">
+                        <div class="flex justify-between items-start mb-3">
+                            <h4 class="font-bold text-blue-700 text-lg">{{ p.waktu }}</h4>
+                            <span class="bg-red-50 text-red-600 px-3 py-1 rounded-lg text-xs font-bold border border-red-100">{{ p.kejadian }} Kejadian</span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                            <div>
+                                <p class="font-bold text-gray-800 mb-2 flex items-center gap-2">
+                                    <i class="fas fa-shield-alt text-blue-600"></i> Strategi Operasional
+                                </p>
+                                <p class="text-gray-600 leading-relaxed">{{ p.tindakan.patroli }}</p>
+                            </div>
+                            <div>
+                                <p class="font-bold text-gray-800 mb-2 flex items-center gap-2">
+                                    <i class="fas fa-road text-blue-600"></i> Perbaikan Infrastruktur
+                                </p>
+                                <ul class="space-y-1 text-gray-600">
+                                    {% for inf in p.tindakan.infrastruktur %}
+                                        <li class="flex items-start gap-2">
+                                            <i class="fas fa-check text-[10px] text-green-500 mt-1"></i>
+                                            {{ inf }}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- JADWAL REKOMENDASI -->
+            <div class="bg-white rounded-2xl shadow-sm border overflow-hidden">
+                <div class="p-5 border-b bg-gray-50">
+                    <h3 class="font-bold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-calendar-alt text-blue-600"></i>
+                        Rencana Penjadwalan Operasional Mingguan
+                    </h3>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {% for j in ai_data.jadwal_patroli %}
+                        <div class="bg-white border border-gray-100 p-4 rounded-xl flex items-center gap-4 hover:shadow-md transition">
+                            <div class="bg-blue-50 w-12 h-12 rounded-xl flex flex-col items-center justify-center border border-blue-100 text-blue-700">
+                                <span class="text-[9px] font-bold uppercase">{{ j.hari|slice:":3" }}</span>
+                                <span class="text-sm font-black">{{ j.jam|slice:":2" }}</span>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-gray-400">{{ j.hari }} | {{ j.jam }}</p>
+                                <p class="text-sm font-bold text-gray-800">{{ j.fokus }}</p>
+                                <div class="flex items-center gap-1 mt-0.5">
+                                    <i class="fas fa-users text-[10px] text-blue-500"></i>
+                                    <span class="text-[10px] text-blue-600 font-bold uppercase">Estimasi: {{ j.unit }} Unit</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SIDEBAR -->
+        <div class="space-y-8">
+            <!-- TARGET KPI -->
+            <div class="bg-white rounded-2xl shadow-sm border p-6">
+                <h3 class="font-bold text-gray-800 mb-5 flex items-center gap-2 border-b pb-3">
+                    <i class="fas fa-bullseye text-blue-600"></i>
+                    Target & Capaian (KPI)
+                </h3>
+                <div class="bg-blue-50 p-5 rounded-2xl mb-5 border border-blue-100">
+                    <p class="text-[10px] text-blue-600 font-bold uppercase tracking-widest mb-1">Target Reduksi</p>
+                    <p class="text-2xl font-black text-blue-800">
+                        {{ ai_data.target_kpi.pengurangan }}
+                    </p>
+                </div>
+                <div class="space-y-4">
+                    {% for ind in ai_data.target_kpi.indikator %}
+                    <div class="flex gap-3 items-start">
+                        <div class="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0"></div>
+                        <p class="text-sm text-gray-600 leading-snug">{{ ind }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- PROGRAM STRATEGIS -->
+            <div class="bg-blue-600 rounded-2xl shadow-xl p-6 text-white relative overflow-hidden">
+                <div class="absolute -right-4 -bottom-4 opacity-10">
+                    <i class="fas fa-tasks text-8xl"></i>
+                </div>
+                <h3 class="font-bold mb-6 flex items-center gap-2 border-b border-blue-400 pb-3 relative z-10">
+                    <i class="fas fa-layer-group"></i>
+                    Program Kerja Strategis
+                </h3>
+                
+                <div class="space-y-6 relative z-10">
+                    <div>
+                        <p class="text-[10px] font-bold text-blue-200 uppercase tracking-widest mb-2">Tahap Implementasi Awal</p>
+                        <ul class="text-xs space-y-2 text-blue-50">
+                            {% for it in ai_data.program.jangka_pendek %}<li><i class="fas fa-chevron-right text-[8px] mr-2 opacity-50"></i>{{ it }}</li>{% endfor %}
+                        </ul>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold text-blue-200 uppercase tracking-widest mb-2">Pengembangan Berkelanjutan</p>
+                        <ul class="text-xs space-y-2 text-blue-50">
+                            {% for it in ai_data.program.jangka_menengah %}<li><i class="fas fa-chevron-right text-[8px] mr-2 opacity-50"></i>{{ it }}</li>{% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CATATAN -->
+    <div class="bg-gray-50 rounded-2xl p-6 border border-gray-200 italic text-gray-600 text-sm mb-12">
+        <p><b>Keterangan:</b> {{ ai_data.catatan }}</p>
+    </div>
+
+    <!-- SIGNATURE BLOCK (ONLY PRINT) -->
+    <div class="hidden print:block mt-20 pb-20">
+        <div class="flex justify-between">
+            <div class="text-center">
+                <p class="text-sm mb-20">Dicetak Pada: {{ today }}</p>
+                <p class="font-bold border-t-2 border-gray-900 pt-2 w-56 mx-auto">Sistem Smart Accident (AHC)</p>
+                <p class="text-[10px] text-gray-500 italic mt-1">Laporan Resmi Analisis Kecelakaan</p>
+            </div>
+            <div class="text-center">
+                <p class="text-sm mb-20">Disahkan Oleh,</p>
+                <p class="font-bold border-t-2 border-gray-900 pt-2 w-56 mx-auto">Satlantas Polres Madiun Kota</p>
+                <p class="text-[10px] text-gray-500 italic mt-1">Stempel & Tanda Tangan Resmi</p>
+            </div>
+        </div>
+    </div>
+
+    {% endif %}
+
+</div>
+
+<style>
+    @media print {
+        body { background-color: white !important; }
+        #sidebar, nav, button, .sidebar-link, .print\:hidden { display: none !important; }
+        .ml-\[256px\] { margin-left: 0 !important; }
+        .flex-1 { padding: 0 !important; }
+        #recommendationArea { max-width: 100% !important; padding: 0 !important; }
+        .shadow-sm, .shadow-md, .shadow-xl { box-shadow: none !important; border: 1px solid #e5e7eb !important; }
+        .bg-blue-600 { background: #2563eb !important; color: white !important; }
+        .prose { max-width: 100% !important; }
+    }
+</style>
+{% endblock %}

@@ -1,4 +1,3 @@
-from urllib import request
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.contrib.auth import authenticate, login, logout
@@ -19,30 +18,15 @@ from rest_framework.response import Response
 from sklearn.discriminant_analysis import StandardScaler
 from .models import (
     RuasJalan, SegmenJalan, Kecelakaan, AnalisisZScore, RekapSegmen,
-    Kota, Kecamatan, Kelurahan, KMeansData, AIConfig
+    Kota, Kecamatan, Kelurahan, ClusterData, AIConfig
 )
 from rest_framework import status
 import json
 import math
 import numpy as np
-import plotly.graph_objects as go
-
 import requests
 from datetime import datetime
 import os
-
-from sklearn.decomposition import PCA
-from scipy.cluster.hierarchy import dendrogram, linkage
-from io import BytesIO
-import matplotlib.pyplot as plt
-import matplotlib
-matplotlib.use('Agg')
-import base64
-from io import BytesIO
-from plotly.figure_factory import create_dendrogram
-import plotly
-
-
 
 import os
 import pandas as pd
@@ -1096,8 +1080,10 @@ def cluster_data(request):
     return render(request, 'coreapp/k-means/data_cluster.html', context)
 
 
+
+
 # ================================
-# PREPROCESSING DATA KMEANS
+# PREPROCESSING DATA
 # ================================
 @login_required(login_url='login')
 def preprocessing(request):
@@ -1187,42 +1173,16 @@ def preprocessing(request):
                 df.loc[jenis.str.contains('mobil', na=False), 'Mobil'] = df['Jumlah Kejadian']
                 df.loc[jenis.str.contains('truk|bus', na=False), 'Truk/Bus'] = df['Jumlah Kejadian']
 
-        # reset
-        df['Faktor Pengemudi'] = 0
-        df['Faktor Jalan'] = 0
-        df['Faktor Kendaraan'] = 0
-        df['Faktor Lingkungan'] = 0
+            # 6️⃣ Faktor penyebab
+            if 'Penyebab' in df.columns:
+                df['Penyebab_clean'] = df['Penyebab'].str.strip().str.lower()
+            else:
+                df['Penyebab_clean'] = ''
 
-        for i, row in df.iterrows():
-            penyebab = str(row['Penyebab_clean']).lower()
-
-            # 🔥 JALAN (lebih spesifik)
-            if any(k in penyebab for k in [
-                'jalan', 'licin', 'berlubang', 'rusak',
-                'lampu', 'penerangan', 'gelap', 'bergelombang'
-            ]):
-                df.at[i, 'Faktor Jalan'] = row['Jumlah Kejadian']
-
-            # 🔥 KENDARAAN
-            if any(k in penyebab for k in [
-                'kendaraan', 'rem', 'ban bocor', 'mesin', 'tergelincir','oleng'
-            ]):
-                df.at[i, 'Faktor Kendaraan'] = row['Jumlah Kejadian']
-
-            # 🔥 LINGKUNGAN
-            if any(k in penyebab for k in [
-                'cuaca', 'hujan', 'kabut'
-            ]):
-                df.at[i, 'Faktor Lingkungan'] = row['Jumlah Kejadian']
-
-            # 🔥 PENGEMUDI (terakhir)
-            if any(k in penyebab for k in [
-                'pengemudi', 'konsentrasi', 'mengantuk', 'lalai',
-                'melanggar', 'mendahului', 'jarak', 'menghindari','sein','mendadak',
-                'melawan arus','laju','berkecepatan tinggi','jarak','jalur','berhenti',
-    
-            ]):
-                df.at[i, 'Faktor Pengemudi'] = row['Jumlah Kejadian']
+            df['Faktor Pengemudi'] = df['Jumlah Kejadian']
+            df['Faktor Jalan'] = 0
+            df['Faktor Kendaraan'] = 0
+            df['Faktor Lingkungan'] = 0
 
             # 7️⃣ Dummy waktu
             waktu_cols = ['Dini Hari', 'Pagi Hari', 'Siang Hari', 'Malam Hari']
@@ -1350,186 +1310,6 @@ def kmeans_hasil(request):
     return render(request, 'coreapp/kmeans/hasil.html')
 
 
-# ==========================================
-# PROSES K-MEANS CLUSTERING
-# ==========================================
-@login_required(login_url='login')
-def proses_cluster(request):
-
-    if request.method != "GET":
-        return redirect('preprocessing')
-
-    # Ambil nilai k
-    try:
-        k = int(request.GET.get('k', 3))
-    except ValueError:
-        k = 3
-
-    k = max(1, min(k, 3))
-
-    # Ambil data summary dari session
-    summary_json = request.session.get('summary_df')
-
-    if not summary_json:
-        print("Session summary_df kosong")
-        return redirect('preprocessing')
-
-    # Load dataframe - handle both JSON string and list formats
-    if isinstance(summary_json, list):
-        df = pd.DataFrame(summary_json)
-    else:
-        try:
-            df = pd.read_json(StringIO(summary_json), orient='records')
-        except Exception:
-            df = pd.DataFrame(summary_json)
-
-    if df.empty:
-        print("DataFrame kosong")
-        return redirect('preprocessing')
-
-    # Ambil hanya kolom numerik (kecuali Umur)
-    numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
-
-    if 'Umur' in numeric_cols:
-        numeric_cols.remove('Umur')
-
-    if not numeric_cols:
-        print("Tidak ada fitur numerik untuk clustering")
-        return redirect('preprocessing')
-
-    X = df[numeric_cols]
-
-    # Jika jumlah data < k
-    if len(X) < k:
-        k = len(X)
-
-    try:
-        # Scaling
-        scaler = StandardScaler()
-        X_scaled = scaler.fit_transform(X)
-
-        # KMeans
-        model = KMeans(n_clusters=k, random_state=42, n_init=10)
-        df['Cluster'] = model.fit_predict(X_scaled) + 1  # Cluster mulai dari 1, 2, 3
-
-        # Mapping label cluster biar lebih jelas
-        label_map = {
-            0: 'Cluster 1 (Rendah)',
-            1: 'Cluster 2 (Sedang)',
-            2: 'Cluster 3 (Tinggi)'
-        }
-
-        df['Cluster_Label'] = df['Cluster'].map(label_map)
-
-    except Exception as e:
-        print("ERROR SAAT CLUSTERING:", e)
-        return redirect('preprocessing')
-
-    # ========================
-    # Interpretasi Cluster
-    # ========================
-
-    cluster_summary = df.groupby('Cluster')[numeric_cols].mean().mean(axis=1)
-    sorted_cluster = cluster_summary.sort_values()
-
-    kategori = ['Rendah', 'Sedang', 'Tinggi']
-    label_map = {}
-
-    for i, cluster_id in enumerate(sorted_cluster.index):
-        if i < len(kategori):
-            label_map[cluster_id] = kategori[i]
-        else:
-            label_map[cluster_id] = f"Cluster {cluster_id}"
-
-    df['Kategori_Cluster'] = df['Cluster'].map(label_map)
-
-    # SIMPAN HASIL CLUSTER KE SESSION (INI KUNCI)
-    request.session['hasil_cluster'] = df.to_dict(orient='records')
-    request.session['k'] = k
-    request.session.modified = True
-
-    return render(request, 'coreapp/k-means/preprocessing.html', {
-        'hasil_cluster': df.to_dict(orient='records'),
-        'k': k
-    })
-
-
-@login_required(login_url='login')
-def hasil(request):
-
-    data = request.session.get("hasil_cluster")
-
-    if not data:
-        return redirect("preprocessing")
-
-    # data sudah HASIL CLUSTER, bukan summary
-    if isinstance(data, list):
-        df = pd.DataFrame(data)
-    else:
-        try:
-            df = pd.read_json(StringIO(data), orient='records')
-        except Exception:
-            df = pd.DataFrame(data)
-
-    context = {
-        "hasil_cluster": df.to_dict(orient='records'),
-        "k": request.session.get("k")
-    }
-
-    return render(request, "coreapp/k-means/hasil.html", context)
-
-# View Tambah Data Kecelakaan
-# =========================
-@login_required(login_url='login')
-def tambah_data(request):
-    if request.method == "POST":
-        # ambil data dari form
-        tanggal = request.POST.get('tanggal')
-        waktu = request.POST.get('waktu')
-        meninggal = request.POST.get('meninggal') or 0
-        luka_berat = request.POST.get('luka_berat') or 0
-        luka_ringan = request.POST.get('luka_ringan') or 0
-        kerugian = request.POST.get('kerugian') or 0
-        kota = request.POST.get('kota')
-        kecamatan = request.POST.get('kecamatan')
-        kelurahan = request.POST.get('kelurahan')
-
-        # simpan ke database
-        Kecelakaan.objects.create(
-            tanggal=tanggal,
-            waktu=waktu,
-            meninggal=meninggal,
-            luka_berat=luka_berat,
-            luka_ringan=luka_ringan,
-            kerugian=kerugian,
-            kota=kota,
-            kecamatan=kecamatan,
-            kelurahan=kelurahan
-        )
-
-        return redirect('data_cluster')  # kembali ke dashboard
-
-    # Jika GET request → tampilkan halaman form
-    return render(request, 'coreapp/k-means/tambah_data.html')
-
-def tambah_data_view(request):
-    kota_list = Kota.objects.all()  # ambil semua kota
-    return render(request, 'coreapp/k-means/tambah_data.html', {
-        'kota_list': kota_list
-    })
-
-def load_kecamatan(request):
-    kota_id = request.GET.get('kota_id')
-    kecamatan = list(Kecamatan.objects.filter(kota_id=kota_id).values('id', 'nama'))
-    return JsonResponse({'kecamatan': kecamatan})
-
-def load_kelurahan(request):
-    kecamatan_id = request.GET.get('kecamatan_id')
-    kelurahan = list(Kelurahan.objects.filter(kecamatan_id=kecamatan_id).values('id', 'nama'))
-    return JsonResponse({'kelurahan': kelurahan})
-
-
-
 # ===============================
 # AHC VIEWS
 # ===============================
@@ -1537,259 +1317,6 @@ def load_kelurahan(request):
 # ================================
 # HALAMAN DATA
 # ================================
-@login_required(login_url='login')
-def ahc_data(request):
-    return render(request, 'coreapp/ahc/data.html')
-
-
-# ================================
-# HALAMAN PROSES
-# ================================
-@login_required(login_url='login')
-def ahc_proses(request):
-    context = {}
-
-    # Ambil data preprocessing dari session
-    summary_df = request.session.get('summary_df')
-    jumlah_data_asli = request.session.get('jumlah_data_asli')
-
-    # Ambil hasil clustering dari session
-    hasil_cluster = request.session.get('hasil_cluster')
-    summary_cluster = request.session.get('summary_cluster')
-    jumlah_cluster = request.session.get('jumlah_cluster')
-
-    # Jika sudah ada preprocessing
-    if summary_df:
-        context['preview'] = summary_df
-        context['jumlah_data'] = len(summary_df)
-        context['jumlah_data_asli'] = jumlah_data_asli
-
-    # Jika sudah ada clustering
-    if hasil_cluster:
-        context['hasil_cluster'] = hasil_cluster
-        context['summary_cluster'] = summary_cluster
-        context['jumlah_cluster'] = jumlah_cluster
-
-    return render(request, 'coreapp/ahc/proses.html', context)
-
-
-# ================================
-# HALAMAN HASIL
-# ================================
-@login_required(login_url='login')
-def ahc_hasil(request):
-    return render(request, 'coreapp/ahc/hasil.html')
-
-# ================================
-# PREPROCESSING DATA AHC
-# ================================
-
-@login_required(login_url='login')
-def preprocessing_data(request):
-    context = {}
-
-    if request.method == "POST":
-        file = request.FILES.get('file')
-
-        if file:
-            # Reset session
-            for key in [
-                'hasil_cluster',
-                'summary_cluster',
-                'jumlah_cluster',
-                'jumlah_data',
-                'silhouette_score',
-                'X_scaled',
-                'summary_df',
-                'jumlah_data_asli'
-            ]:
-                request.session.pop(key, None)
-
-            # Simpan nama file aktif
-            request.session['uploaded_file_name'] = file.name
-
-            # ================================
-            # 1. BACA DATA
-            # ================================
-            df = pd.read_excel(file)
-
-            context['preview_asli'] = df.head().to_html( 
-                classes="table-auto w-full text-sm", 
-                index=False
-            )
-
-            # Simpan jumlah data asli
-            request.session['jumlah_data_asli'] = len(df)
-
-            # Handle missing value
-            df.replace('-', np.nan, inplace=True)
-
-            numeric_cols = ['Umur', 'Jumlah Kejadian']
-            numeric_cols = [c for c in numeric_cols if c in
-    df.columns]
-            
-            for col in numeric_cols:
-                df[col] = pd.to_numeric(df[col], errors='coerce')
-
-            if 'Jumlah Kejadian' in df.columns:
-                df['Jumlah Kejadian'] = df['Jumlah Kejadian'].fillna(1)
-            else:
-                df['Jumlah Kejadian'] = 1  
-
-            # ================================
-            # 2. NUMERIC
-            # ================================
-            df['Umur'] = pd.to_numeric(df['Umur'], errors='coerce')
-            df['Jumlah Kejadian'] = pd.to_numeric(df['Jumlah Kejadian'], errors='coerce').fillna(1)
-
-            df = df[df['Umur'] > 0]
-
-            # ================================
-            # 3. WAKTU
-            # ================================
-            def konversi_waktu(jam):
-                try:
-                    jam = str(jam).strip()
-
-                    # ubah 19.00 → 19:00
-                    jam = jam.replace('.', ':')
-
-                    # ambil jam saja
-                    jam = int(jam.split(':')[0])
-
-                except:
-                    return "Tidak Diketahui"
-
-                if 0 <= jam < 6:
-                    return "Dini Hari"
-                elif 6 <= jam < 12:
-                    return "Pagi Hari"
-                elif 12 <= jam < 18:
-                    return "Siang Hari"
-                else:
-                    return "Malam Hari"
-
-            df.columns = df.columns.str.strip()
-
-            if 'Jam' in df.columns:
-                df['Waktu Kejadian'] = df['Jam'].apply(konversi_waktu)
-            else:
-                df['Waktu Kejadian'] = 'Tidak Diketahui'
-
-
-            # ================================
-            # 4. KENDARAAN
-            # ================================
-            kendaraan_cols = ['Motor', 'Mobil', 'Truk/Bus']
-            df[kendaraan_cols] = 0
-
-            jenis = df['Jenis Kendaraan'].astype(str).str.lower()
-
-            df.loc[jenis.str.contains('motor'), 'Motor'] = df['Jumlah Kejadian']
-            df.loc[jenis.str.contains(r'mobil|pick\s*up|pickup', na=False), 'Mobil'] = df['Jumlah Kejadian']
-            df.loc[jenis.str.contains('truk|bus'), 'Truk/Bus'] = df['Jumlah Kejadian']
-
-            # ================================
-            # FAKTOR PENYEBAB
-            # ================================
-            df['Penyebab_clean'] = df['Penyebab'].astype(str).str.lower().str.strip()
-
-            df['Faktor Pengemudi'] = 0
-            df['Faktor Jalan'] = 0
-            df['Faktor Kendaraan'] = 0
-            df['Faktor Lingkungan'] = 0
-
-            for i, row in df.iterrows():
-                penyebab = row['Penyebab_clean']
-                jumlah = row['Jumlah Kejadian']
-
-                # JALAN
-                if any(k in penyebab for k in ['licin', 'jalan berlubang', 'penerangan','genangan air']):
-                    df.at[i, 'Faktor Jalan'] += jumlah
-
-                # KENDARAAN
-                if any(k in penyebab for k in ['kendaraan ban bocor', 'kendaraan oleng','tergelincir','lampu depan mati','roda bermasalah','batu']):
-                    df.at[i, 'Faktor Kendaraan'] += jumlah
-
-                # LINGKUNGAN
-                if any(k in penyebab for k in ['cuaca hujan','kabut','pohon tumbang']):
-                    df.at[i, 'Faktor Lingkungan'] += jumlah
-
-                # PENGEMUDI 
-                if any(k in penyebab for k in [
-                    'kurang konsentrasi',
-                    'konsentrasi',
-                    'lalai',
-                    'mengantuk',
-                    'mendahului sebelah kiri',
-                    'berkecepatan tinggi',
-                    'membuka pintu mendadak'
-                    'melanggar Apill',
-                    'melebihi marka',
-                    'tidak mengutamakan jalur utama',
-                    'mengerem mendadak',
-                    'tidak menyalakan lampu sein',
-                    'melawan arus',
-                    'berkecepatan tinggi',
-                    'berkendara menggunakan hp',
-                    'tidak menguasai laju',
-                    'tidak menjaga jarak aman',
-                    'pengaruh alkohol'
-                    'gerobak lepas dari sepeda motor'
-                ]):
-                    df.at[i, 'Faktor Pengemudi'] += jumlah
-
-                # fallback
-                if (
-                    df.at[i, 'Faktor Pengemudi'] == 0 and
-                    df.at[i, 'Faktor Jalan'] == 0 and
-                    df.at[i, 'Faktor Kendaraan'] == 0 and
-                    df.at[i, 'Faktor Lingkungan'] == 0
-                ):
-                    df.at[i, 'Faktor Pengemudi'] = jumlah
-
-            # ================================
-            # 6. WAKTU
-            # ================================
-            waktu_cols = ['Dini Hari', 'Pagi Hari', 'Siang Hari', 'Malam Hari']
-            for w in waktu_cols:
-                df[w] = (df['Waktu Kejadian'] == w).astype(int) * df['Jumlah Kejadian']
-
-            # ================================
-            # 7. GROUP BY UMUR
-            # ================================
-            summary_cols = (
-                ['Jumlah Kejadian'] +
-                kendaraan_cols +
-                ['Faktor Pengemudi','Faktor Jalan','Faktor Kendaraan','Faktor Lingkungan'] +
-                waktu_cols
-            )
-
-            summary_df = df.groupby('Umur')[summary_cols].sum().reset_index()
-            summary_df = summary_df.round().astype(int)
-
-            # ================================
-            # 8. SCALING
-            # ================================
-            fitur_clustering = summary_df.copy()
-            scaler = StandardScaler()
-            X_scaled = scaler.fit_transform(fitur_clustering)
-
-            # ================================
-            # 9. SIMPAN SESSION
-            # ================================
-            request.session['summary_df'] = summary_df.to_dict(orient='records')
-            request.session['X_scaled'] = X_scaled.tolist()
-            request.session.modified = True
-
-            context['preview'] = summary_df.to_dict(orient='records')
-            context['jumlah_data'] = len(summary_df)
-            context['jumlah_data_asli'] = request.session.get('jumlah_data_asli')
-            # Setelah upload via AHC preprocessing, redirect ke halaman proses AHC
-            return redirect('ahc_proses')
-
-            # Untuk GET (atau jika tidak ada file POST), tampilkan halaman proses AHC
-        return render(request, 'coreapp/ahc/proses.html', context)
 
 # #########################################################################################
 # START K-MEANS SECTION
@@ -1982,10 +1509,10 @@ def preprocessing(request):
             request.session.pop(key, None)
 
         if use_db:
-            data_db = KMeansData.objects.all().values()
+            data_db = ClusterData.objects.all().values()
             if not data_db:
                 messages.error(request, "Data di database masih kosong.")
-                return redirect('kmeans_data_list')
+                return redirect('cluster_data_list')
             df = pd.DataFrame(list(data_db))
             # Map database fields to standard names
             df = df.rename(columns={
@@ -2350,77 +1877,124 @@ def get_ai_recommendation(request):
         peak = tinggi_df.iloc[0]
         waktu_rawan = f"{peak['Hari']} pukul {peak['Jam']}"
 
-    # Ambil API KEY dari Database
+    # Ambil API KEY dari Database (Prioritas: Config DB > .env)
     config = AIConfig.objects.filter(tipe='kmeans').first()
-    if not config or not config.api_key:
-        return JsonResponse({"success": False, "message": "API Key belum dikonfigurasi di menu Data."}, status=400)
-    
-    api_key = config.api_key
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={api_key}"
+    api_key_db = config.api_key.strip() if (config and config.api_key) else None
+    api_key_env = os.environ.get('GEMINI_API_KEY', '').strip()
+    api_key = api_key_db or api_key_env
 
-    # PROMPT CONSTRUCTION
+    if not api_key:
+        return JsonResponse({"success": False, "message": "API Key belum dikonfigurasi."}, status=400)
+    
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={api_key}"
+    headers = {
+        "Content-Type": "application/json",
+        "X-goog-api-key": api_key
+    }
+    
+    print("\n" + "="*50)
+    print(" [AI REQUEST DEBUG] - KMEANS REKOMENDASI")
+    print(f" URL: {url.split('?')[0]}")
+    print(f" Using Key: {api_key[:6]}...{api_key[-4:]} (Source: {'DB' if api_key_db else 'ENV'})")
+
+    class NpEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, np.integer): return int(obj)
+            if isinstance(obj, np.floating): return float(obj)
+            if isinstance(obj, np.ndarray): return obj.tolist()
+            return super(NpEncoder, self).default(obj)
+
     prompt = f"""
-    Anda adalah asisten analis kecelakaan lalu lintas untuk Polres Madiun.
+    Sebagai AI Ahli Keselamatan Jalan, berikan rekomendasi kebijakan berdasarkan data clustering K-Means berikut.
     
-    DATA CLUSTERING (Sample Top 20 High Risk):
-    {json.dumps(cluster_sample)}
+    DATA RINGKASAN:
+    - Total Unit Analisis: {total} slot waktu (Hari + Jam)
+    - Slot Risiko Tinggi (Cluster Tinggi): {tinggi} titik ({persen}%)
+    - Titik Terkritis: {waktu_rawan}
     
-    STATISTIK TOTAL:
-    - Total: {total} slot waktu dianalisis
-    - Risiko Tinggi: {tinggi} slot ({persen}%)
-    - Waktu terawan utama: {waktu_rawan}
-    INSTRUKSI:
-    Buatkan usulan penanganan rawan kecelakaan dalam format JSON murni:
+    SAMPEL DATA CLUSTER TINGGI (High Risk):
+    {json.dumps(cluster_sample, cls=NpEncoder)}
+    
+    INSTRUKSI ANALISIS:
+    1. Identifikasi pola temporal (hari/jam) yang menjadi hotspot kecelakaan.
+    2. Berikan matriks intervensi yang spesifik dan terukur (patroli, infrastruktur, regulasi).
+    3. Targetkan pengurangan angka kecelakaan berdasarkan densitas cluster tinggi.
+    
+    FORMAT OUTPUT (HARUS JSON VALID MURNI):
     {{
-      "ringkasan": "2-3 kalimat temuan utama",
-      "prioritas_tinggi": [
-        {{
-          "waktu": "Hari, rentang jam",
-          "kejadian": 100,
-          "tindakan": {{
-            "patroli": "deskripsi spesifik",
-            "infrastruktur": ["item1", "item2"],
-            "sosialisasi": ["item1", "item2"]
-          }}
-        }}
-      ],
-      "prioritas_sedang": [],
-      "prioritas_rendah": [],
-      "jadwal_patroli": [
-        {{
-          "hari": "Hari",
-          "jam": "Jam",
-          "unit": 2,
-          "fokus": "deskripsi fokus patroli"
-        }}
-      ],
-      "program": {{
-        "jangka_pendek": [],
-        "jangka_menengah": [],
-        "jangka_panjang": []
-      }},
-      "target_kpi": {{
-        "pengurangan": "target %",
-        "indikator": ["indikator1", "indikator2"]
-      }},
-      "catatan": "catatan penutup"
+        "ringkasan": "Analisis kritis terhadap korelasi hari/jam dan frekuensi kejadian.",
+        "prioritas_tinggi": [
+            {{ 
+                "waktu": "Hari X Pukul Y", 
+                "kejadian": "Z kejadian", 
+                "tindakan": {{ 
+                    "patroli": "Tindakan pengawasan spesifik", 
+                    "infrastruktur": ["Perbaikan rambu/lampu", "Markah jalan"] 
+                }} 
+            }}
+        ],
+        "jadwal_patroli": [
+            {{ "hari": "...", "jam": "...", "fokus": "Aspek utama yang diawasi", "unit": "X" }}
+        ],
+        "target_kpi": {{
+            "pengurangan": "Estimasi % pengurangan jika rekomendasi dijalankan",
+            "indikator": ["Key Performance Indicator 1", "KPI 2"]
+        }},
+        "program": {{
+            "jangka_pendek": ["Langkah darurat 1 bulan"],
+            "jangka_menengah": ["Pembangunan/Regulasi 6-12 bulan"]
+        }},
+        "catatan": "Pesan penutup strategis."
     }}
-    
-    PENTING: Berikan response hanya JSON murni tanpa karakter markdown atau backticks.
+    - Bahasa Indonesia formal.
+    - Tanpa penjelasan markdown di luar JSON.
     """
 
     payload = {"contents": [{"parts": [{"text": prompt}]}]}
+    
+    print("\n" + "="*50)
+    print(" [AI REQUEST DEBUG] - KMEANS REKOMENDASI")
+    print(f" URL: {url.split('?')[0]}")
+    print(f" Using Key: {api_key[:6]}...{api_key[-4:]} (Source: {'DB' if api_key_db else 'ENV'})")
+    
+    import time
+    start_time = time.time()
+    
     try:
-        response = requests.post(url, json=payload, timeout=30)
+        response = requests.post(url, headers=headers, json=payload, timeout=30)
+        
+        print(f" Status Code: {response.status_code}")
+        print(f" Time Taken: {round(time.time() - start_time, 2)}s")
+        
         res_json = response.json()
+        
+        if response.status_code != 200:
+            print(f" ERROR RESPONSE: {json.dumps(res_json, indent=2)}")
+        else:
+            print(" RESPONSE: Success")
+            
+        print("="*50 + "\n")
+        
+        if 'candidates' not in res_json or not res_json['candidates']:
+            error_msg = res_json.get('error', {}).get('message', 'Gemini API tidak mengembalikan hasil.')
+            return JsonResponse({"success": False, "message": f"AI Error: {error_msg}"}, status=400)
+
         raw_text = res_json['candidates'][0]['content']['parts'][0]['text']
         clean_text = raw_text.replace('```json', '').replace('```', '').strip()
-        ai_data = json.loads(clean_text)
+        
+        try:
+            ai_data = json.loads(clean_text)
+        except json.JSONDecodeError:
+            # Fallback jika AI tidak memberikan JSON murni meskipun sudah diinstruksikan
+            return JsonResponse({"success": False, "message": "AI tidak mengembalikan format data yang valid."}, status=500)
+
         request.session['ai_recommendation_data'] = ai_data
         request.session.modified = True
         return JsonResponse({"success": True, "data": ai_data})
+    except requests.exceptions.Timeout:
+        return JsonResponse({"success": False, "message": "Koneksi ke AI (Gemini) timeout."}, status=504)
     except Exception as e:
-        return JsonResponse({"success": False, "message": str(e)}, status=500)
+        return JsonResponse({"success": False, "message": f"System Error: {str(e)}"}, status=500)
 
 # ==========================================
 # AJAX: GET AI DASHBOARD ANALYSIS (GEMINI)
@@ -2467,14 +2041,21 @@ def analyze_accident_clustering(request):
         peaks.append({"label": "Puncak", "hour": f"{int(max_idx):02d}:00", "val": round(float(hourly_avg[max_idx]), 1)})
 
     # Construct Prompt
+    class NpEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, np.integer): return int(obj)
+            if isinstance(obj, np.floating): return float(obj)
+            if isinstance(obj, np.ndarray): return obj.tolist()
+            return super(NpEncoder, self).default(obj)
+
     prompt = f"""
     Analisis data clustering K-Means kecelakaan berikut (Total {total_incidents} kejadian):
 
     1. DISTRIBUSI CLUSTER:
-    {json.dumps(clusters)}
+    {json.dumps(clusters, cls=NpEncoder)}
 
     2. HOTSPOTS (Titik Tertinggi):
-    {json.dumps(hotspot_list)}
+    {json.dumps(hotspot_list, cls=NpEncoder)}
 
     3. TREN 24 JAM (Rata-rata Kejadian):
     {hourly_avg.to_dict()}
@@ -2492,31 +2073,68 @@ def analyze_accident_clustering(request):
     - Tanpa saran/rekomendasi.
     """
 
-    # Ambil API KEY dari Database
+    # Ambil API KEY dari Database (Prioritas: Config DB > .env)
     config = AIConfig.objects.filter(tipe='kmeans').first()
-    if not config or not config.api_key:
-        return JsonResponse({"success": False, "message": "API Key belum dikonfigurasi di menu Data."}, status=400)
+    api_key_db = config.api_key.strip() if (config and config.api_key) else None
+    api_key_env = os.environ.get('GEMINI_API_KEY', '').strip()
+    api_key = api_key_db or api_key_env
 
-    api_key = config.api_key
+    if not api_key:
+        return JsonResponse({"success": False, "message": "API Key belum dikonfigurasi."}, status=400)
+
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={api_key}"
+    headers = {
+        "Content-Type": "application/json",
+        "X-goog-api-key": api_key
+    }
+    
+    print("\n" + "="*50)
+    print(" [AI REQUEST DEBUG] - KMEANS ANALISIS")
+    print(f" URL: {url.split('?')[0]}")
+    print(f" Using Key: {api_key[:6]}...{api_key[-4:]} (Source: {'DB' if api_key_db else 'ENV'})")
+    print(f" Model: gemini-flash-latest")
+    
+    import time
+    start_time = time.time()
     
     try:
         payload = {"contents": [{"parts": [{"text": prompt}]}]}
-        response = requests.post(url, json=payload, timeout=30)
+        response = requests.post(url, headers=headers, json=payload, timeout=30)
+        
+        print(f" Status Code: {response.status_code}")
+        print(f" Time Taken: {round(time.time() - start_time, 2)}s")
+        
         res_json = response.json()
         
+        if response.status_code != 200:
+            print(f" ERROR RESPONSE: {json.dumps(res_json, indent=2)}")
+        else:
+            print(" RESPONSE: Success")
+
+        print("="*50 + "\n")
+        
+        if 'candidates' not in res_json or not res_json['candidates']:
+            error_msg = res_json.get('error', {}).get('message', 'Gemini API tidak mengembalikan hasil.')
+            return JsonResponse({"success": False, "message": f"AI Error: {error_msg}"}, status=400)
+            
         raw_text = res_json['candidates'][0]['content']['parts'][0]['text']
         # Pembersihan jika ada markdown
         clean_text = raw_text.replace('```json', '').replace('```', '').strip()
-        analysis_data = json.loads(clean_text)
+        
+        try:
+            analysis_data = json.loads(clean_text)
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "message": "AI tidak mengembalikan format analisis yang valid."}, status=500)
 
         # Simpan di session untuk persistensi
         request.session['ai_dashboard_analysis'] = analysis_data
         request.session.modified = True
 
         return JsonResponse({"success": True, "analysis": analysis_data})
+    except requests.exceptions.Timeout:
+        return JsonResponse({"success": False, "message": "Koneksi ke AI (Gemini) timeout."}, status=504)
     except Exception as e:
-        return JsonResponse({"success": False, "message": str(e)}, status=500)
+        return JsonResponse({"success": False, "message": f"System Error: {str(e)}"}, status=500)
 
 @login_required(login_url='login')
 def save_ai_config(request):
@@ -2554,12 +2172,12 @@ def normalize_jam(jam_str):
     return jam_str
 
 @login_required(login_url='login')
-def kmeans_data_list(request):
-    all_data = KMeansData.objects.all()
+def cluster_data_list(request):
+    all_data = ClusterData.objects.all()
     total_count = all_data.count()
     
     # Hitung duplikasi (data yang isinya persis sama di semua kolom utama)
-    duplicate_groups = KMeansData.objects.values(
+    duplicate_groups = ClusterData.objects.values(
         'no_referensi', 'umur', 'tkp', 'penyebab', 'hari', 'tanggal', 'jam', 
         'jenis_kendaraan', 'tipe_kendaraan', 'kerugian_material'
     ).annotate(count=Count('id')).filter(count__gt=1)
@@ -2570,7 +2188,7 @@ def kmeans_data_list(request):
     duplicate_data_details = []
     for group in duplicate_groups:
         # Ambil satu contoh data untuk setiap grup duplikat
-        example = KMeansData.objects.filter(
+        example = ClusterData.objects.filter(
             no_referensi=group['no_referensi'],
             umur=group['umur'], tkp=group['tkp'], penyebab=group['penyebab'],
             hari=group['hari'], tanggal=group['tanggal'], jam=group['jam'],
@@ -2600,11 +2218,12 @@ def kmeans_data_list(request):
         'jumlah_duplikat': jumlah_duplikat,
         'duplicate_data_details': duplicate_data_details,
         'ai_config': AIConfig.objects.filter(tipe='kmeans').first(),
+        'ai_config_ahc': AIConfig.objects.filter(tipe='ahc').first(),
     }
     return render(request, 'coreapp/k-means/data_list.html', context)
 
 @login_required(login_url='login')
-def kmeans_data_tambah(request):
+def cluster_data_tambah(request):
     if request.method == "POST":
         umur = request.POST.get('umur')
         tkp = request.POST.get('tkp')
@@ -2626,7 +2245,7 @@ def kmeans_data_tambah(request):
         }
         hari = hari_map.get(hari_en, hari_en)
 
-        KMeansData.objects.create(
+        ClusterData.objects.create(
             umur=umur,
             tkp=str(tkp).strip(),
             penyebab=str(penyebab).strip(),
@@ -2638,12 +2257,12 @@ def kmeans_data_tambah(request):
             kerugian_material=kerugian_material
         )
         messages.success(request, "Data berhasil ditambahkan.")
-        return redirect('kmeans_data_list')
+        return redirect('cluster_data_list')
 
     # Dropdown data: Ambil unik, hilangkan yang kosong/null, urutkan
     def get_unique_choices(field):
         # Ambil dari DB
-        raw_choices = KMeansData.objects.exclude(**{f"{field}__isnull": True}).exclude(**{f"{field}": ""}).values_list(field, flat=True).distinct()
+        raw_choices = ClusterData.objects.exclude(**{f"{field}__isnull": True}).exclude(**{f"{field}": ""}).values_list(field, flat=True).distinct()
         
         # Bersihkan whitespace dan pastikan unik di Python (case-insensitive check or normalization)
         cleaned = set()
@@ -2660,6 +2279,64 @@ def kmeans_data_tambah(request):
         'tipe_choices': get_unique_choices('tipe_kendaraan'),
     }
     return render(request, 'coreapp/k-means/data_tambah.html', context)
+
+@login_required(login_url='login')
+def cluster_data_edit(request, pk):
+    from django.shortcuts import get_object_or_404
+    data = get_object_or_404(ClusterData, pk=pk)
+    
+    if request.method == "POST":
+        umur = request.POST.get('umur')
+        tkp = request.POST.get('tkp')
+        penyebab = request.POST.get('penyebab')
+        tanggal_raw = request.POST.get('tanggal')
+        jam = request.POST.get('jam')
+        jenis_kendaraan = request.POST.get('jenis_kendaraan')
+        tipe_kendaraan = request.POST.get('tipe_kendaraan')
+        kerugian_material = request.POST.get('kerugian_material')
+
+        if kerugian_material:
+            kerugian_material = kerugian_material.upper().replace('RP', '').replace('.', '').replace(',', '').replace(' ', '').strip()
+
+        tanggal_obj = datetime.strptime(tanggal_raw, '%Y-%m-%d')
+        hari_en = tanggal_obj.strftime('%A')
+        hari_map = {
+            'Monday': 'Senin', 'Tuesday': 'Selasa', 'Wednesday': 'Rabu',
+            'Thursday': 'Kamis', 'Friday': 'Jumat', 'Saturday': 'Sabtu', 'Sunday': 'Minggu'
+        }
+        hari = hari_map.get(hari_en, hari_en)
+
+        data.umur = umur
+        data.tkp = str(tkp).strip()
+        data.penyebab = str(penyebab).strip()
+        data.hari = str(hari).strip()
+        data.tanggal = tanggal_raw
+        data.jam = normalize_jam(jam)
+        data.jenis_kendaraan = str(jenis_kendaraan).strip()
+        data.tipe_kendaraan = str(tipe_kendaraan).strip()
+        data.kerugian_material = kerugian_material
+        data.save()
+        
+        messages.success(request, "Data berhasil diupdate.")
+        return redirect('cluster_data_list')
+
+    # Dropdown data: Ambil unik, hilangkan yang kosong/null, urutkan
+    def get_unique_choices(field):
+        raw_choices = ClusterData.objects.exclude(**{f"{field}__isnull": True}).exclude(**{f"{field}": ""}).values_list(field, flat=True).distinct()
+        cleaned = set()
+        for c in raw_choices:
+            if c:
+                cleaned.add(str(c).strip())
+        return sorted(list(cleaned))
+
+    context = {
+        'data': data,
+        'tkp_choices': get_unique_choices('tkp'),
+        'penyebab_choices': get_unique_choices('penyebab'),
+        'jenis_choices': get_unique_choices('jenis_kendaraan'),
+        'tipe_choices': get_unique_choices('tipe_kendaraan'),
+    }
+    return render(request, 'coreapp/k-means/data_edit.html', context)
 
 def _parse_indo_date(date_str):
     """Helper to parse Indonesian date strings like '1 Januari 2024'"""
@@ -2696,12 +2373,12 @@ def _parse_indo_date(date_str):
         return None
 
 @login_required(login_url='login')
-def kmeans_data_import(request):
+def cluster_data_import(request):
     if request.method == "POST":
         file = request.FILES.get('file')
         if not file:
             messages.error(request, "Silakan pilih file excel.")
-            return redirect('kmeans_data_list')
+            return redirect('cluster_data_list')
         
         try:
             df = pd.read_excel(file)
@@ -2752,7 +2429,7 @@ def kmeans_data_import(request):
                     jam = str(row.get('jam', '')).replace('.', ':') # normalize 19.00 to 19:00 if needed, but the user example shows 19.00
                     if jam == 'nan': jam = "00:00"
                     
-                    KMeansData.objects.create(
+                    ClusterData.objects.create(
                         umur=row.get('umur', 0),
                         tkp=str(row.get('tkp', '')).strip(),
                         penyebab=str(row.get('penyebab', '')).strip(),
@@ -2773,33 +2450,33 @@ def kmeans_data_import(request):
         except Exception as e:
             messages.error(request, f"Gagal mengimport data: {str(e)}")
             
-        return redirect('kmeans_data_list')
+        return redirect('cluster_data_list')
     
-    return redirect('kmeans_data_list')
+    return redirect('cluster_data_list')
 
 @login_required(login_url='login')
-def kmeans_data_hapus(request, pk):
-    KMeansData.objects.filter(pk=pk).delete()
+def cluster_data_hapus(request, pk):
+    ClusterData.objects.filter(pk=pk).delete()
     messages.success(request, "Data berhasil dihapus.")
-    return redirect('kmeans_data_list')
+    return redirect('cluster_data_list')
 
 @login_required(login_url='login')
-def kmeans_data_hapus_semua(request):
-    KMeansData.objects.all().delete()
+def cluster_data_hapus_semua(request):
+    ClusterData.objects.all().delete()
     messages.success(request, "Semua data berhasil dihapus.")
-    return redirect('kmeans_data_list')
+    return redirect('cluster_data_list')
 
 @login_required(login_url='login')
-def kmeans_data_hapus_duplikat(request):
+def cluster_data_hapus_duplikat(request):
     if request.method == "POST":
-        duplicate_groups = KMeansData.objects.values(
+        duplicate_groups = ClusterData.objects.values(
             'no_referensi', 'umur', 'tkp', 'penyebab', 'hari', 'tanggal', 'jam', 
             'jenis_kendaraan', 'tipe_kendaraan', 'kerugian_material'
         ).annotate(count=Count('id')).filter(count__gt=1)
         
         deleted_count = 0
         for group in duplicate_groups:
-            ids = list(KMeansData.objects.filter(
+            ids = list(ClusterData.objects.filter(
                 no_referensi=group['no_referensi'],
                 umur=group['umur'], tkp=group['tkp'], penyebab=group['penyebab'],
                 hari=group['hari'], tanggal=group['tanggal'], jam=group['jam'],
@@ -2809,12 +2486,12 @@ def kmeans_data_hapus_duplikat(request):
             
             # Keep one, delete the rest
             ids_to_delete = ids[1:]
-            KMeansData.objects.filter(id__in=ids_to_delete).delete()
+            ClusterData.objects.filter(id__in=ids_to_delete).delete()
             deleted_count += len(ids_to_delete)
             
         messages.success(request, f"Berhasil menghapus {deleted_count} data duplikat.")
-        return redirect('kmeans_data_list')
-    return redirect('kmeans_data_list')
+        return redirect('cluster_data_list')
+    return redirect('cluster_data_list')
 
 # ==========================================
 # END K-MEANS SECTION
@@ -2871,482 +2548,7 @@ def load_kelurahan(request):
     return JsonResponse({'kelurahan': kelurahan})
 
 
-    # ================================
-    # 7. SESSION SAVE
-    # ================================
-    request.session['hasil_cluster'] = df.to_dict('records')
-    request.session['summary_cluster'] = summary
-    request.session['jumlah_cluster'] = n_cluster
-    request.session['jumlah_data'] = len(df)
-    request.session['silhouette_score'] = sil_score
-    request.session['total_kejadian'] = total_kejadian_all
-    request.session['dendrogram_html'] = dendrogram_html
-    request.session['scatter_html'] = scatter_html
-    request.session['bar_chart'] = bar_chart
-
-    return redirect('ahc_hasil')
-
-
-    # ================================
-    # HASIL AHC
-    # ================================
-@login_required(login_url='login')
-def ahc_hasil(request):
-
-    hasil_cluster = request.session.get('hasil_cluster', [])
-    df = pd.DataFrame(hasil_cluster)
-    summary_cluster = request.session.get('summary_cluster', [])
-    jumlah_cluster = request.session.get('jumlah_cluster')
-    jumlah_data = request.session.get('jumlah_data')
-    silhouette = request.session.get('silhouette_score')
-    scatter_html = request.session.get('scatter_html')
-    dendrogram_html = request.session.get('dendrogram_html')
-    bar_chart = request.session.get('bar_chart')
-    faktor_chart = request.session.get('faktor_chart')
-
-    belum_clustering = len(hasil_cluster) == 0
-
-    # ================================
-    # AI INTELLIGENT ANALYSIS (GLOBAL)
-    # ================================
-    ai_global = generate_ai_insight(summary_cluster, silhouette)
-
-    # ================================
-    # CHART DATA
-    # ================================
-    cluster_labels = [
-        f"Cluster {s['cluster']}" for s in summary_cluster
-    ]
-    cluster_counts = [
-        s['jumlah'] for s in summary_cluster
-    ]
-
-    # ================================
-    # DETAIL CLUSTER
-    # ================================
-    cluster_detail = {}
-
-    for s in summary_cluster:
-        cid = s['cluster']
-        data_cluster = [r for r in hasil_cluster if r['Cluster'] == cid]
-
-        cluster_detail[f"Cluster {cid}"] = [
-            f"Umur: {d.get('Umur','-')}, Jumlah: {d.get('Jumlah Kejadian',0)}"
-            for d in data_cluster
-        ]
-
-    # ================================
-    # TOTAL KEJADIAN
-    # ================================
-    total_kejadian = sum(
-        r.get('Jumlah Kejadian', 0) for r in hasil_cluster
-    )
-
-    # ================================
-    # FAKTOR PENYEBAB (GLOBAL)
-    # ================================
-
-    faktor_cols = ["Faktor Pengemudi", "Faktor Jalan", "Faktor Kendaraan", "Faktor Lingkungan"]
-
-    df_all = df.copy()
-
-    faktor_total = {}
-
-    for col in faktor_cols:
-        if col in df_all.columns:
-            faktor_total[col] = int(df_all[col].sum())
-
-    # INI WAJIB ADA
-    faktor_labels = list(faktor_total.keys())
-    faktor_values = list(faktor_total.values())
-
-    print("FAKTOR LABEL:", faktor_labels)
-
-    # ================================
-    # FIX ERROR umur_labels
-    # ================================
-    try:
-        df_all = df.copy()
-
-        def kategori_umur(u):
-            try:
-                u = int(u)
-            except:
-                return "Tidak Diketahui"
-
-            if u <= 11:
-                return "5-11 (Kanak-kanak)"
-            elif u <= 16:
-                return "12-16 (Remaja Awal)"
-            elif u <= 25:
-                return "17-25 (Remaja Akhir)"
-            elif u <= 35:
-                return "26-35 (Dewasa Awal)"
-            elif u <= 45:
-                return "36-45 (Dewasa Akhir)"
-            elif u <= 55:
-                return "46-55 (Lansia Awal)"
-            elif u <= 65:
-                return "56-65 (Lansia Akhir)"
-            else:
-                return "66-90 (Manula)"
-
-        if not df_all.empty and 'Umur' in df_all.columns:
-
-            # 🔥 pastikan tidak ada null
-            df_all['Umur'] = pd.to_numeric(df_all['Umur'], errors='coerce').fillna(0)
-
-            # 🔥 buat kolom dulu
-            df_all['Kelompok Umur'] = df_all['Umur'].apply(kategori_umur)
-
-            # 🔥 CEK dulu sebelum groupby
-            if 'Kelompok Umur' in df_all.columns:
-
-                faktor_cols = [
-                    "Faktor Pengemudi",
-                    "Faktor Jalan",
-                    "Faktor Kendaraan",
-                    "Faktor Lingkungan"
-                ]
-
-                grouped = df_all.groupby('Kelompok Umur')[faktor_cols].sum().reset_index()
-
-                umur_labels = grouped['Kelompok Umur'].tolist()
-                faktor_pengemudi = grouped['Faktor Pengemudi'].tolist()
-                faktor_jalan = grouped['Faktor Jalan'].tolist()
-                faktor_kendaraan = grouped['Faktor Kendaraan'].tolist()
-                faktor_lingkungan = grouped['Faktor Lingkungan'].tolist()
-
-            else:
-                umur_labels = []
-                faktor_pengemudi = []
-                faktor_jalan = []
-                faktor_kendaraan = []
-                faktor_lingkungan = []
-
-        else:
-            umur_labels = []
-            faktor_pengemudi = []
-            faktor_jalan = []
-            faktor_kendaraan = []
-            faktor_lingkungan = []
-
-    except Exception as e:
-        print("ERROR UMUR CHART:", e)
-        umur_labels = []
-        faktor_pengemudi = []
-        faktor_jalan = []
-        faktor_kendaraan = []
-        faktor_lingkungan = []
-
-    # ================================
-    # AI PER VISUAL 
-    # ================================
-
-    # AI BAR CHART (ENHANCED)
-
-    if summary_cluster:
-
-        total = sum(s['jumlah'] for s in summary_cluster)
-
-        terbesar = max(summary_cluster, key=lambda x: x['jumlah'])
-        terkecil = min(summary_cluster, key=lambda x: x['jumlah'])
-
-        ai_bar = "<b>ANALISIS DISTRIBUSI CLUSTER (BAR CHART)</b><br><br>"
-
-        for s in sorted(summary_cluster, key=lambda x: x['cluster']):
-            persentase = round((s['jumlah'] / total) * 100, 2)
-
-            ai_bar += (
-                f"• <b>Cluster {s['cluster']}</b>: "
-                f"<b>{s['jumlah']}</b> kejadian "
-                f"(<b>{persentase}%</b>) → "
-            )
-
-            if s['jumlah'] == terbesar['jumlah']:
-                ai_bar += "<b style='color:#dc2626'>Dominan (tertinggi)</b><br>"
-            elif s['jumlah'] == terkecil['jumlah']:
-                ai_bar += "<b style='color:#2563eb'>Terendah</b><br>"
-            else:
-                ai_bar += "Kategori <b>Sedang</b><br>"
-
-        # KESIMPULAN
-
-        ai_bar += "<br><b>Kesimpulan:</b><br>"
-
-        ai_bar += (
-            f"Cluster <b style='color:#dc2626'>{terbesar['cluster']}</b> "
-            f"merupakan cluster dengan jumlah kejadian tertinggi, "
-            f"sedangkan cluster <b style='color:#2563eb'>{terkecil['cluster']}</b> "
-            f"memiliki jumlah kejadian paling rendah. "
-            f"Hal ini menunjukkan adanya perbedaan distribusi kejadian yang cukup signifikan antar cluster."
-        )
-
-    else:
-        ai_bar = "Belum ada data untuk analisis bar chart."
-
-    # ================================
-    # AI PCA
-    # ================================
-    ai_pca = (
-        "<b>ANALISIS VISUALISASI PCA (PRINCIPAL COMPONENT ANALYSIS)</b><br><br>"
-        
-        "Visualisasi PCA digunakan untuk mereduksi data ke dalam dua dimensi utama "
-        "(<b>Principal Component 1</b> dan <b>Principal Component 2</b>) agar pola data lebih mudah dianalisis.<br><br>"
-        "Setiap titik merepresentasikan satu data dalam cluster tertentu. "
-        "Semakin jauh jarak antar cluster, maka perbedaan karakteristik semakin jelas sehingga hasil clustering dapat dianggap "
-        "<b style='color:#16a34a'>baik</b>.<br><br>"
-        "Sebaliknya, jika terjadi <i>overlap</i>, maka menunjukkan adanya kemiripan antar data sehingga pemisahan cluster belum optimal.<br><br>"
-        
-        "<b>Kesimpulan:</b> PCA membantu mengevaluasi kualitas clustering melalui visualisasi pemisahan antar cluster."
-    )
-    
-    # ================================
-    # AI DENDROGRAM (ENHANCED)
-    # ================================
-    ai_dendrogram = f"<b>ANALISIS DENDROGRAM HIERARCHICAL CLUSTERING</b>\n\n" \
-    "Dendrogram menunjukkan proses pengelompokan data berdasarkan tingkat kemiripan antar data.\n\n" \
-    "Pada awalnya, setiap data dianggap sebagai satu cluster, kemudian secara bertahap digabungkan dengan data lain yang memiliki kemiripan paling tinggi.\n\n" \
-    "Garis <b style='color:#dc2626'>cut-off</b> digunakan sebagai batas untuk menentukan jumlah cluster yang terbentuk.\n" \
-    f"Pada hasil ini, pemotongan dendrogram menghasilkan sebanyak <b style='color:#2563eb'>{jumlah_cluster} cluster</b>.\n\n" \
-    "Semakin tinggi posisi cut-off, maka jumlah cluster semakin sedikit.\n" \
-    "Sebaliknya, semakin rendah cut-off, maka jumlah cluster semakin banyak dan lebih detail.\n\n" \
-    "<b>Kesimpulan:</b>\n" \
-    f"Pembagian data ke dalam <b style='color:#2563eb'>{jumlah_cluster} cluster</b> sudah sesuai dengan pola kemiripan data, sehingga proses clustering dapat dianggap <b>optimal</b>."
-    # ================================
-    # AI FAKTOR PENYEBAB (GLOBAL)
-    # ================================
-    if faktor_values:
-        max_index = faktor_values.index(max(faktor_values))
-        faktor_tertinggi = faktor_labels[max_index]
-
-        ai_faktor = "ANALISIS FAKTOR PENYEBAB KECELAKAAN\n\n"
-
-        ai_faktor += "Distribusi faktor penyebab:\n"
-
-        for i in range(len(faktor_labels)):
-            ai_faktor += (
-                f"- <b>{faktor_labels[i]}</b>: "
-                f"<b>{faktor_values[i]}</b> kejadian\n"
-            )
-
-        ai_faktor += (
-            "\nFaktor paling dominan adalah "
-            f"<b style='color:#dc2626'>{faktor_tertinggi}</b>.\n"
-        )
-
-        if faktor_tertinggi == "Faktor Pengemudi":
-            ai_faktor += (
-                "Hal ini menunjukkan bahwa <b>kesalahan manusia</b> "
-                "menjadi penyebab utama kecelakaan."
-            )
-        elif faktor_tertinggi == "Faktor Jalan":
-            ai_faktor += (
-                "Hal ini menunjukkan bahwa <b>kondisi jalan</b> "
-                "menjadi faktor utama kecelakaan."
-            )
-        elif faktor_tertinggi == "Faktor Kendaraan":
-            ai_faktor += (
-                "Hal ini menunjukkan bahwa <b>kondisi kendaraan</b> "
-                "memiliki kontribusi besar terhadap kecelakaan."
-            )
-        else:
-            ai_faktor += (
-                "Hal ini menunjukkan bahwa <b>faktor lingkungan</b> "
-                "berpengaruh terhadap kecelakaan."
-            )
-
-        ai_faktor += (
-            "\n\nKesimpulan:\n"
-            f"Faktor <b style='color:#dc2626'>{faktor_tertinggi}</b> "
-            "merupakan penyebab utama kecelakaan dan perlu menjadi fokus utama dalam upaya pencegahan."
-        )
-
-    else:
-        ai_faktor = "Belum ada data faktor."
-
-    # ================================
-    # AI UMUR vs FAKTOR (ENHANCED)
-    # ================================
-
-    ai_umur = "Belum ada data umur."
-
-    if umur_labels:
-
-        total_per_umur = []
-
-        for i in range(len(umur_labels)):
-            total = (
-                faktor_pengemudi[i] +
-                faktor_jalan[i] +
-                faktor_kendaraan[i] +
-                faktor_lingkungan[i]
-            )
-            total_per_umur.append(total)
-
-        max_index = total_per_umur.index(max(total_per_umur))
-        umur_tertinggi = umur_labels[max_index]
-
-        # 🔥 cari faktor dominan pada umur tertinggi
-        idx = max_index
-        faktor_list = [
-            ("Faktor Pengemudi", faktor_pengemudi[idx]),
-            ("Faktor Jalan", faktor_jalan[idx]),
-            ("Faktor Kendaraan", faktor_kendaraan[idx]),
-            ("Faktor Lingkungan", faktor_lingkungan[idx])
-        ]
-        faktor_dominan = max(faktor_list, key=lambda x: x[1])[0]
-
-        # ================================
-        # BUILD TEXT
-        # ================================
-        ai_umur = "<b>ANALISIS HUBUNGAN UMUR DAN FAKTOR KECELAKAAN</b>\n\n"
-
-        ai_umur += (
-            f"Kelompok umur dengan kejadian tertinggi adalah "
-            f"<b style='color:#2563eb'>{umur_tertinggi}</b>.\n\n"
-        )
-
-        ai_umur += "Distribusi faktor pada setiap kelompok umur:\n"
-
-        for i in range(len(umur_labels)):
-            ai_umur += (
-                f"\n• <b>Umur {umur_labels[i]}</b>\n"
-                f"  - Pengemudi   : <b>{faktor_pengemudi[i]}</b>\n"
-                f"  - Jalan       : <b>{faktor_jalan[i]}</b>\n"
-                f"  - Kendaraan   : <b>{faktor_kendaraan[i]}</b>\n"
-                f"  - Lingkungan  : <b>{faktor_lingkungan[i]}</b>\n"
-            )
-
-        # ================================
-        # KESIMPULAN
-        # ================================
-        ai_umur += (
-            "\nKesimpulan:\n"
-            f"Kelompok umur <b style='color:#2563eb'>{umur_tertinggi}</b> "
-            f"merupakan kelompok dengan tingkat kecelakaan tertinggi, "
-            f"dengan faktor dominan yaitu "
-            f"<b style='color:#dc2626'>{faktor_dominan}</b>.\n\n"
-        )
-
-        # ================================
-        # REKOMENDASI (BONUS 🔥)
-        # ================================
-        ai_umur += (
-            "Rekomendasi:\n"
-            "Perlu dilakukan peningkatan edukasi keselamatan berkendara "
-            "terutama pada kelompok umur dominan guna mengurangi risiko kecelakaan."
-        )
-                
-    # ================================
-    # CONTEXT
-    # ================================
-    context = {
-        "hasil_cluster": hasil_cluster,
-        "summary_cluster": summary_cluster,
-        "jumlah_cluster": jumlah_cluster,
-        "jumlah_data": jumlah_data,
-        "total_kejadian": total_kejadian,
-        "silhouette_score": silhouette,
-        "belum_clustering": belum_clustering,
-        "scatter_html": scatter_html,
-        "dendrogram_html": dendrogram_html,
-        "bar_chart": bar_chart,
-        "faktor_chart": faktor_chart,
-        "faktor_labels": faktor_labels,
-        "faktor_values": faktor_values,
-        "umur_labels": umur_labels,
-        "faktor_pengemudi": faktor_pengemudi,
-        "faktor_jalan": faktor_jalan,
-        "faktor_kendaraan": faktor_kendaraan,
-        "faktor_lingkungan": faktor_lingkungan,
-        "ai_faktor": ai_faktor,
-        "ai_umur": ai_umur,
-
-        "cluster_labels": cluster_labels,
-        "cluster_counts": cluster_counts,
-        "cluster_detail": cluster_detail,
-
-        # AI OUTPUT
-        "ai_global": ai_global,
-        "ai_bar": ai_bar,
-        "ai_pca": ai_pca,
-        "ai_dendrogram": ai_dendrogram,
-    }
-
-    return render(request, 'coreapp/ahc/hasil.html', context)
-
 # ================================
-# AI ENGINE
-# ================================
-def generate_ai_insight(summary_cluster, silhouette):
-
-    if not summary_cluster:
-        return "Belum ada data untuk dianalisis."
-
-    total_data = sum(s['jumlah'] for s in summary_cluster)
-    jumlah_cluster = len(summary_cluster)
-
-    max_cluster = max(summary_cluster, key=lambda x: x['jumlah'])
-    min_cluster = min(summary_cluster, key=lambda x: x['jumlah'])
-
-    insight = "🧠 INTELLIGENT CLUSTER ANALYSIS\n"
-    insight += "=" * 50 + "\n\n"
-
-    insight += (
-        f"Dataset terdiri dari {total_data} data dan terbagi menjadi "
-        f"{jumlah_cluster} cluster.\n\n"
-    )
-
-    insight += (
-        f"Cluster terbesar adalah {max_cluster['cluster']} "
-        f"({max_cluster['jumlah']} data).\n"
-        f"Cluster terkecil adalah {min_cluster['cluster']} "
-        f"({min_cluster['jumlah']} data).\n\n"
-    )
-
-    for s in summary_cluster:
-        insight += (
-            f"- Cluster {s['cluster']}: {s['jumlah']} data, "
-            f"umur {s['rata_umur']}, faktor {s['faktor_dominan']}, "
-            f"waktu {s['waktu_dominan']}\n"
-        )
-
-    insight += "\n"
-
-    if silhouette is not None:
-        insight += f"Silhouette Score: {silhouette}\n"
-
-        if silhouette > 0.5:
-            insight += "Kualitas clustering sangat baik.\n"
-        elif silhouette > 0.25:
-            insight += "Kualitas clustering cukup.\n"
-        else:
-            insight += "Kualitas clustering kurang optimal.\n"
-
-    return insight
-
-
-# ================================
-# RESET
-# ================================
-@login_required(login_url='login')
-def reset_ahc(request):
-
-    keys = [
-        'hasil_cluster',
-        'summary_cluster',
-        'jumlah_cluster',
-        'jumlah_data',
-        'silhouette_score',
-        'X_scaled',
-        'summary_df',
-        'uploaded_file_name',
-        'jumlah_data_asli'
-    ]
-
-    for key in keys_to_clear:
-        request.session.pop(key, None)
 
 
 # ======================== Upload Kecelakaan Views ========================
@@ -3588,4 +2790,16 @@ def kecelakaan_preprosesing_list(request):
     }
     return render(request, 'coreapp/kecelakaan/list_preprosesing.html', context)
 
-    return redirect('ahc_proses')
+# ===============================
+# AHC VIEWS (Imported from utils_ahc.py)
+# ===============================
+from .utils_ahc import (
+    ahc_data, 
+    ahc_proses, 
+    preprocessing_data, 
+    proses_ahc, 
+    ahc_hasil, 
+    reset_ahc,
+    ahc_ai_explain,
+    ahc_rekomendasi
+)
