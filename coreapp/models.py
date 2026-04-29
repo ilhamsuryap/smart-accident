@@ -978,8 +978,8 @@ class Kelurahan(models.Model):
     def __str__(self):
         return self.nama
 
-class KMeansData(models.Model):
-    """Model untuk data mentah yang digunakan dalam proses K-Means"""
+class ClusterData(models.Model):
+    """Model untuk data mentah yang digunakan dalam proses clustering"""
     no_referensi = models.CharField(max_length=50, blank=True, null=True)
     umur = models.IntegerField()
     tkp = models.CharField(max_length=255)
@@ -993,7 +993,8 @@ class KMeansData(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name_plural = "K-Means Data"
+        verbose_name_plural = "Cluster Data"
+        db_table = 'clusterdata'
         ordering = ['-tanggal', '-jam']
 
     def __str__(self):
