@@ -2,15 +2,18 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # Homepage
+    path('', views.homepage_view, name='homepage'),
+    
     # Authentication
     path('register/', views.register_view, name='register'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     
-    # Dashboard
-    path('', views.dashboard_view, name='dashboard'),
+    # Dashboard (Admin)
+    path('dashboard/', views.dashboard_view, name='dashboard'),
     
-    # Ruas Jalan
+    # Ruas Jalan (Admin)
     path('ruas-jalan/', views.ruas_jalan_list, name='ruas_jalan_list'),
     path('ruas-jalan/create/', views.ruas_jalan_create, name='ruas_jalan_create'),
     path('ruas-jalan/<int:pk>/', views.ruas_jalan_detail, name='ruas_jalan_detail'),
@@ -26,16 +29,45 @@ urlpatterns = [
     path('kecelakaan/<int:pk>/delete/', views.kecelakaan_delete, name='kecelakaan_delete'),
     path('kecelakaan/segmen/<int:segmen_id>/', views.segmen_kecelakaan_detail, name='segmen_kecelakaan_detail'),
     
+    # Upload Kecelakaan Raw
+    path('kecelakaan-raw/upload/', views.upload_kecelakaan_raw, name='upload_kecelakaan_raw'),
+    path('kecelakaan-raw/', views.kecelakaan_raw_list, name='kecelakaan_raw_list'),
+    path('kecelakaan-raw/<int:pk>/', views.kecelakaan_raw_detail, name='kecelakaan_raw_detail'),
+    path('kecelakaan-raw/<int:pk>/delete/', views.kecelakaan_raw_delete, name='kecelakaan_raw_delete'),
+    
+    # Upload Kecelakaan Preprosesing
+    path('kecelakaan-preprosesing/upload/', views.upload_kecelakaan_preprosesing, name='upload_kecelakaan_preprosesing'),
+    path('kecelakaan-preprosesing/', views.kecelakaan_preprosesing_list, name='kecelakaan_preprosesing_list'),
+    path('kecelakaan-preprosesing/<int:pk>/', views.kecelakaan_preprosesing_detail, name='kecelakaan_preprosesing_detail'),
+    path('kecelakaan-preprosesing/<int:pk>/delete/', views.kecelakaan_preprosesing_delete, name='kecelakaan_preprosesing_delete'),
+    
     # Analisis
     path('analisis/', views.analisis_view, name='analisis'),
     
     # Map 
     path('peta/', views.map_view, name='map'),
+    path('peta-user/', views.peta_user_view, name='peta_user'),
 
     # ================= KMEANS =================
-    path('kmeans/data/', views.kmeans_data, name='kmeans_data'),
-    path('kmeans/proses/', views.kmeans_proses, name='kmeans_proses'),
-    path('kmeans/hasil/', views.kmeans_hasil, name='kmeans_hasil'),
+    path('k-means/data/', views.kmeans_data_list, name='kmeans_data_list'),
+    path('k-means/data/tambah/', views.kmeans_data_tambah, name='kmeans_data_tambah'),
+    path('k-means/data/import/', views.kmeans_data_import, name='kmeans_data_import'),
+    path('k-means/data/hapus/<int:pk>/', views.kmeans_data_hapus, name='kmeans_data_hapus'),
+    path('k-means/data/hapus-duplikat/', views.kmeans_data_hapus_duplikat, name='kmeans_data_hapus_duplikat'),
+    path('k-means/data/hapus-semua/', views.kmeans_data_hapus_semua, name='kmeans_data_hapus_semua'),
+    path('k-means/proses/', views.proses_cluster, name='proses_cluster'),
+    path('k-means/preprocessing/', views.preprocessing, name='preprocessing'),
+    path('k-means/hasil/', views.hasil, name='hasil'),
+    path('k-means/rekomendasi/', views.rekomendasi_kebijakan, name='rekomendasi_kebijakan'),
+    path('k-means/ai-recommendation/', views.get_ai_recommendation, name='get_ai_recommendation'),
+    path('k-means/analyze-dashboard/', views.analyze_accident_clustering, name='analyze_dashboard'),
+    path('k-means/save-ai-config/', views.save_ai_config, name='save_ai_config'),
+    path('k-means/reset/', views.reset_k_means, name='reset_k_means'),
+
+    # path('tambah-data/', views.tambah_data, name='tambah_data'),
+    path('ajax/load-kecamatan/', views.load_kecamatan, name='ajax_load_kecamatan'),
+    path('ajax/load-kelurahan/', views.load_kelurahan, name='ajax_load_kelurahan'),
+   
 
     # ================= AHC =================   
 
@@ -46,24 +78,12 @@ urlpatterns = [
     path('ahc/hasil/', views.ahc_hasil, name='ahc_hasil'),
     path('proses-ahc/', views.proses_ahc, name='proses_ahc'),
     path('ahc/reset/', views.reset_ahc, name='reset_ahc'),
-  
-
-    
-    # Cluster K-Means
-    path('k-means/data_cluster/', views.cluster_data, name='cluster_data'),
-    path('k-means/tambah/', views.tambah_data, name='tambah_data'),
-    # path('k-means/hasil/', views.hasil_cluster, name='hasil_cluster'),
-    path('k-means/preprocessing/', views.preprocessing, name='preprocessing'),
-    path('k-means/hasil/', views.hasil, name='hasil'),
-    path('k-means/reset/', views.reset_k_means, name='reset_k_means'),
-
-    # path('tambah-data/', views.tambah_data, name='tambah_data'),
-    path('ajax/load-kecamatan/', views.load_kecamatan, name='ajax_load_kecamatan'),
-    path('ajax/load-kelurahan/', views.load_kelurahan, name='ajax_load_kelurahan'),
 
 
     # API
     path('api/segmen/geojson/', views.api_segmen_geojson, name='api_segmen_geojson'),
+    path('api/segmen/thresholds/', views.api_threshold_data, name='api_threshold_data'),
+    path('api/segmen/check-update/', views.api_data_update_check, name='api_data_update_check'),
     path('api/kecelakaan/geojson/', views.api_kecelakaan_geojson, name='api_kecelakaan_geojson'),
     path('api/analisis/statistik/', views.api_analisis_statistik, name='api_analisis_statistik'),
     
