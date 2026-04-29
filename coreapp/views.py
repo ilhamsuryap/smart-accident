@@ -1,3 +1,4 @@
+from urllib import request
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.contrib.auth import authenticate, login, logout
@@ -22,8 +23,23 @@ from rest_framework import status
 import json
 import math
 import numpy as np
+import plotly.graph_objects as go
+
 import requests
 import os
+
+from sklearn.decomposition import PCA
+from scipy.cluster.hierarchy import dendrogram, linkage
+from io import BytesIO
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
+import base64
+from io import BytesIO
+from plotly.figure_factory import create_dendrogram
+import plotly
+
+
 
 import os
 import pandas as pd
@@ -676,10 +692,8 @@ def cluster_data(request):
     return render(request, 'coreapp/k-means/data_cluster.html', context)
 
 
-
-
 # ================================
-# PREPROCESSING DATA
+# PREPROCESSING DATA KMEANS
 # ================================
 @login_required(login_url='login')
 def preprocessing(request):
@@ -769,16 +783,42 @@ def preprocessing(request):
                 df.loc[jenis.str.contains('mobil', na=False), 'Mobil'] = df['Jumlah Kejadian']
                 df.loc[jenis.str.contains('truk|bus', na=False), 'Truk/Bus'] = df['Jumlah Kejadian']
 
-            # 6️⃣ Faktor penyebab
-            if 'Penyebab' in df.columns:
-                df['Penyebab_clean'] = df['Penyebab'].str.strip().str.lower()
-            else:
-                df['Penyebab_clean'] = ''
+        # reset
+        df['Faktor Pengemudi'] = 0
+        df['Faktor Jalan'] = 0
+        df['Faktor Kendaraan'] = 0
+        df['Faktor Lingkungan'] = 0
 
-            df['Faktor Pengemudi'] = df['Jumlah Kejadian']
-            df['Faktor Jalan'] = 0
-            df['Faktor Kendaraan'] = 0
-            df['Faktor Lingkungan'] = 0
+        for i, row in df.iterrows():
+            penyebab = str(row['Penyebab_clean']).lower()
+
+            # 🔥 JALAN (lebih spesifik)
+            if any(k in penyebab for k in [
+                'jalan', 'licin', 'berlubang', 'rusak',
+                'lampu', 'penerangan', 'gelap', 'bergelombang'
+            ]):
+                df.at[i, 'Faktor Jalan'] = row['Jumlah Kejadian']
+
+            # 🔥 KENDARAAN
+            if any(k in penyebab for k in [
+                'kendaraan', 'rem', 'ban bocor', 'mesin', 'tergelincir','oleng'
+            ]):
+                df.at[i, 'Faktor Kendaraan'] = row['Jumlah Kejadian']
+
+            # 🔥 LINGKUNGAN
+            if any(k in penyebab for k in [
+                'cuaca', 'hujan', 'kabut'
+            ]):
+                df.at[i, 'Faktor Lingkungan'] = row['Jumlah Kejadian']
+
+            # 🔥 PENGEMUDI (terakhir)
+            if any(k in penyebab for k in [
+                'pengemudi', 'konsentrasi', 'mengantuk', 'lalai',
+                'melanggar', 'mendahului', 'jarak', 'menghindari','sein','mendadak',
+                'melawan arus','laju','berkecepatan tinggi','jarak','jalur','berhenti',
+    
+            ]):
+                df.at[i, 'Faktor Pengemudi'] = row['Jumlah Kejadian']
 
             # 7️⃣ Dummy waktu
             waktu_cols = ['Dini Hari', 'Pagi Hari', 'Siang Hari', 'Malam Hari']
@@ -906,207 +946,6 @@ def kmeans_hasil(request):
     return render(request, 'coreapp/kmeans/hasil.html')
 
 
-# ===============================
-# AHC VIEWS
-# ===============================
-
-# ================================
-# HALAMAN DATA
-# ================================
-@login_required(login_url='login')
-def ahc_data(request):
-    return render(request, 'coreapp/ahc/data.html')
-
-
-# ================================
-# HALAMAN PROSES
-# ================================
-@login_required(login_url='login')
-def ahc_proses(request):
-    context = {}
-
-    # Ambil data preprocessing dari session
-    summary_df = request.session.get('summary_df')
-    jumlah_data_asli = request.session.get('jumlah_data_asli')
-
-    # Ambil hasil clustering dari session
-    hasil_cluster = request.session.get('hasil_cluster')
-    summary_cluster = request.session.get('summary_cluster')
-    jumlah_cluster = request.session.get('jumlah_cluster')
-
-    # Jika sudah ada preprocessing
-    if summary_df:
-        context['preview'] = summary_df
-        context['jumlah_data'] = len(summary_df)
-        context['jumlah_data_asli'] = jumlah_data_asli
-
-    # Jika sudah ada clustering
-    if hasil_cluster:
-        context['hasil_cluster'] = hasil_cluster
-        context['summary_cluster'] = summary_cluster
-        context['jumlah_cluster'] = jumlah_cluster
-
-    return render(request, 'coreapp/ahc/proses.html', context)
-
-
-# ================================
-# HALAMAN HASIL
-# ================================
-@login_required(login_url='login')
-def ahc_hasil(request):
-    return render(request, 'coreapp/ahc/hasil.html')
-
-# ================================
-# PREPROCESSING DATA
-# ================================
-
-@login_required(login_url='login')
-def preprocessing_data(request):
-    context = {}
-
-    if request.method == "POST":
-        file = request.FILES.get('file')
-
-        if file:
-            # 🔥 RESET SEMUA SESSION LAMA (lebih lengkap)
-            for key in [
-                'hasil_cluster',
-                'summary_cluster',
-                'jumlah_cluster',
-                'jumlah_data',
-                'silhouette_score',
-                'X_scaled',
-                'summary_df',
-                'jumlah_data_asli'
-            ]:
-                request.session.pop(key, None)
-
-            # ✅ Simpan nama file aktif
-            request.session['uploaded_file_name'] = file.name
-
-            # 1️⃣ Baca file
-            df = pd.read_excel(file)
-
-            context['preview_asli'] = df.head().to_html(
-                classes="table-auto w-full text-sm",
-                index=False
-            )
-
-            # Simpan jumlah data asli
-            request.session['jumlah_data_asli'] = len(df)
-
-            # 2️⃣ Handle missing value
-            df.replace('-', np.nan, inplace=True)
-
-            numeric_cols = ['Umur', 'Jumlah Kejadian']
-            numeric_cols = [c for c in numeric_cols if c in df.columns]
-
-            for col in numeric_cols:
-                df[col] = pd.to_numeric(df[col], errors='coerce')
-
-            if 'Jumlah Kejadian' in df.columns:
-                df['Jumlah Kejadian'] = df['Jumlah Kejadian'].fillna(1)
-            else:
-                df['Jumlah Kejadian'] = 1
-
-            # 3️⃣ Hapus umur <= 0
-            if 'Umur' in df.columns:
-                df = df[df['Umur'] > 0]
-
-            # 4️⃣ Konversi jam ke kategori waktu
-            def konversi_waktu(jam):
-                try:
-                    if isinstance(jam, str) and ':' in jam:
-                        jam = int(jam.split(':')[0])
-                    else:
-                        jam = int(jam)
-                except:
-                    return "Tidak Diketahui"
-
-                if 0 <= jam < 6:
-                    return "Dini Hari"
-                elif 6 <= jam < 12:
-                    return "Pagi Hari"
-                elif 12 <= jam < 18:
-                    return "Siang Hari"
-                elif 18 <= jam < 24:
-                    return "Malam Hari"
-                else:
-                    return "Tidak Diketahui"
-
-            if 'Jam' in df.columns:
-                df['Waktu Kejadian'] = df['Jam'].apply(konversi_waktu)
-            else:
-                df['Waktu Kejadian'] = 'Tidak Diketahui'
-
-            # 5️⃣ Dummy kendaraan
-            kendaraan_cols = ['Motor', 'Mobil', 'Truk/Bus']
-
-            if 'Jenis Kendaraan' in df.columns:
-                for k in kendaraan_cols:
-                    df[k] = (
-                        df['Jenis Kendaraan']
-                        .str.strip()
-                        .str.lower()
-                        .eq(k.lower())
-                        .astype(int)
-                        * df['Jumlah Kejadian']
-                    )
-            else:
-                for k in kendaraan_cols:
-                    df[k] = 0
-
-            # 6️⃣ Faktor penyebab
-            if 'Penyebab' in df.columns:
-                df['Penyebab_clean'] = df['Penyebab'].str.strip().str.lower()
-            else:
-                df['Penyebab_clean'] = ''
-
-            df['Faktor Pengemudi'] = df['Jumlah Kejadian']
-            df['Faktor Jalan'] = 0
-            df['Faktor Kendaraan'] = 0
-            df['Faktor Lingkungan'] = 0
-
-            # 7️⃣ Dummy waktu
-            waktu_cols = ['Dini Hari', 'Pagi Hari', 'Siang Hari', 'Malam Hari']
-            for w in waktu_cols:
-                df[w] = (df['Waktu Kejadian'] == w).astype(int) * df['Jumlah Kejadian']
-
-            # 8️⃣ Group by umur
-            summary_cols = (
-                ['Jumlah Kejadian']
-                + kendaraan_cols
-                + ['Faktor Pengemudi', 'Faktor Jalan', 'Faktor Kendaraan', 'Faktor Lingkungan']
-                + waktu_cols
-            )
-
-            if 'Umur' in df.columns:
-                summary_df = df.groupby('Umur')[summary_cols].sum().reset_index()
-            else:
-                summary_df = df[summary_cols].sum().to_frame().T
-
-            summary_df = summary_df.round().astype(int)
-
-            # 9️⃣ Scaling
-            fitur_clustering = summary_df.copy()
-            scaler = StandardScaler()
-            X_scaled = scaler.fit_transform(fitur_clustering)
-
-            # 🔟 Simpan ke session
-            # 🔟 Simpan hasil preprocessing saja
-            request.session['summary_df'] = summary_df.to_dict(orient='records')
-            request.session['X_scaled'] = X_scaled.tolist()
-            request.session.modified = True
-
-            context['preview'] = summary_df.to_dict(orient='records')
-            context['jumlah_data'] = len(summary_df)
-            context['jumlah_data_asli'] = request.session.get('jumlah_data_asli')
-                # Setelah upload via AHC preprocessing, redirect ke halaman proses AHC
-            return redirect('ahc_proses')
-
-            # Untuk GET (atau jika tidak ada file POST), tampilkan halaman proses AHC
-            return render(request, 'coreapp/ahc/proses.html', context)
-
 # ==========================================
 # PROSES K-MEANS CLUSTERING
 # ==========================================
@@ -1168,6 +1007,15 @@ def proses_cluster(request):
         # KMeans
         model = KMeans(n_clusters=k, random_state=42, n_init=10)
         df['Cluster'] = model.fit_predict(X_scaled) + 1  # Cluster mulai dari 1, 2, 3
+
+        # Mapping label cluster biar lebih jelas
+        label_map = {
+            0: 'Cluster 1 (Rendah)',
+            1: 'Cluster 2 (Sedang)',
+            2: 'Cluster 3 (Tinggi)'
+        }
+
+        df['Cluster_Label'] = df['Cluster'].map(label_map)
 
     except Exception as e:
         print("ERROR SAAT CLUSTERING:", e)
@@ -1277,187 +1125,46 @@ def load_kelurahan(request):
     return JsonResponse({'kelurahan': kelurahan})
 
 
-    # if 'Jumlah Kejadian' in df.columns:
-    #             df['Jumlah Kejadian'] = df['Jumlah Kejadian'].fillna(1)
-    # else:
-    #             df['Jumlah Kejadian'] = 1
 
-    #         # 3️⃣ Hapus umur <= 0
-    # if 'Umur' in df.columns:
-    #             df = df[df['Umur'] > 0]
-
-    #         # 4️⃣ Konversi jam ke kategori waktu
-    # def konversi_waktu(jam):
-    #             try:
-    #                 if isinstance(jam, str) and ':' in jam:
-    #                     jam = int(jam.split(':')[0])
-    #                 else:
-    #                     jam = int(jam)
-    #             except:
-    #                 return "Tidak Diketahui"
-
-    #             if 0 <= jam < 6:
-    #                 return "Dini Hari"
-    #             elif 6 <= jam < 12:
-    #                 return "Pagi Hari"
-    #             elif 12 <= jam < 18:
-    #                 return "Siang Hari"
-    #             elif 18 <= jam < 24:
-    #                 return "Malam Hari"
-    #             else:
-    #                 return "Tidak Diketahui"
-
-    # if 'Jam' in df.columns:
-    #             df['Waktu Kejadian'] = df['Jam'].apply(konversi_waktu)
-    # else:
-    #             df['Waktu Kejadian'] = 'Tidak Diketahui'
-
-    #         # 5️⃣ Dummy kendaraan
-    # kendaraan_cols = ['Motor', 'Mobil', 'Truk/Bus']
-
-    # if 'Jenis Kendaraan' in df.columns:
-    #             for k in kendaraan_cols:
-    #                 df[k] = (
-    #                     df['Jenis Kendaraan']
-    #                     .str.strip()
-    #                     .str.lower()
-    #                     .eq(k.lower())
-    #                     .astype(int)
-    #                     * df['Jumlah Kejadian']
-    #                 )
-    # else:
-    #             for k in kendaraan_cols:
-    #                 df[k] = 0
-
-    #         # 6️⃣ Faktor penyebab
-    # if 'Penyebab' in df.columns:
-    #             df['Penyebab_clean'] = df['Penyebab'].str.strip().str.lower()
-    # else:
-    #             df['Penyebab_clean'] = ''
-
-    #             df['Faktor Pengemudi'] = df['Jumlah Kejadian']
-    #             df['Faktor Jalan'] = 0
-    #             df['Faktor Kendaraan'] = 0
-    #             df['Faktor Lingkungan'] = 0
-
-    #         # 7️⃣ Dummy waktu
-    # waktu_cols = ['Dini Hari', 'Pagi Hari', 'Siang Hari', 'Malam Hari']
-    # for w in waktu_cols:
-    #             df[w] = (df['Waktu Kejadian'] == w).astype(int) * df['Jumlah Kejadian']
-
-    #         # 8️⃣ Group by umur
-    # summary_cols = (
-    #             ['Jumlah Kejadian']
-    #             + kendaraan_cols
-    #             + ['Faktor Pengemudi', 'Faktor Jalan', 'Faktor Kendaraan', 'Faktor Lingkungan']
-    #             + waktu_cols
-    #         )
-
-    # if 'Umur' in df.columns:
-    #             summary_df = df.groupby('Umur')[summary_cols].sum().reset_index()
-    # else:
-    #             summary_df = df[summary_cols].sum().to_frame().T
-
-    # summary_df = summary_df.round().astype(int)
-
-    #         # 9️⃣ Scaling
-    # fitur_clustering = summary_df.copy()
-    # scaler = StandardScaler()
-    # X_scaled = scaler.fit_transform(fitur_clustering)
-
-    # # 🔟 Simpan ke session
-    # request.session['X_scaled'] = X_scaled.tolist()
-    # request.session['summary_df'] = summary_df.to_dict(orient='records')
-
-    # context['preview'] = summary_df.to_dict(orient='records')
-    # context['jumlah_data'] = len(summary_df)
-    # context['jumlah_data_asli'] = request.session.get('jumlah_data_asli')
-
-    #     return render(request, 'coreapp/ahc/proses.html', context)
-
+# ===============================
+# AHC VIEWS
+# ===============================
 
 # ================================
-# PROSES AHC
+# HALAMAN DATA
 # ================================
-
 @login_required(login_url='login')
-def proses_ahc(request):
+def ahc_data(request):
+    return render(request, 'coreapp/ahc/data.html')
+
+
+# ================================
+# HALAMAN PROSES
+# ================================
+@login_required(login_url='login')
+def ahc_proses(request):
     context = {}
 
-    X_scaled = request.session.get('X_scaled')
+    # Ambil data preprocessing dari session
     summary_df = request.session.get('summary_df')
+    jumlah_data_asli = request.session.get('jumlah_data_asli')
 
-    if not X_scaled or not summary_df:
-        context['error'] = "Silakan lakukan preprocessing terlebih dahulu."
-        return render(request, 'coreapp/ahc/proses.html', context)
+    # Ambil hasil clustering dari session
+    hasil_cluster = request.session.get('hasil_cluster')
+    summary_cluster = request.session.get('summary_cluster')
+    jumlah_cluster = request.session.get('jumlah_cluster')
 
-    X_scaled = np.array(X_scaled)
-    df = pd.DataFrame(summary_df)
+    # Jika sudah ada preprocessing
+    if summary_df:
+        context['preview'] = summary_df
+        context['jumlah_data'] = len(summary_df)
+        context['jumlah_data_asli'] = jumlah_data_asli
 
-    n_cluster = int(request.GET.get('cluster', 3))
-
-    model = AgglomerativeClustering(
-        n_clusters=n_cluster,
-        linkage='ward'
-    )
-
-    labels = model.fit_predict(X_scaled)
-    sil_score = silhouette_score(X_scaled, labels)
-    sil_score = round(float(sil_score), 4)
-    df['Cluster'] = labels
-
-    total_data = len(df)
-    summary = []
-
-    faktor_cols = [
-        "Faktor Pengemudi",
-        "Faktor Jalan",
-        "Faktor Kendaraan",
-        "Faktor Lingkungan"
-    ]
-
-    waktu_cols = [
-        "Dini Hari",
-        "Pagi Hari",
-        "Siang Hari",
-        "Malam Hari"
-    ]
-
-    for cluster_id in sorted(df['Cluster'].unique()):
-        cluster_data = df[df['Cluster'] == cluster_id]
-
-        jumlah = len(cluster_data)
-        persentase = round((jumlah / total_data) * 100, 2)
-        rata_umur = round(cluster_data['Umur'].mean(), 1)
-
-        faktor_dominan = cluster_data[faktor_cols].sum().idxmax()
-        waktu_dominan = cluster_data[waktu_cols].sum().idxmax()
-
-        summary.append({
-            "cluster": int(cluster_id),
-            "jumlah": jumlah,
-            "persentase": persentase,
-            "rata_umur": rata_umur,
-            "faktor_dominan": faktor_dominan,
-            "waktu_dominan": waktu_dominan,
-        })
-
-    # Simpan untuk halaman hasil
-    request.session['hasil_cluster'] = df.to_dict(orient="records")
-    request.session['summary_cluster'] = summary
-    request.session['jumlah_cluster'] = n_cluster
-    request.session['jumlah_data'] = total_data
-    request.session['silhouette_score'] = sil_score
-
-    # 🔥 Kirim ulang preview preprocessing agar tidak hilang
-    context['preview'] = summary_df
-    context['jumlah_data'] = len(summary_df)
-    context['jumlah_data_asli'] = request.session.get('jumlah_data_asli')
-
-    # 🔥 Tambahkan hasil clustering
-    context['hasil_cluster'] = df.to_dict(orient="records")
-    context['summary_cluster'] = summary
-    context['jumlah_cluster'] = n_cluster
+    # Jika sudah ada clustering
+    if hasil_cluster:
+        context['hasil_cluster'] = hasil_cluster
+        context['summary_cluster'] = summary_cluster
+        context['jumlah_cluster'] = jumlah_cluster
 
     return render(request, 'coreapp/ahc/proses.html', context)
 
@@ -1465,45 +1172,932 @@ def proses_ahc(request):
 # ================================
 # HALAMAN HASIL
 # ================================
-
 @login_required(login_url='login')
 def ahc_hasil(request):
+    return render(request, 'coreapp/ahc/hasil.html')
+
+# ================================
+# PREPROCESSING DATA AHC
+# ================================
+
+@login_required(login_url='login')
+def preprocessing_data(request):
+    context = {}
+
+    if request.method == "POST":
+        file = request.FILES.get('file')
+
+        if file:
+            # Reset session
+            for key in [
+                'hasil_cluster',
+                'summary_cluster',
+                'jumlah_cluster',
+                'jumlah_data',
+                'silhouette_score',
+                'X_scaled',
+                'summary_df',
+                'jumlah_data_asli'
+            ]:
+                request.session.pop(key, None)
+
+            # Simpan nama file aktif
+            request.session['uploaded_file_name'] = file.name
+
+            # ================================
+            # 1. BACA DATA
+            # ================================
+            df = pd.read_excel(file)
+
+            context['preview_asli'] = df.head().to_html( 
+                classes="table-auto w-full text-sm", 
+                index=False
+            )
+
+            # Simpan jumlah data asli
+            request.session['jumlah_data_asli'] = len(df)
+
+            # Handle missing value
+            df.replace('-', np.nan, inplace=True)
+
+            numeric_cols = ['Umur', 'Jumlah Kejadian']
+            numeric_cols = [c for c in numeric_cols if c in
+    df.columns]
+            
+            for col in numeric_cols:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+
+            if 'Jumlah Kejadian' in df.columns:
+                df['Jumlah Kejadian'] = df['Jumlah Kejadian'].fillna(1)
+            else:
+                df['Jumlah Kejadian'] = 1  
+
+            # ================================
+            # 2. NUMERIC
+            # ================================
+            df['Umur'] = pd.to_numeric(df['Umur'], errors='coerce')
+            df['Jumlah Kejadian'] = pd.to_numeric(df['Jumlah Kejadian'], errors='coerce').fillna(1)
+
+            df = df[df['Umur'] > 0]
+
+            # ================================
+            # 3. WAKTU
+            # ================================
+            def konversi_waktu(jam):
+                try:
+                    jam = str(jam).strip()
+
+                    # ubah 19.00 → 19:00
+                    jam = jam.replace('.', ':')
+
+                    # ambil jam saja
+                    jam = int(jam.split(':')[0])
+
+                except:
+                    return "Tidak Diketahui"
+
+                if 0 <= jam < 6:
+                    return "Dini Hari"
+                elif 6 <= jam < 12:
+                    return "Pagi Hari"
+                elif 12 <= jam < 18:
+                    return "Siang Hari"
+                else:
+                    return "Malam Hari"
+
+            df.columns = df.columns.str.strip()
+
+            if 'Jam' in df.columns:
+                df['Waktu Kejadian'] = df['Jam'].apply(konversi_waktu)
+            else:
+                df['Waktu Kejadian'] = 'Tidak Diketahui'
+
+
+            # ================================
+            # 4. KENDARAAN
+            # ================================
+            kendaraan_cols = ['Motor', 'Mobil', 'Truk/Bus']
+            df[kendaraan_cols] = 0
+
+            jenis = df['Jenis Kendaraan'].astype(str).str.lower()
+
+            df.loc[jenis.str.contains('motor'), 'Motor'] = df['Jumlah Kejadian']
+            df.loc[jenis.str.contains(r'mobil|pick\s*up|pickup', na=False), 'Mobil'] = df['Jumlah Kejadian']
+            df.loc[jenis.str.contains('truk|bus'), 'Truk/Bus'] = df['Jumlah Kejadian']
+
+            # ================================
+            # FAKTOR PENYEBAB
+            # ================================
+            df['Penyebab_clean'] = df['Penyebab'].astype(str).str.lower().str.strip()
+
+            df['Faktor Pengemudi'] = 0
+            df['Faktor Jalan'] = 0
+            df['Faktor Kendaraan'] = 0
+            df['Faktor Lingkungan'] = 0
+
+            for i, row in df.iterrows():
+                penyebab = row['Penyebab_clean']
+                jumlah = row['Jumlah Kejadian']
+
+                # JALAN
+                if any(k in penyebab for k in ['licin', 'jalan berlubang', 'penerangan','genangan air']):
+                    df.at[i, 'Faktor Jalan'] += jumlah
+
+                # KENDARAAN
+                if any(k in penyebab for k in ['kendaraan ban bocor', 'kendaraan oleng','tergelincir','lampu depan mati','roda bermasalah','batu']):
+                    df.at[i, 'Faktor Kendaraan'] += jumlah
+
+                # LINGKUNGAN
+                if any(k in penyebab for k in ['cuaca hujan','kabut','pohon tumbang']):
+                    df.at[i, 'Faktor Lingkungan'] += jumlah
+
+                # PENGEMUDI 
+                if any(k in penyebab for k in [
+                    'kurang konsentrasi',
+                    'konsentrasi',
+                    'lalai',
+                    'mengantuk',
+                    'mendahului sebelah kiri',
+                    'berkecepatan tinggi',
+                    'membuka pintu mendadak'
+                    'melanggar Apill',
+                    'melebihi marka',
+                    'tidak mengutamakan jalur utama',
+                    'mengerem mendadak',
+                    'tidak menyalakan lampu sein',
+                    'melawan arus',
+                    'berkecepatan tinggi',
+                    'berkendara menggunakan hp',
+                    'tidak menguasai laju',
+                    'tidak menjaga jarak aman',
+                    'pengaruh alkohol'
+                    'gerobak lepas dari sepeda motor'
+                ]):
+                    df.at[i, 'Faktor Pengemudi'] += jumlah
+
+                # fallback
+                if (
+                    df.at[i, 'Faktor Pengemudi'] == 0 and
+                    df.at[i, 'Faktor Jalan'] == 0 and
+                    df.at[i, 'Faktor Kendaraan'] == 0 and
+                    df.at[i, 'Faktor Lingkungan'] == 0
+                ):
+                    df.at[i, 'Faktor Pengemudi'] = jumlah
+
+            # ================================
+            # 6. WAKTU
+            # ================================
+            waktu_cols = ['Dini Hari', 'Pagi Hari', 'Siang Hari', 'Malam Hari']
+            for w in waktu_cols:
+                df[w] = (df['Waktu Kejadian'] == w).astype(int) * df['Jumlah Kejadian']
+
+            # ================================
+            # 7. GROUP BY UMUR
+            # ================================
+            summary_cols = (
+                ['Jumlah Kejadian'] +
+                kendaraan_cols +
+                ['Faktor Pengemudi','Faktor Jalan','Faktor Kendaraan','Faktor Lingkungan'] +
+                waktu_cols
+            )
+
+            summary_df = df.groupby('Umur')[summary_cols].sum().reset_index()
+            summary_df = summary_df.round().astype(int)
+
+            # ================================
+            # 8. SCALING
+            # ================================
+            fitur_clustering = summary_df.copy()
+            scaler = StandardScaler()
+            X_scaled = scaler.fit_transform(fitur_clustering)
+
+            # ================================
+            # 9. SIMPAN SESSION
+            # ================================
+            request.session['summary_df'] = summary_df.to_dict(orient='records')
+            request.session['X_scaled'] = X_scaled.tolist()
+            request.session.modified = True
+
+            context['preview'] = summary_df.to_dict(orient='records')
+            context['jumlah_data'] = len(summary_df)
+            context['jumlah_data_asli'] = request.session.get('jumlah_data_asli')
+            # Setelah upload via AHC preprocessing, redirect ke halaman proses AHC
+            return redirect('ahc_proses')
+
+            # Untuk GET (atau jika tidak ada file POST), tampilkan halaman proses AHC
+        return render(request, 'coreapp/ahc/proses.html', context)
+
+
+    # ================================
+    # FUNGSI UNTUK MENENTUKAN K TERBAIK (SILHOUETTE SCORE)
+    # ================================
+def find_best_cluster(X, max_k=5):
+    best_k = 2
+    best_score = -1
+
+    for k in range(2, max_k + 1):
+        model = AgglomerativeClustering(n_clusters=k, linkage='ward')
+        labels = model.fit_predict(X)
+
+        score = silhouette_score(X, labels)
+
+        if score > best_score:
+            best_score = score
+            best_k = k
+
+    return best_k
+
+    # ================================
+    # PROSES AHC
+    # ================================
+@login_required(login_url='login')
+def proses_ahc(request):
+
+    import io, base64
+    import matplotlib.pyplot as plt
+    import plotly.express as px
+
+    from sklearn.decomposition import PCA
+    from sklearn.cluster import AgglomerativeClustering
+    from sklearn.metrics import silhouette_score
+    from scipy.cluster.hierarchy import linkage
+    from plotly.figure_factory import create_dendrogram
+
+    # ================================
+    # 1. AMBIL DATA
+    # ================================
+    X_scaled = request.session.get('X_scaled')
+    summary_df = request.session.get('summary_df')
+
+    if not X_scaled or not summary_df:
+        return render(request, 'coreapp/ahc/proses.html', {
+            "error": "Silakan lakukan preprocessing terlebih dahulu."
+        })
+
+    X_scaled = np.array(X_scaled)
+    df = pd.DataFrame(summary_df)
+
+    df['Jumlah Kejadian'] = pd.to_numeric(df['Jumlah Kejadian'], errors='coerce').fillna(0)
+    df['Umur'] = pd.to_numeric(df['Umur'], errors='coerce').fillna(0)
+
+    # ================================
+    # PILIH CLUSTER
+    # ================================
+    
+    # AUTO (berdasarkan data)
+    n_cluster = find_best_cluster(X_scaled, max_k=3)
+
+    # MANUAL (ditentukan sendiri)
+    #n_cluster = 3
+
+    # ================================
+    # MODEL AHC
+    # ================================
+
+    model = AgglomerativeClustering(n_clusters=n_cluster, linkage='ward')
+    labels = model.fit_predict(X_scaled)
+
+    # HITUNG SILHOUETTE (SETELAH ADA LABELS)
+    sil_score = round(float(silhouette_score(X_scaled, labels)), 4)
+
+    # ================================
+    # PCA VISUAL
+    # ================================
+
+    from sklearn.decomposition import PCA
+    import plotly.express as px
+
+    pca = PCA(n_components=2)
+    X_pca = pca.fit_transform(X_scaled)
+
+    df_pca = df.copy()
+    df_pca['PC1'] = X_pca[:, 0]
+    df_pca['PC2'] = X_pca[:, 1]
+    df_pca['Cluster'] = labels + 1
+
+    fig_scatter = px.scatter(
+        df_pca,
+        x='PC1',
+        y='PC2',
+        color=df_pca['Cluster'].astype(str),
+        title='Visualisasi Cluster (PCA)',
+    )
+
+    scatter_html = fig_scatter.to_html(full_html=False)
+
+    df['Cluster'] = labels + 1
+    cluster_counts = df['Cluster'].value_counts().sort_index()
+    sil_score = round(float(silhouette_score(X_scaled, labels)), 4)
+
+    # ================================
+    # 3. BAR CHART
+    # ================================
+    bar_df = pd.DataFrame({
+        "Cluster": [f"Cluster {i}" for i in cluster_counts.index],
+        "Jumlah": cluster_counts.values
+    })
+
+    fig_bar = px.bar(
+        bar_df,
+        x="Cluster",
+        y="Jumlah",
+        text="Jumlah",
+        title="Jumlah Data pada Setiap Cluster"
+    )
+
+    # interaksi hover & click
+    fig_bar.update_traces(
+        hovertemplate="Cluster: %{x}<br>Jumlah: %{y}<extra></extra>",
+        customdata=cluster_counts.index
+    )
+
+    bar_chart = fig_bar.to_html(full_html=False)
+    request.session['bar_chart'] = bar_chart
+
+    # ================================
+    # 3B. FAKTOR PENYEBAB (GLOBAL)
+    # ================================
+
+    faktor_cols = ["Faktor Pengemudi", "Faktor Jalan", "Faktor Kendaraan", "Faktor Lingkungan"]
+
+    # ambil dari hasil_cluster
+    df_all = df.copy()
+
+    faktor_total = {}
+
+    for col in faktor_cols:
+        if col in df_all.columns:
+            faktor_total[col] = int(df_all[col].sum())
+
+        faktor_labels = list(faktor_total.keys())
+        faktor_values = list(faktor_total.values())
+
+
+    # # ================================
+    # # GROUPED DATA (UMUR vs FAKTOR)
+    # # ================================
+    # faktor_cols = ["Faktor Pengemudi", "Faktor Jalan", "Faktor Kendaraan", "Faktor Lingkungan"]
+
+    # grouped = df_all.groupby('Kelompok Umur')[faktor_cols].sum().reset_index()
+
+    # umur_labels = grouped['Kelompok Umur'].tolist()
+
+    # faktor_pengemudi = grouped['Faktor Pengemudi'].tolist() if 'Faktor Pengemudi' in grouped else []
+    # faktor_jalan = grouped['Faktor Jalan'].tolist() if 'Faktor Jalan' in grouped else []
+    # faktor_kendaraan = grouped['Faktor Kendaraan'].tolist() if 'Faktor Kendaraan' in grouped else []
+    # faktor_lingkungan = grouped['Faktor Lingkungan'].tolist() if 'Faktor Lingkungan' in grouped else []
+
+    # ================================
+    # 4. DENDROGRAM (MATPLOTLIB FIX)
+    # ================================
+
+    import plotly.graph_objects as go
+    from plotly.figure_factory import create_dendrogram
+
+    Z = linkage(X_scaled, method='ward')
+
+    max_d = Z[:, 2].max()
+    threshold = 0.6 * max_d
+
+    fig = create_dendrogram(
+        X_scaled,
+        linkagefun=lambda x: Z,
+        color_threshold=threshold
+    )
+
+    # ambil range X
+    x_min = min([min(t['x']) for t in fig['data'] if 'x' in t])
+    x_max = max([max(t['x']) for t in fig['data'] if 'x' in t])
+
+    # garis merah
+    fig.add_trace(
+        go.Scatter(
+            x=[x_min, x_max],
+            y=[threshold, threshold],
+            mode='lines',
+            line=dict(color='red', width=5, dash='dash'),
+            name='Cut-off'
+        )
+    )
+
+    fig.update_layout(
+        title="Dendrogram Hierarchical Clustering",
+        width=900,
+        height=500
+    )
+
+    dendrogram_html = fig.to_html(full_html=False)
+    
+
+    # ================================
+    # 6. SUMMARY CLUSTER
+    # ================================
+    summary = []
+    total_kejadian_all = int(df['Jumlah Kejadian'].sum())
+
+    faktor_cols = ["Faktor Pengemudi", "Faktor Jalan", "Faktor Kendaraan", "Faktor Lingkungan"]
+    waktu_cols = ["Dini Hari", "Pagi Hari", "Siang Hari", "Malam Hari"]
+
+    for cluster_id in sorted(df['Cluster'].unique()):
+        cluster_data = df[df['Cluster'] == cluster_id]
+
+        jumlah = int(cluster_data['Jumlah Kejadian'].sum())
+        persentase = round((jumlah / total_kejadian_all) * 100, 2)
+
+        umur_min = int(cluster_data['Umur'].min())
+        umur_max = int(cluster_data['Umur'].max())
+
+        if "Penyebab_clean" in cluster_data.columns:
+            faktor_dominan = cluster_data["Penyebab_clean"].mode()[0]
+        else:
+            faktor_exist = [c for c in faktor_cols if c in cluster_data.columns]
+            faktor_dominan = cluster_data[faktor_exist].sum().idxmax() if faktor_exist else "-"
+
+        waktu_exist = [c for c in waktu_cols if c in cluster_data.columns]
+        waktu_dominan = cluster_data[waktu_exist].sum().idxmax() if waktu_exist else "-"
+
+        summary.append({
+            "cluster": int(cluster_id),
+            "jumlah": jumlah,
+            "persentase": persentase,
+            "rata_umur": f"{umur_min}-{umur_max}",
+            "faktor_dominan": faktor_dominan,
+            "waktu_dominan": waktu_dominan,
+        })
+
+    # ================================
+    # 7. SESSION SAVE
+    # ================================
+    request.session['hasil_cluster'] = df.to_dict('records')
+    request.session['summary_cluster'] = summary
+    request.session['jumlah_cluster'] = n_cluster
+    request.session['jumlah_data'] = len(df)
+    request.session['silhouette_score'] = sil_score
+    request.session['total_kejadian'] = total_kejadian_all
+    request.session['dendrogram_html'] = dendrogram_html
+    request.session['scatter_html'] = scatter_html
+    request.session['bar_chart'] = bar_chart
+
+    return redirect('ahc_hasil')
+
+
+    # ================================
+    # HASIL AHC
+    # ================================
+@login_required(login_url='login')
+def ahc_hasil(request):
+
     hasil_cluster = request.session.get('hasil_cluster', [])
+    df = pd.DataFrame(hasil_cluster)
     summary_cluster = request.session.get('summary_cluster', [])
     jumlah_cluster = request.session.get('jumlah_cluster')
     jumlah_data = request.session.get('jumlah_data')
     silhouette = request.session.get('silhouette_score')
+    scatter_html = request.session.get('scatter_html')
+    dendrogram_html = request.session.get('dendrogram_html')
+    bar_chart = request.session.get('bar_chart')
+    faktor_chart = request.session.get('faktor_chart')
 
-    # Jika belum ada data cluster
     belum_clustering = len(hasil_cluster) == 0
 
+    # ================================
+    # AI INTELLIGENT ANALYSIS (GLOBAL)
+    # ================================
+    ai_global = generate_ai_insight(summary_cluster, silhouette)
+
+    # ================================
+    # CHART DATA
+    # ================================
+    cluster_labels = [
+        f"Cluster {s['cluster']}" for s in summary_cluster
+    ]
+    cluster_counts = [
+        s['jumlah'] for s in summary_cluster
+    ]
+
+    # ================================
+    # DETAIL CLUSTER
+    # ================================
+    cluster_detail = {}
+
+    for s in summary_cluster:
+        cid = s['cluster']
+        data_cluster = [r for r in hasil_cluster if r['Cluster'] == cid]
+
+        cluster_detail[f"Cluster {cid}"] = [
+            f"Umur: {d.get('Umur','-')}, Jumlah: {d.get('Jumlah Kejadian',0)}"
+            for d in data_cluster
+        ]
+
+    # ================================
+    # TOTAL KEJADIAN
+    # ================================
+    total_kejadian = sum(
+        r.get('Jumlah Kejadian', 0) for r in hasil_cluster
+    )
+
+    # ================================
+    # FAKTOR PENYEBAB (GLOBAL)
+    # ================================
+
+    faktor_cols = ["Faktor Pengemudi", "Faktor Jalan", "Faktor Kendaraan", "Faktor Lingkungan"]
+
+    df_all = df.copy()
+
+    faktor_total = {}
+
+    for col in faktor_cols:
+        if col in df_all.columns:
+            faktor_total[col] = int(df_all[col].sum())
+
+    # INI WAJIB ADA
+    faktor_labels = list(faktor_total.keys())
+    faktor_values = list(faktor_total.values())
+
+    print("FAKTOR LABEL:", faktor_labels)
+
+    # ================================
+    # FIX ERROR umur_labels
+    # ================================
+    try:
+        df_all = df.copy()
+
+        def kategori_umur(u):
+            try:
+                u = int(u)
+            except:
+                return "Tidak Diketahui"
+
+            if u <= 11:
+                return "5-11 (Kanak-kanak)"
+            elif u <= 16:
+                return "12-16 (Remaja Awal)"
+            elif u <= 25:
+                return "17-25 (Remaja Akhir)"
+            elif u <= 35:
+                return "26-35 (Dewasa Awal)"
+            elif u <= 45:
+                return "36-45 (Dewasa Akhir)"
+            elif u <= 55:
+                return "46-55 (Lansia Awal)"
+            elif u <= 65:
+                return "56-65 (Lansia Akhir)"
+            else:
+                return "66-90 (Manula)"
+
+        if not df_all.empty and 'Umur' in df_all.columns:
+
+            # 🔥 pastikan tidak ada null
+            df_all['Umur'] = pd.to_numeric(df_all['Umur'], errors='coerce').fillna(0)
+
+            # 🔥 buat kolom dulu
+            df_all['Kelompok Umur'] = df_all['Umur'].apply(kategori_umur)
+
+            # 🔥 CEK dulu sebelum groupby
+            if 'Kelompok Umur' in df_all.columns:
+
+                faktor_cols = [
+                    "Faktor Pengemudi",
+                    "Faktor Jalan",
+                    "Faktor Kendaraan",
+                    "Faktor Lingkungan"
+                ]
+
+                grouped = df_all.groupby('Kelompok Umur')[faktor_cols].sum().reset_index()
+
+                umur_labels = grouped['Kelompok Umur'].tolist()
+                faktor_pengemudi = grouped['Faktor Pengemudi'].tolist()
+                faktor_jalan = grouped['Faktor Jalan'].tolist()
+                faktor_kendaraan = grouped['Faktor Kendaraan'].tolist()
+                faktor_lingkungan = grouped['Faktor Lingkungan'].tolist()
+
+            else:
+                umur_labels = []
+                faktor_pengemudi = []
+                faktor_jalan = []
+                faktor_kendaraan = []
+                faktor_lingkungan = []
+
+        else:
+            umur_labels = []
+            faktor_pengemudi = []
+            faktor_jalan = []
+            faktor_kendaraan = []
+            faktor_lingkungan = []
+
+    except Exception as e:
+        print("ERROR UMUR CHART:", e)
+        umur_labels = []
+        faktor_pengemudi = []
+        faktor_jalan = []
+        faktor_kendaraan = []
+        faktor_lingkungan = []
+
+    # ================================
+    # AI PER VISUAL 
+    # ================================
+
+    # AI BAR CHART (ENHANCED)
+
+    if summary_cluster:
+
+        total = sum(s['jumlah'] for s in summary_cluster)
+
+        terbesar = max(summary_cluster, key=lambda x: x['jumlah'])
+        terkecil = min(summary_cluster, key=lambda x: x['jumlah'])
+
+        ai_bar = "<b>ANALISIS DISTRIBUSI CLUSTER (BAR CHART)</b><br><br>"
+
+        for s in sorted(summary_cluster, key=lambda x: x['cluster']):
+            persentase = round((s['jumlah'] / total) * 100, 2)
+
+            ai_bar += (
+                f"• <b>Cluster {s['cluster']}</b>: "
+                f"<b>{s['jumlah']}</b> kejadian "
+                f"(<b>{persentase}%</b>) → "
+            )
+
+            if s['jumlah'] == terbesar['jumlah']:
+                ai_bar += "<b style='color:#dc2626'>Dominan (tertinggi)</b><br>"
+            elif s['jumlah'] == terkecil['jumlah']:
+                ai_bar += "<b style='color:#2563eb'>Terendah</b><br>"
+            else:
+                ai_bar += "Kategori <b>Sedang</b><br>"
+
+        # KESIMPULAN
+
+        ai_bar += "<br><b>Kesimpulan:</b><br>"
+
+        ai_bar += (
+            f"Cluster <b style='color:#dc2626'>{terbesar['cluster']}</b> "
+            f"merupakan cluster dengan jumlah kejadian tertinggi, "
+            f"sedangkan cluster <b style='color:#2563eb'>{terkecil['cluster']}</b> "
+            f"memiliki jumlah kejadian paling rendah. "
+            f"Hal ini menunjukkan adanya perbedaan distribusi kejadian yang cukup signifikan antar cluster."
+        )
+
+    else:
+        ai_bar = "Belum ada data untuk analisis bar chart."
+
+    # ================================
+    # AI PCA
+    # ================================
+    ai_pca = (
+        "<b>ANALISIS VISUALISASI PCA (PRINCIPAL COMPONENT ANALYSIS)</b><br><br>"
+        
+        "Visualisasi PCA digunakan untuk mereduksi data ke dalam dua dimensi utama "
+        "(<b>Principal Component 1</b> dan <b>Principal Component 2</b>) agar pola data lebih mudah dianalisis.<br><br>"
+        "Setiap titik merepresentasikan satu data dalam cluster tertentu. "
+        "Semakin jauh jarak antar cluster, maka perbedaan karakteristik semakin jelas sehingga hasil clustering dapat dianggap "
+        "<b style='color:#16a34a'>baik</b>.<br><br>"
+        "Sebaliknya, jika terjadi <i>overlap</i>, maka menunjukkan adanya kemiripan antar data sehingga pemisahan cluster belum optimal.<br><br>"
+        
+        "<b>Kesimpulan:</b> PCA membantu mengevaluasi kualitas clustering melalui visualisasi pemisahan antar cluster."
+    )
+    
+    # ================================
+    # AI DENDROGRAM (ENHANCED)
+    # ================================
+    ai_dendrogram = f"<b>ANALISIS DENDROGRAM HIERARCHICAL CLUSTERING</b>\n\n" \
+    "Dendrogram menunjukkan proses pengelompokan data berdasarkan tingkat kemiripan antar data.\n\n" \
+    "Pada awalnya, setiap data dianggap sebagai satu cluster, kemudian secara bertahap digabungkan dengan data lain yang memiliki kemiripan paling tinggi.\n\n" \
+    "Garis <b style='color:#dc2626'>cut-off</b> digunakan sebagai batas untuk menentukan jumlah cluster yang terbentuk.\n" \
+    f"Pada hasil ini, pemotongan dendrogram menghasilkan sebanyak <b style='color:#2563eb'>{jumlah_cluster} cluster</b>.\n\n" \
+    "Semakin tinggi posisi cut-off, maka jumlah cluster semakin sedikit.\n" \
+    "Sebaliknya, semakin rendah cut-off, maka jumlah cluster semakin banyak dan lebih detail.\n\n" \
+    "<b>Kesimpulan:</b>\n" \
+    f"Pembagian data ke dalam <b style='color:#2563eb'>{jumlah_cluster} cluster</b> sudah sesuai dengan pola kemiripan data, sehingga proses clustering dapat dianggap <b>optimal</b>."
+    # ================================
+    # AI FAKTOR PENYEBAB (GLOBAL)
+    # ================================
+    if faktor_values:
+        max_index = faktor_values.index(max(faktor_values))
+        faktor_tertinggi = faktor_labels[max_index]
+
+        ai_faktor = "ANALISIS FAKTOR PENYEBAB KECELAKAAN\n\n"
+
+        ai_faktor += "Distribusi faktor penyebab:\n"
+
+        for i in range(len(faktor_labels)):
+            ai_faktor += (
+                f"- <b>{faktor_labels[i]}</b>: "
+                f"<b>{faktor_values[i]}</b> kejadian\n"
+            )
+
+        ai_faktor += (
+            "\nFaktor paling dominan adalah "
+            f"<b style='color:#dc2626'>{faktor_tertinggi}</b>.\n"
+        )
+
+        if faktor_tertinggi == "Faktor Pengemudi":
+            ai_faktor += (
+                "Hal ini menunjukkan bahwa <b>kesalahan manusia</b> "
+                "menjadi penyebab utama kecelakaan."
+            )
+        elif faktor_tertinggi == "Faktor Jalan":
+            ai_faktor += (
+                "Hal ini menunjukkan bahwa <b>kondisi jalan</b> "
+                "menjadi faktor utama kecelakaan."
+            )
+        elif faktor_tertinggi == "Faktor Kendaraan":
+            ai_faktor += (
+                "Hal ini menunjukkan bahwa <b>kondisi kendaraan</b> "
+                "memiliki kontribusi besar terhadap kecelakaan."
+            )
+        else:
+            ai_faktor += (
+                "Hal ini menunjukkan bahwa <b>faktor lingkungan</b> "
+                "berpengaruh terhadap kecelakaan."
+            )
+
+        ai_faktor += (
+            "\n\nKesimpulan:\n"
+            f"Faktor <b style='color:#dc2626'>{faktor_tertinggi}</b> "
+            "merupakan penyebab utama kecelakaan dan perlu menjadi fokus utama dalam upaya pencegahan."
+        )
+
+    else:
+        ai_faktor = "Belum ada data faktor."
+
+    # ================================
+    # AI UMUR vs FAKTOR (ENHANCED)
+    # ================================
+
+    ai_umur = "Belum ada data umur."
+
+    if umur_labels:
+
+        total_per_umur = []
+
+        for i in range(len(umur_labels)):
+            total = (
+                faktor_pengemudi[i] +
+                faktor_jalan[i] +
+                faktor_kendaraan[i] +
+                faktor_lingkungan[i]
+            )
+            total_per_umur.append(total)
+
+        max_index = total_per_umur.index(max(total_per_umur))
+        umur_tertinggi = umur_labels[max_index]
+
+        # 🔥 cari faktor dominan pada umur tertinggi
+        idx = max_index
+        faktor_list = [
+            ("Faktor Pengemudi", faktor_pengemudi[idx]),
+            ("Faktor Jalan", faktor_jalan[idx]),
+            ("Faktor Kendaraan", faktor_kendaraan[idx]),
+            ("Faktor Lingkungan", faktor_lingkungan[idx])
+        ]
+        faktor_dominan = max(faktor_list, key=lambda x: x[1])[0]
+
+        # ================================
+        # BUILD TEXT
+        # ================================
+        ai_umur = "<b>ANALISIS HUBUNGAN UMUR DAN FAKTOR KECELAKAAN</b>\n\n"
+
+        ai_umur += (
+            f"Kelompok umur dengan kejadian tertinggi adalah "
+            f"<b style='color:#2563eb'>{umur_tertinggi}</b>.\n\n"
+        )
+
+        ai_umur += "Distribusi faktor pada setiap kelompok umur:\n"
+
+        for i in range(len(umur_labels)):
+            ai_umur += (
+                f"\n• <b>Umur {umur_labels[i]}</b>\n"
+                f"  - Pengemudi   : <b>{faktor_pengemudi[i]}</b>\n"
+                f"  - Jalan       : <b>{faktor_jalan[i]}</b>\n"
+                f"  - Kendaraan   : <b>{faktor_kendaraan[i]}</b>\n"
+                f"  - Lingkungan  : <b>{faktor_lingkungan[i]}</b>\n"
+            )
+
+        # ================================
+        # KESIMPULAN
+        # ================================
+        ai_umur += (
+            "\nKesimpulan:\n"
+            f"Kelompok umur <b style='color:#2563eb'>{umur_tertinggi}</b> "
+            f"merupakan kelompok dengan tingkat kecelakaan tertinggi, "
+            f"dengan faktor dominan yaitu "
+            f"<b style='color:#dc2626'>{faktor_dominan}</b>.\n\n"
+        )
+
+        # ================================
+        # REKOMENDASI (BONUS 🔥)
+        # ================================
+        ai_umur += (
+            "Rekomendasi:\n"
+            "Perlu dilakukan peningkatan edukasi keselamatan berkendara "
+            "terutama pada kelompok umur dominan guna mengurangi risiko kecelakaan."
+        )
+                
+    # ================================
+    # CONTEXT
+    # ================================
     context = {
         "hasil_cluster": hasil_cluster,
         "summary_cluster": summary_cluster,
         "jumlah_cluster": jumlah_cluster,
         "jumlah_data": jumlah_data,
+        "total_kejadian": total_kejadian,
         "silhouette_score": silhouette,
         "belum_clustering": belum_clustering,
+        "scatter_html": scatter_html,
+        "dendrogram_html": dendrogram_html,
+        "bar_chart": bar_chart,
+        "faktor_chart": faktor_chart,
+        "faktor_labels": faktor_labels,
+        "faktor_values": faktor_values,
+        "umur_labels": umur_labels,
+        "faktor_pengemudi": faktor_pengemudi,
+        "faktor_jalan": faktor_jalan,
+        "faktor_kendaraan": faktor_kendaraan,
+        "faktor_lingkungan": faktor_lingkungan,
+        "ai_faktor": ai_faktor,
+        "ai_umur": ai_umur,
+
+        "cluster_labels": cluster_labels,
+        "cluster_counts": cluster_counts,
+        "cluster_detail": cluster_detail,
+
+        # AI OUTPUT
+        "ai_global": ai_global,
+        "ai_bar": ai_bar,
+        "ai_pca": ai_pca,
+        "ai_dendrogram": ai_dendrogram,
     }
 
     return render(request, 'coreapp/ahc/hasil.html', context)
 
+# ================================
+# AI ENGINE
+# ================================
+def generate_ai_insight(summary_cluster, silhouette):
 
+    if not summary_cluster:
+        return "Belum ada data untuk dianalisis."
+
+    total_data = sum(s['jumlah'] for s in summary_cluster)
+    jumlah_cluster = len(summary_cluster)
+
+    max_cluster = max(summary_cluster, key=lambda x: x['jumlah'])
+    min_cluster = min(summary_cluster, key=lambda x: x['jumlah'])
+
+    insight = "🧠 INTELLIGENT CLUSTER ANALYSIS\n"
+    insight += "=" * 50 + "\n\n"
+
+    insight += (
+        f"Dataset terdiri dari {total_data} data dan terbagi menjadi "
+        f"{jumlah_cluster} cluster.\n\n"
+    )
+
+    insight += (
+        f"Cluster terbesar adalah {max_cluster['cluster']} "
+        f"({max_cluster['jumlah']} data).\n"
+        f"Cluster terkecil adalah {min_cluster['cluster']} "
+        f"({min_cluster['jumlah']} data).\n\n"
+    )
+
+    for s in summary_cluster:
+        insight += (
+            f"- Cluster {s['cluster']}: {s['jumlah']} data, "
+            f"umur {s['rata_umur']}, faktor {s['faktor_dominan']}, "
+            f"waktu {s['waktu_dominan']}\n"
+        )
+
+    insight += "\n"
+
+    if silhouette is not None:
+        insight += f"Silhouette Score: {silhouette}\n"
+
+        if silhouette > 0.5:
+            insight += "Kualitas clustering sangat baik.\n"
+        elif silhouette > 0.25:
+            insight += "Kualitas clustering cukup.\n"
+        else:
+            insight += "Kualitas clustering kurang optimal.\n"
+
+    return insight
+
+
+# ================================
+# RESET
+# ================================
 @login_required(login_url='login')
 def reset_ahc(request):
-    keys_to_clear = [
+
+    keys = [
         'hasil_cluster',
         'summary_cluster',
         'jumlah_cluster',
         'jumlah_data',
         'silhouette_score',
         'X_scaled',
-        'summary_df',
-        'uploaded_file_name',
-        'jumlah_data_asli'
+        'summary_df'
     ]
 
-    for key in keys_to_clear:
-        request.session.pop(key, None)
+    for k in keys:
+        request.session.pop(k, None)
 
     return redirect('ahc_proses')

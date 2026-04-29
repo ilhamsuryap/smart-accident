@@ -1,9 +1,13 @@
 {% extends "base.html" %}
 {% block content %}
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- <script src="https://cdn.plot.ly/plotly-latest.min.js"></script> -->
+
+
 <div class="max-w-6xl mx-auto pt-6 pb-10">
 
-    <!-- HEADER SELALU MUNCUL -->
+    <!-- HEADER -->
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-800">
             Hasil Clustering AHC
@@ -20,85 +24,397 @@
     </div>
 
     {% if not belum_clustering %}
-        <!-- INFO RINGKAS -->
-        <div class="grid grid-cols-3 gap-4 mb-6 text-center">
-            <div class="bg-blue-50 p-4 rounded-lg shadow">
-                <p class="text-gray-500 text-sm">Jumlah Data</p>
-                <p class="text-2xl font-bold text-blue-700">{{ jumlah_data }}</p>
-            </div>
-            <div class="bg-green-50 p-4 rounded-lg shadow">
-                <p class="text-gray-500 text-sm">Jumlah Cluster</p>
-                <p class="text-2xl font-bold text-green-700">{{ jumlah_cluster }}</p>
-            </div>
-            <div class="bg-purple-50 p-4 rounded-lg shadow">
-                <p class="text-gray-500 text-sm">Silhouette Score</p>
-                <p class="text-2xl font-bold text-purple-700">{{ silhouette_score }}</p>
-            </div>
+
+    <!--AI GLOBAL INSIGHT -->
+    <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mb-6">
+        <h2 class="text-xl font-bold text-yellow-700 mb-2">
+            Insight AI
+        </h2>
+
+        <p class="text-gray-700 text-sm whitespace-pre-line">
+            {{ ai_global }}
+        </p>
+    </div>
+
+    <!-- INFO RINGKAS -->
+    <div class="grid grid-cols-3 gap-4 mb-6 text-center">
+        <div class="bg-blue-50 p-4 rounded-lg shadow">
+        <p class="text-gray-500 text-sm">Total Kejadian Kecelakaan</p>
+        <p class="text-2xl font-bold text-blue-700">{{ total_kejadian }}</p>
         </div>
 
-        <!-- TABEL HASIL CLUSTERING -->
-        <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-            <h2 class="text-xl font-bold mb-4 text-gray-700">
-                Detail Data Cluster
-            </h2>
+        <div class="bg-green-50 p-4 rounded-lg shadow">
+            <p class="text-gray-500 text-sm">Jumlah Cluster</p>
+            <p class="text-2xl font-bold text-green-700">{{ jumlah_cluster }}</p>
+        </div>
 
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-sm text-left border border-gray-200">
-                    <thead class="bg-gray-100 text-gray-700">
-                        <tr>
+        <div class="bg-purple-50 p-4 rounded-lg shadow">
+            <p class="text-gray-500 text-sm">Silhouette Score</p>
+            <p class="text-2xl font-bold text-purple-700">{{ silhouette_score }}</p>
+        </div>
+    </div>
+
+    <!-- DETAIL DATA -->
+    <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+        <h2 class="text-xl font-bold mb-4 text-gray-700">
+            Detail Data Cluster
+        </h2>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm border border-gray-200">
+                <thead class="bg-gray-100 text-gray-700">
+                    <tr>
+                        {% if hasil_cluster %}
                             {% for col in hasil_cluster.0.keys %}
-                                <th class="px-4 py-2 border">{{ col }}</th>
+                            <th class="px-4 py-2 border">{{ col }}</th>
                             {% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for row in hasil_cluster %}
-                        <tr class="hover:bg-gray-50">
-                            {% for value in row.values %}
-                                <td class="px-4 py-2 border">{{ value }}</td>
-                            {% endfor %}
-                        </tr>
+                        {% endif %}
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for row in hasil_cluster %}
+                    <tr class="hover:bg-yellow-50 border-l-4 border-yellow-400">
+                        {% for value in row.values %}
+                        <td class="px-4 py-2 border">{{ value }}</td>
                         {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- RINGKASAN -->
+    <div class="bg-white rounded-xl shadow-md p-6 mb-10">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">
+            Ringkasan Cluster
+        </h2>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm border border-gray-200">
+                <thead class="bg-gray-100 text-gray-700">
+                    <tr>
+                        <th class="px-4 py-2 border">Cluster</th>
+                        <th class="px-4 py-2 border">Jumlah Kejadian</th>
+                        <th class="px-4 py-2 border">Persentase (%)</th>
+                        <th class="px-4 py-2 border">Rentang Umur</th>
+                        <th class="px-4 py-2 border">Faktor Dominan</th>
+                        <th class="px-4 py-2 border">Waktu Dominan</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for s in summary_cluster %}
+                    <tr>
+                        <td class="px-4 py-2 border font-semibold">
+                            Cluster {{ s.cluster }}
+                        </td>
+                        <td class="px-4 py-2 border">{{ s.jumlah }}</td>
+                        <td class="px-4 py-2 border">{{ s.persentase }}%</td>
+                        <td class="px-4 py-2 border">{{ s.rata_umur }}</td>
+                        <td class="px-4 py-2 border text-blue-700 font-medium">
+                            {{ s.faktor_dominan }}
+                        </td>
+                        <td class="px-4 py-2 border text-purple-700 font-medium">
+                            {{ s.waktu_dominan }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- SCATTER PCA -->
+    {% if scatter_html %}
+    <div class="bg-white rounded-xl shadow-md p-6 mb-10">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">
+            Visualisasi Cluster (PCA Interaktif)
+        </h2>
+
+        <div class="w-full overflow-x-auto">
+            {{ scatter_html|safe }}
         </div>
 
-        <!-- RINGKASAN CLUSTER -->
-        <div class="bg-white rounded-xl shadow-md p-6 mt-10">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">
-                Ringkasan Cluster
-            </h2>
+        <div class="flex justify-center gap-6 mt-4 text-sm">
+            <div><span style="color:#22c55e">●</span> Cluster 1</div>
+            <div><span style="color:#eab308">●</span> Cluster 2</div>
+            <div><span style="color:#ef4444">●</span> Cluster 3</div>
+        </div>
 
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-sm text-left border border-gray-200">
-                    <thead class="bg-gray-100 text-gray-700">
-                        <tr>
-                            <th class="px-4 py-2 border">Cluster</th>
-                            <th class="px-4 py-2 border">Jumlah</th>
-                            <th class="px-4 py-2 border">Persentase (%)</th>
-                            <th class="px-4 py-2 border">Rata-rata Umur</th>
-                            <th class="px-4 py-2 border">Faktor Dominan</th>
-                            <th class="px-4 py-2 border">Waktu Dominan</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for s in summary_cluster %}
-                        <tr>
-                            <td class="px-4 py-2 border font-semibold">{{ s.cluster }}</td>
-                            <td class="px-4 py-2 border">{{ s.jumlah }}</td>
-                            <td class="px-4 py-2 border">{{ s.persentase }}%</td>
-                            <td class="px-4 py-2 border">{{ s.rata_umur }}</td>
-                            <td class="px-4 py-2 border text-blue-700 font-medium">{{ s.faktor_dominan }}</td>
-                            <td class="px-4 py-2 border text-purple-700 font-medium">{{ s.waktu_dominan }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        <p class="text-center text-gray-500 text-sm mt-3">
+            Titik menunjukkan data. Warna menunjukkan cluster. Hover untuk detail.
+        </p>
+
+        <!--AI PCA -->
+        <div class="mt-4 text-sm text-gray-700 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg leading-relaxed">
+            <div class="flex items-center mb-2">
+                <span class="bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full">
+                    AI Insight
+                </span>
             </div>
+            {{ ai_pca|safe }}
         </div>
     {% endif %}
 
+    <!-- DENDROGRAM -->
+    {% if dendrogram_html %}
+    <div class="bg-white rounded-xl shadow-md p-6 mb-10">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">
+            Dendrogram Hierarchical Clustering
+        </h2>
+
+        <div class="w-full overflow-x-auto">
+            {{ dendrogram_html|safe }}
+        </div>
+
+        <p class="text-center text-gray-500 text-sm mt-3">
+            Menunjukkan proses penggabungan cluster berdasarkan jarak.
+        </p>
+
+            <!-- AI DENDROGRAM -->
+            <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+
+                <div class="flex items-center mb-3">
+                    <span class="bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full">
+                        AI Insight
+                    </span>
+                </div>
+
+                <div class="text-gray-700 text-sm leading-relaxed">
+                    {{ ai_dendrogram|safe }}
+                </div>
+
+            </div>
+    {% endif %}
+
+    <!-- BAR CHART -->
+    <div class="bg-white rounded-xl shadow-md p-6 mb-10">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">
+            Bar Chart Jumlah Cluster
+        </h2>
+
+        <canvas id="clusterChart"></canvas>
+        
+        <!-- MODAL DETAIL CLUSTER -->
+            <div id="modalCluster" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50">
+                
+                <div class="bg-white w-[600px] max-h-[80vh] rounded-xl shadow-lg overflow-hidden">
+
+                    <!-- HEADER -->
+                    <div class="flex justify-between items-center p-4 border-b bg-yellow-50 border-l-4 border-yellow-400">
+                        <h2 id="modalTitle" class="font-bold text-lg">Cluster</h2>
+                        <button onclick="closeModal()" class="text-gray-500 hover:text-red-500 text-xl">
+                            &times;
+                        </button>
+                    </div>
+
+        <!-- CONTENT -->
+        <div id="modalContent" class="p-4 overflow-y-auto space-y-3 text-sm max-h-[60vh]">
+            <!-- isi dari JS -->
+        </div>
+
+    </div>
 </div>
+
+        <!-- AI BAR -->
+        <div class="mt-4 text-sm text-gray-700 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg leading-relaxed">
+            <div class="flex items-center mb-2">
+                <span class="bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full">
+                    AI Insight
+                </span>
+            </div>
+            {{ ai_bar|safe }}
+        </div>
+
+        <!-- BAR CHART FAKTOR PENYEBAB -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-10">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">
+                Faktor Penyebab Kecelakaan (Global)
+            </h2>
+
+            <canvas id="faktorChart"></canvas>
+
+            <p class="text-center text-gray-500 text-sm mt-3">
+                Grafik ini menunjukkan faktor yang paling dominan menyebabkan kecelakaan.
+            </p>
+        </div>
+
+        <p class="text-center text-gray-500 text-sm mt-3">
+    Grafik ini menunjukkan faktor yang paling dominan menyebabkan kecelakaan.
+</p>
+
+        <!-- 🔥 AI FAKTOR -->
+            <div class="mt-4 text-sm text-gray-700 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg whitespace-pre-line leading-relaxed">
+                <div class="flex items-center mb-3">
+                    <span class="bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full">
+                        AI Insight
+                    </span>
+                </div>
+                {{ ai_faktor|safe }}
+            </div>
+
+                    <!-- GROUPED BAR CHART -->
+            <div class="bg-white rounded-xl shadow-md p-6 mb-10">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">
+                    Analisis Faktor Berdasarkan Kelompok Umur
+                </h2>
+
+                <canvas id="umurFaktorChart"></canvas>
+
+                <p class="text-center text-gray-500 text-sm mt-3">
+                    Grafik menunjukkan hubungan antara umur dan faktor penyebab kecelakaan.
+                </p>
+            </div>
+
+            <!-- 🔥 AI UMUR -->
+            <div class="mt-4 text-sm text-gray-600 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg whitespace-pre-line leading-relaxed">
+                <div class="flex items-center mb-2">
+                    <span class="bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full">
+                        AI Insight
+                    </span>
+                </div>
+                {{ ai_umur|safe }}
+            </div>
+
+            {% endif %}         
+
+<script>
+const labels = {{ cluster_labels|default:"[]"|safe }};
+const counts = {{ cluster_counts|default:"[]"|safe }};
+const clusterDetail = {{ cluster_detail|default:"{}"|safe }};
+
+const ctx = document.getElementById('clusterChart');
+
+if (ctx) {
+    const chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Jumlah Kejadian',
+                data: counts,
+                backgroundColor: ['#22c55e','#eab308','#ef4444'],
+                borderRadius: 6
+            }]
+        },
+
+                options: {
+                    plugins: {
+                        legend: {
+                            display: false   // 🔥 ini yang menghilangkan kotak hijau
+                        }
+                    },
+
+                    onClick: (evt, elements) => {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const clusterName = labels[index];
+                            const detail = clusterDetail[clusterName];
+
+                            const modal = document.getElementById("modalCluster");
+                            const modalTitle = document.getElementById("modalTitle");
+                            const modalContent = document.getElementById("modalContent");
+
+                            modalTitle.innerText = `${clusterName} (${detail.length} data)`;
+                            modalContent.innerHTML = "";
+
+                            if (detail) {
+                                detail.forEach((item, i) => {
+                                    modalContent.innerHTML += `
+                                        <div class="rounded-lg p-3 bg-gray-100 shadow-sm">
+                                            <p class="font-semibold text-gray-700">
+                                                Data ${i + 1}
+                                            </p>
+                                            <p class="text-gray-600">
+                                                ${item.replace("Jumlah:", "Jumlah Kejadian:")}
+                                            </p>
+                                        </div>
+                                    `;
+                                });
+                            } else {
+                                modalContent.innerHTML = `
+                                    <p class="text-gray-500">Tidak ada data.</p>
+                                `;
+                            }
+
+                            modal.classList.remove("hidden");
+                            modal.classList.add("flex");
+                        }
+                    }
+                }
+    });
+}
+    function closeModal() {
+        const modal = document.getElementById("modalCluster");
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+    }
+
+    // OPTIONAL (klik luar untuk close)
+    document.getElementById("modalCluster").addEventListener("click", function(e) {
+        if (e.target === this) {
+            closeModal();
+        }
+    });
+
+    const faktorLabels = {{ faktor_labels|default:"[]"|safe }};
+    const faktorValues = {{ faktor_values|default:"[]"|safe }};
+
+    const ctxFaktor = document.getElementById('faktorChart');
+
+    if (ctxFaktor) {
+        new Chart(ctxFaktor, {
+            type: 'bar',
+            data: {
+                labels: faktorLabels,
+                datasets: [{
+                    label: 'Jumlah Kejadian',
+                    data: faktorValues,
+                    backgroundColor: ['#3b82f6','#22c55e','#f59e0b','#ef4444'],
+                    borderRadius: 6
+                }]
+            }
+        });
+    }
+
+        //
+    const umurLabels = {{ umur_labels|default:"[]"|safe }};
+    const faktorPengemudi = {{ faktor_pengemudi|default:"[]"|safe }};
+    const faktorJalan = {{ faktor_jalan|default:"[]"|safe }};
+    const faktorKendaraan = {{ faktor_kendaraan|default:"[]"|safe }};
+    const faktorLingkungan = {{ faktor_lingkungan|default:"[]"|safe }};
+
+    const ctxUmur = document.getElementById('umurFaktorChart');
+
+    if (ctxUmur) {
+        new Chart(ctxUmur, {
+            type: 'bar',
+            data: {
+                labels: umurLabels,
+                datasets: [
+                    {
+                        label: 'Pengemudi',
+                        data: faktorPengemudi
+                    },
+                    {
+                        label: 'Jalan',
+                        data: faktorJalan
+                    },
+                    {
+                        label: 'Kendaraan',
+                        data: faktorKendaraan
+                    },
+                    {
+                        label: 'Lingkungan',
+                        data: faktorLingkungan
+                    }
+                ]
+            }
+        });
+    }
+</script>
+
 
 {% endblock %}
