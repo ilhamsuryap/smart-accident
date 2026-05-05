@@ -135,9 +135,33 @@ def dashboard_view(request):
     
     # Segmen dengan kecelakaan terbanyak
     context['top_segmen'] = SegmenJalan.objects.annotate(
-        jumlah_kecelakaan=Count('kecelakaan')
+        jumlah_kecelakaan=Count('kecelakaan_preprosesing')
     ).order_by('-jumlah_kecelakaan')[:5]
+
+    # --- Statistik Data Cluster (Non-AHC Parameters) ---
+    cluster_data = ClusterData.objects.all()
+    context['total_cluster_data'] = cluster_data.count()
     
+    # 1. Top 5 Jenis Kendaraan
+    context['top_vehicles'] = list(cluster_data.values('jenis_kendaraan').annotate(
+        count=Count('id')
+    ).order_by('-count')[:5])
+    
+    # 2. Distribusi Hari (Top Days)
+    context['day_dist'] = list(cluster_data.values('hari').annotate(
+        count=Count('id')
+    ).order_by('-count'))
+    
+    # 3. Top 5 TKP
+    context['top_tkp'] = list(cluster_data.values('tkp').annotate(
+        count=Count('id')
+    ).order_by('-count')[:5])
+    
+    # 4. Top 5 Jam (Sesi Waktu)
+    context['top_hours'] = list(cluster_data.values('jam').annotate(
+        count=Count('id')
+    ).order_by('-count')[:5])
+
     return render(request, 'coreapp/dashboard.html', context)
 
 
@@ -1099,7 +1123,7 @@ def cluster_data(request):
         'kecelakaan': data
     }
 
-    return render(request, 'coreapp/k-means/data_cluster.html', context)
+    return render(request, 'coreapp/data_cluster/cluster.html', context)
 
 
 
@@ -2242,7 +2266,7 @@ def cluster_data_list(request):
         'ai_config': AIConfig.objects.filter(tipe='kmeans').first(),
         'ai_config_ahc': AIConfig.objects.filter(tipe='ahc').first(),
     }
-    return render(request, 'coreapp/k-means/data_list.html', context)
+    return render(request, 'coreapp/data_cluster/list.html', context)
 
 @login_required(login_url='login')
 def cluster_data_tambah(request):
@@ -2300,7 +2324,7 @@ def cluster_data_tambah(request):
         'jenis_choices': get_unique_choices('jenis_kendaraan'),
         'tipe_choices': get_unique_choices('tipe_kendaraan'),
     }
-    return render(request, 'coreapp/k-means/data_tambah.html', context)
+    return render(request, 'coreapp/data_cluster/tambah.html', context)
 
 @login_required(login_url='login')
 def cluster_data_edit(request, pk):
@@ -2358,7 +2382,7 @@ def cluster_data_edit(request, pk):
         'jenis_choices': get_unique_choices('jenis_kendaraan'),
         'tipe_choices': get_unique_choices('tipe_kendaraan'),
     }
-    return render(request, 'coreapp/k-means/data_edit.html', context)
+    return render(request, 'coreapp/data_cluster/edit.html', context)
 
 def _parse_indo_date(date_str):
     """Helper to parse Indonesian date strings like '1 Januari 2024'"""
@@ -2551,11 +2575,11 @@ def tambah_data(request):
         return redirect('data_cluster')  # kembali ke dashboard
 
     # Jika GET request → tampilkan halaman form
-    return render(request, 'coreapp/k-means/tambah_data.html')
+    return render(request, 'coreapp/data_cluster/tambah_kejadian.html')
 
 def tambah_data_view(request):
     kota_list = Kota.objects.all()  # ambil semua kota
-    return render(request, 'coreapp/k-means/tambah_data.html', {
+    return render(request, 'coreapp/data_cluster/tambah_kejadian.html', {
         'kota_list': kota_list
     })
 
