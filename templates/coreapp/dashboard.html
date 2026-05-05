@@ -115,4 +115,140 @@
         </div>
     </div> -->
     
+    <!-- SEKSI BARU: Statistik Data Cluster (Raw Data) -->
+    <div class="mb-8 mt-10">
+        <h2 class="text-2xl font-bold mb-6 flex items-center gap-2 text-gray-800">
+            <i class="fas fa-database text-blue-600"></i> Statistik Data Kecelakaan (Cluster Data)
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <!-- Total Data Cluster -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-blue-600 hover:shadow-md transition-shadow">
+                <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Data</p>
+                <div class="flex items-end justify-between mt-1">
+                    <p class="text-3xl font-black text-blue-600">{{ total_cluster_data }}</p>
+                    <i class="fas fa-folder-open text-blue-100 text-2xl"></i>
+                </div>
+            </div>
+            <!-- Top Day -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-orange-500 hover:shadow-md transition-shadow">
+                <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Hari Terpadat</p>
+                <div class="mt-1">
+                    <p class="text-sm font-bold text-gray-800">{{ day_dist.0.hari|default:"-" }}</p>
+                    <p class="text-xs text-orange-500 font-bold">{{ day_dist.0.count|default:0 }} Kejadian</p>
+                </div>
+            </div>
+            <!-- Top Vehicle -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-purple-500 hover:shadow-md transition-shadow">
+                <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Kendaraan Terbanyak</p>
+                <div class="mt-1">
+                    <p class="text-sm font-bold text-gray-800 truncate">{{ top_vehicles.0.jenis_kendaraan|default:"-" }}</p>
+                    <p class="text-xs text-purple-500 font-bold">{{ top_vehicles.0.count|default:0 }} Kejadian</p>
+                </div>
+            </div>
+            <!-- Top TKP -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-green-500 hover:shadow-md transition-shadow">
+                <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">TKP Terbanyak</p>
+                <div class="mt-1">
+                    <p class="text-sm font-bold text-gray-800 truncate" title="{{ top_tkp.0.tkp }}">{{ top_tkp.0.tkp|default:"-" }}</p>
+                    <p class="text-xs text-green-500 font-bold">{{ top_tkp.0.count|default:0 }} Kejadian</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Diagram Statistik Data Cluster -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
+        <!-- Vehicle Chart -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <h5 class="text-lg font-bold mb-6 flex items-center gap-2">
+                <i class="fas fa-motorcycle text-purple-500"></i> Distribusi Jenis Kendaraan
+            </h5>
+            <div class="h-80 relative">
+                <canvas id="vehicleChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Day Chart -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <h5 class="text-lg font-bold mb-6 flex items-center gap-2">
+                <i class="fas fa-calendar-day text-orange-500"></i> Distribusi Hari Kejadian
+            </h5>
+            <div class="h-80 relative">
+                <canvas id="dayChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
+
+{% block extra_js %}
+{{ top_vehicles|json_script:"vehicles-data" }}
+{{ day_dist|json_script:"days-data" }}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Data Preparation from JSON scripts
+    const vehiclesRaw = JSON.parse(document.getElementById('vehicles-data').textContent);
+    const daysRaw = JSON.parse(document.getElementById('days-data').textContent);
+
+    const vehicleLabels = vehiclesRaw.map(v => v.jenis_kendaraan);
+    const vehicleData = vehiclesRaw.map(v => v.count);
+    
+    const dayLabels = daysRaw.map(d => d.hari);
+    const dayData = daysRaw.map(d => d.count);
+
+    // Vehicle Chart
+    const ctxV = document.getElementById('vehicleChart').getContext('2d');
+    new Chart(ctxV, {
+        type: 'doughnut',
+        data: {
+            labels: vehicleLabels,
+            datasets: [{
+                data: vehicleData,
+                backgroundColor: ['#8b5cf6', '#3b82f6', '#f59e0b', '#10b981', '#ef4444'],
+                borderWidth: 0,
+                hoverOffset: 10
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: { padding: 12, cornerRadius: 10 }
+            },
+            cutout: '65%'
+        }
+    });
+
+    // Day Chart
+    const ctxD = document.getElementById('dayChart').getContext('2d');
+    new Chart(ctxD, {
+        type: 'bar',
+        data: {
+            labels: dayLabels,
+            datasets: [{
+                label: 'Jumlah Kejadian',
+                data: dayData,
+                backgroundColor: 'rgba(249, 115, 22, 0.8)',
+                hoverBackgroundColor: '#ea580c',
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#f3f4f6' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+</script>
+{% endblock %}
+
