@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}Profil Saya{% endblock %}
+
+{% block content %}
+<form method="POST">
+    {% csrf_token %}
+
+    <div class="max-w-4xl mx-auto">
+
+        <!-- ================= CARD ATAS ================= -->
+        <div class="bg-white rounded-2xl shadow-md p-6 mb-6 flex items-center justify-between">
+
+            <div class="flex items-center gap-6">
+                <img src="/static/img/default-user.png"
+                     class="w-24 h-24 rounded-full border object-cover">
+
+                <div>
+                    <h2 class="text-2xl font-bold">
+                        {{ user.username }}
+                    </h2>
+                    <p class="text-gray-500">{{ user.email }}</p>
+                </div>
+            </div>
+
+            <!-- tombol tetap di atas -->
+            <button type="button" onclick="toggleEdit()"
+                    id="btnEdit"
+                    class="bg-blue text-white px-4 py-2 rounded">
+                Edit Profil
+            </button>
+        </div>
+
+        <!-- ================= CARD KEDUA ================= -->
+        <div class="bg-white rounded-2xl shadow-md p-6">
+
+            <!-- ===== MODE VIEW ===== -->
+    <div id="viewData" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <div>
+            <p class="text-sm text-gray-500">Username</p>
+            <p class="font-semibold">{{ user.username }}</p>
+        </div>
+
+        <div>
+            <p class="text-sm text-gray-500">Nama Lengkap</p>
+            <p class="font-semibold">
+                {{ user.first_name }} {{ user.last_name }}
+            </p>
+        </div>
+
+        <div>
+            <p class="text-sm text-gray-500">Alamat</p>
+            <p class="font-semibold">
+                {{ user.profile.alamat|default:"-" }}
+            </p>
+        </div>
+
+        <div>
+            <p class="text-sm text-gray-500">Email</p>
+            <p class="font-semibold">{{ user.email }}</p>
+        </div>
+
+    </div>
+
+
+    <!-- ===== MODE EDIT ===== -->
+    <div id="editData" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <!-- Username -->
+        <div>
+            <label class="text-sm text-gray-500">Username</label>
+            <input type="text" name="username"
+                value="{{ user.username }}"
+                class="border p-2 rounded w-full">
+        </div>
+
+        <!-- Nama Lengkap -->
+        <div>
+            <label class="text-sm text-gray-500">Nama Lengkap</label>
+            <input type="text" name="full_name"
+                value="{{ user.first_name }} {{ user.last_name }}"
+                class="border p-2 rounded w-full">
+        </div>
+
+        <!-- Email -->
+        <div class="md:col-span-2">
+            <label class="text-sm text-gray-500">Email</label>
+            <input type="email" name="email"
+                value="{{ user.email }}"
+                class="border p-2 rounded w-full">
+        </div>
+
+        <!-- Alamat -->
+        <div class="md:col-span-2">
+            <label class="text-sm text-gray-500">Alamat</label>
+            <textarea name="alamat"
+                    class="border p-2 rounded w-full"
+                    rows="3">{{ user.profile.alamat }}</textarea>
+        </div>
+
+
+        <!-- Button -->
+        <div class="md:col-span-2">
+            <button type="submit"
+                    class="bg-green-600 text-white px-4 py-2 rounded w-full">
+                Simpan Perubahan
+            </button>
+        </div>
+
+    </div>
+
+    </div>
+
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let isEdit = false;
+
+function toggleEdit() {
+    const view = document.getElementById('viewData');
+    const edit = document.getElementById('editData');
+    const btn = document.getElementById('btnEdit');
+
+    if (!isEdit) {
+        // masuk mode edit
+        view.classList.add('hidden');
+        edit.classList.remove('hidden');
+
+        btn.innerText = "Batal Edit";
+        btn.classList.remove('bg-blue');
+        btn.classList.add('bg-red-600');
+
+        isEdit = true;
+    } else {
+        // keluar mode edit
+        view.classList.remove('hidden');
+        edit.classList.add('hidden');
+
+        btn.innerText = "Edit Profil";
+        btn.classList.remove('bg-red-600');
+        btn.classList.add('bg-blue');
+
+        isEdit = false;
+    }
+}
+</script>
+{% endblock %}

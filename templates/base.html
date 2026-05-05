@@ -251,22 +251,23 @@
                 <div id="navMenu" class="hidden md:flex items-center gap-6">
                     <ul class="flex items-center gap-4">
                         {% if user.is_authenticated %}
-                            <li class="relative group">
-                                <button class="text-white flex items-center gap-2 hover:text-gray-200">
-                                    <i class="fas fa-user"></i> {{ user.first_name|default:user.username }}
-                                    <i class="fas fa-chevron-down text-sm"></i>
-                                </button>
-                                <div class="absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded-lg shadow-lg hidden group-hover:block z-50">
-                                    <!-- {% if user.is_staff %}
-                                        <a href="{% url 'admin:index' %}" class="block px-4 py-2 hover:bg-gray-100">Admin Panel</a>
-                                        <hr>
-                                    {% endif %}
-                                    -->
-                                </div>
-                            </li>
-                        {% else %}
-                            <li class="hidden"><a href="{% url 'login' %}" class="text-white hover:text-gray-200">Login</a></li>
-                            <li class="hidden"><a href="{% url 'register' %}" class="text-white hover:text-gray-200">Register</a></li>
+                        <li>
+                            <a href="{% url 'profile' %}" 
+                            class="flex items-center gap-2 text-white hover:text-gray-200 transition">
+
+                                <!-- Foto -->
+                                <img 
+                                    src="/static/img/default-user.png"
+                                    alt="profile"
+                                    class="w-8 h-8 rounded-full object-cover border border-white"
+                                >
+
+                                <!-- Nama -->
+                                <span class="font-medium">
+                                    {{ user.username|default:user.username }}
+                                </span>
+                            </a>
+</li>
                         {% endif %}
                     </ul>
                 </div>
@@ -486,7 +487,10 @@
     
     <!-- Leaflet JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-    
+
+    <!-- Chart JS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <!-- Mobile Menu Toggle -->
     <script>
         document.getElementById('navToggle').addEventListener('click', function() {
@@ -494,7 +498,7 @@
             navMenu.classList.toggle('hidden');
         });
     </script>
-    
+
     {% block extra_js %}{% endblock %}
-</body>
-</html>
+    </body>
+    </html>
