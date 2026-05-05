@@ -30,7 +30,7 @@
 
 <div class="max-w-6xl mx-auto pt-6 pb-10">
 
-    <!-- HEADER (Matching K-Means) -->
+    <!-- HEADER -->
     <div class="bg-white rounded-xl shadow-md p-6 mb-8 border-l-8 border-blue-600">
         <div class="flex justify-between items-center">
             <div>
@@ -54,7 +54,7 @@
 
     {% if not belum_clustering %}
 
-    <!-- INFO RINGKAS (Matching K-Means) -->
+    <!-- INFO RINGKAS  -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 shadow-sm">
             <p class="text-sm text-gray-500 font-medium">Total Kejadian</p>
@@ -71,16 +71,16 @@
     </div>
 
     <!-- AI GLOBAL INSIGHT (Matching Diagram AI Style) -->
-    <div class="bg-blue-50 border border-blue-100 rounded-xl p-6 shadow-sm mb-10">
+    <!-- <div class="bg-blue-50 border border-blue-100 rounded-xl p-6 shadow-sm mb-10">
         <h4 class="font-bold text-blue-900 mb-3 flex items-center gap-2 text-sm uppercase">
             <i class="fas fa-robot"></i> Analisis Klaster
         </h4>
         <div class="text-blue-800 text-sm leading-relaxed ai-justify">
             {{ ai_global|safe }}
         </div>
-    </div>
+    </div> -->
 
-    <!-- RINGKASAN CLUSTER (Matching K-Means Info Table Style) -->
+    <!-- RINGKASAN CLUSTER  -->
     <div class="bg-white rounded-xl shadow-md border border-gray-100 p-8 mb-10">
         <div class="flex items-center gap-3 mb-6">
             <div class="bg-gray-100 p-2 rounded-lg">
@@ -301,7 +301,7 @@
         </div>
     </div>
 
-    <!-- BOXPLOT UMUR -->
+    <!-- BOXPLOT UMUR
     {% if boxplot_html %}
     <div class="bg-white rounded-xl shadow-md p-8 mb-10 border border-gray-100">
         <div class="flex items-center gap-3 mb-6">
@@ -315,9 +315,9 @@
             {{ boxplot_html|safe }}
         </div>
 
-        <!-- AI BOXPLOT -->
+        AI BOXPLOT
         <div class="mt-8 bg-blue-50 border border-blue-100 rounded-xl p-6 shadow-sm min-h-[150px] relative overflow-hidden">
-            <!-- Loading State -->
+                # Loading State
             <div id="ai-boxplot-loading" class="absolute inset-0 glass-loading z-10 flex flex-col items-center justify-center p-8 text-center rounded-xl {% if ai_explain_cache %}hidden{% endif %}">
                 <p class="text-blue-600 font-bold text-[10px] uppercase tracking-[0.2em] mb-4">Menganalisis Sebaran Umur...</p>
                 <div class="w-full max-w-[200px] space-y-3">
@@ -334,7 +334,7 @@
             </div>
         </div>
     </div>
-    {% endif %}
+    {% endif %} -->
 
     <!-- UMUR VS FAKTOR -->
     <div class="bg-white rounded-xl shadow-md p-8 mb-10 border border-gray-100">
@@ -376,7 +376,7 @@
         </div>
     </div>
 
-    <!-- SECTION REKOMENDASI (Matching YOLA Style) -->
+    <!-- SECTION REKOMENDASI -->
     <div class="mt-12 bg-white border border-blue-100 rounded-2xl p-10 shadow-sm text-center">
         <div class="max-w-2xl mx-auto">
             <h3 class="text-xl font-black text-gray-800 mb-3 uppercase tracking-tight">

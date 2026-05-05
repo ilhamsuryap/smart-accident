@@ -241,6 +241,28 @@ def generate_segmen(request, pk):
     return redirect('ruas_jalan_detail', pk=pk)
 
 
+# Profil Views
+@login_required
+def profile_view(request):
+    user = request.user
+
+    if request.method == "POST":
+        user.username = request.POST.get("username")
+        user.email = request.POST.get("email")
+
+        full_name = request.POST.get("full_name")
+        if full_name:
+            nama = full_name.split(" ", 1)
+            user.first_name = nama[0]
+            user.last_name = nama[1] if len(nama) > 1 else ""
+
+        user.save()
+
+        return redirect('profile')
+
+    return render(request, 'profile.html')
+
+
 # Kecelakaan Views
 @login_required(login_url='login')
 def kecelakaan_list(request):
