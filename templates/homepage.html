@@ -107,6 +107,7 @@
     </style>
 </head>
 <body class="bg-gray-50">
+
     <!-- Navbar -->
     <nav class="bg-blue shadow-md sticky top-0 z-50">
         <div class="w-full px-4 py-4">
@@ -118,25 +119,79 @@
                     <i class="fas fa-bars"></i>
                 </button>
                 <div id="navMenu" class="hidden md:flex items-center gap-6">
-                    <ul class="flex items-center gap-6">
-                        <li><a href="/" class="text-white hover:text-gray-200">Beranda</a></li>
-                        <li><a href="/peta-user/" class="text-white hover:text-gray-200">Peta</a></li>
-                        <li><a href="#features" class="text-white hover:text-gray-200">Fitur</a></li>
-                        {% if user.is_authenticated %}
-                            <li class="relative group">
-                                <button class="text-white flex items-center gap-2 hover:text-gray-200">
-                                    <i class="fas fa-user"></i> {{ user.first_name|default:user.username }}
-                                </button>
-                                <div class="absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded-lg shadow-lg hidden group-hover:block z-50">
-                                    {% if user.is_staff %}<a href="/dashboard/" class="block px-4 py-2 hover:bg-gray-100">Dashboard Admin</a><hr>{% endif %}
-                                    <a href="{% url 'logout' %}" class="block px-4 py-2 hover:bg-gray-100">Logout</a>
-                                </div>
-                            </li>
-                        {% else %}
-                            <li class="hidden"><a href="{% url 'login' %}" class="text-white hover:text-gray-200">Login</a></li>
-                            <li class="hidden"><a href="{% url 'register' %}" class="bg-white text-blue rounded px-4 py-2">Register</a></li>
-                        {% endif %}
-                    </ul>
+                <ul class="flex items-center gap-6">
+
+                    <li><a href="/" class="text-white hover:text-gray-200">Beranda</a></li>
+                    <li><a href="#features" class="text-white hover:text-gray-200">Fitur</a></li>
+                    <li><a href="/" class="text-white hover:text-gray-200">Data Kecelakaan</a></li>
+                    <li><a href="/peta-user/" class="text-white hover:text-gray-200">Peta</a></li>
+                    <li class="relative group">
+                        <button class="text-white hover:text-gray-200 flex items-center gap-1">
+                            Hasil Clustering
+                            <i class="fas fa-chevron-down text-xs opacity-70"></i>
+                        </button>
+
+                        <!-- Glass Dropdown -->
+                        <div class="absolute left-0 mt-3 w-44 rounded-xl 
+                                    bg-white/10 backdrop-blur-md border border-white/20 
+                                    shadow-xl 
+                                    opacity-0 invisible group-hover:opacity-100 group-hover:visible 
+                                    transform translate-y-2 group-hover:translate-y-0
+                                    transition-all duration-300 z-50 p-2">
+
+                            <a href="/kmeans/" 
+                            class="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-white 
+                                    hover:bg-white/20 transition">
+                                <i class="fas fa-clock text-xs"></i>
+                                K-Means
+                            </a>
+
+                            <a href="/ahc/" 
+                            class="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-white 
+                                    hover:bg-white/20 transition">
+                                <i class="fas fa-diagram-project text-xs"></i>
+                                AHC
+                            </a>
+
+                        </div>
+                    </li>
+
+                    <!-- {% if user.is_authenticated %} -->
+                        <!-- USER MENU -->
+                        <!-- <li class="relative group"> -->
+                            <!-- <button class="text-white flex items-center gap-2 hover:text-gray-200">
+                                <i class="fas fa-user"></i> {{ user.first_name|default:user.username }}
+                            </button>
+
+                            <div class="absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded-lg shadow-lg hidden group-hover:block z-50">
+                                {% if user.is_staff %}
+                                    <a href="/dashboard/" class="block px-4 py-2 hover:bg-gray-100">Dashboard Admin</a>
+                                    <hr>
+                                {% endif %}
+                                <a href="{% url 'logout' %}" class="block px-4 py-2 hover:bg-gray-100">Logout</a>
+                            </div>
+                        </li>
+
+                    {% else %}
+                        LOGIN BUTTON -->
+                        <!-- <li>
+                            <a href="{% url 'login' %}" 
+                            class="flex items-center gap-2 bg-white text-blue px-4 py-2 rounded font-semibold hover:bg-gray-100 transition">
+                                <i class="fas fa-right-to-bracket"></i>
+                                Masuk
+                            </a>
+                        </li> -->
+                    <!-- {% endif %} -->
+
+                    <li>
+                        <a href="{% url 'login' %}" 
+                        class="flex items-center gap-2 bg-white text-blue px-4 py-2 rounded font-semibold hover:bg-gray-100 transition">
+                            <i class="fas fa-right-to-bracket"></i>
+                            Masuk
+                        </a>
+                    </li>
+
+                </ul>
                 </div>
             </div>
         </div>
@@ -146,8 +201,8 @@
     <div class="hero">
         <div class="hero-content">
             <h1 class="hero-title">Smart Accident</h1>
-            <p class="hero-subtitle">Sistem Pemetaan dan Analisis Kerawanan Kecelakaan Lalu Lintas</p>
-            <p class="mb-8 text-lg opacity-90">Visualisasi data kecelakaan dengan teknologi Z-Score clustering untuk identifikasi zona berbahaya</p>
+            <p class="hero-subtitle"> Platform Analisis Kecelakaan Lalu Lintas Berbasis Data</p>
+            <p class="mb-8 text-lg opacity-90">Menggabungkan analisis tingkat kerawanan, faktor penyebab, serta pola waktu kejadian kecelakaan dengan memanfaatkan <br> Metode Z-Score, Agglomerative Hierarchical Clustering, dan K-Means untuk menghasilkan insight yang komprehensif <br> dan mendukung pengambilan keputusan berbasis data.</p>
             <div>
                 <a href="/peta-user/" class="btn-primary">
                     <i class="fas fa-map mr-2"></i>Lihat Peta Interaktif
@@ -159,7 +214,7 @@
         </div>
     </div>
 
-    <!-- Features Section -->
+    <!-- Features Section
     <section id="features" class="py-16 px-4">
         <div class="max-w-7xl mx-auto">
             <div class="text-center mb-12">
@@ -184,7 +239,176 @@
                 </div>
             </div>
         </div>
-    </section>
+    </section> -->
+
+    <!-- Features Section -->
+<section id="features" class="py-16 px-4">
+    <div class="max-w-7xl mx-auto">
+
+        <!-- Heading -->
+        <div class="text-center mb-12 max-w-2xl mx-auto">
+            <h2 class="text-3xl font-bold text-gray-900 mb-4">
+                Fitur Utama
+            </h2>
+            <p class="text-gray-600 text-lg">
+                Eksplorasi tiga pendekatan analisis untuk memahami kecelakaan lalu lintas secara komprehensif
+            </p>
+        </div>
+
+        <!-- Card Utama -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+            <!-- Z-Score -->
+            <div class="feature-card cursor-pointer" onclick="toggleDetail('zscore')">
+                <div class="feature-icon">
+                    <i class="fas fa-map-location-dot"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Analisis Kerawanan</h3>
+                <p class="text-gray-600 text-sm">
+                    Identifikasi zona rawan menggunakan metode Z-Score
+                </p>
+            </div>
+
+            <!-- AHC -->
+            <div class="feature-card cursor-pointer" onclick="toggleDetail('ahc')">
+                <div class="feature-icon">
+                    <i class="fas fa-diagram-project"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Faktor Penyebab</h3>
+                <p class="text-gray-600 text-sm">
+                    Analisis faktor kecelakaan dengan AHC
+                </p>
+            </div>
+
+            <!-- K-Means -->
+            <div class="feature-card cursor-pointer" onclick="toggleDetail('kmeans')">
+                <div class="feature-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Pola Waktu</h3>
+                <p class="text-gray-600 text-sm">
+                    Identifikasi pola waktu menggunakan K-Means
+                </p>
+            </div>
+
+        </div>
+
+        <!-- Detail Section -->
+        <div class="mt-12">
+
+            <!-- Z-Score -->
+            <div id="zscore" class="hidden">
+                <h3 class="text-xl font-bold mb-6 text-center">
+                    Analisis Kerawanan (Z-Score)
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="feature-card">
+                        <h4 class="font-semibold mb-2">Peta Interaktif</h4>
+                        <p class="text-sm text-gray-600">
+                            Visualisasi data kecelakaan pada peta dengan segmen jalan yang dikategorikan berdasarkan tingkat kerawanan
+                        </p>
+                    </div>
+
+                    <div class="feature-card">
+                        <h4 class="font-semibold mb-2">Analisis Z-Score</h4>
+                        <p class="text-sm text-gray-600">
+                            Perhitungan statistik per ruas jalan dengan interval dinamis untuk identifikasi zona kerawanan secara akurat
+                        </p>
+                    </div>
+
+                    <div class="feature-card">
+                        <h4 class="font-semibold mb-2">Segmentasi Jalan</h4>
+                        <p class="text-sm text-gray-600">
+                            Pembagian ruas jalan menjadi segmen-segmen untuk analisis detail tingkat kerawanan kecelakaan
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AHC -->
+            <div id="ahc" class="hidden">
+                <h3 class="text-xl font-bold mb-6 text-center">
+                    Analisis Faktor Penyebab (AHC)
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="feature-card">
+                        <h4 class="font-semibold mb-2">Clustering Faktor</h4>
+                        <p class="text-sm text-gray-600">
+                            Pengelompokan faktor kecelakaan
+                        </p>
+                    </div>
+
+                    <div class="feature-card">
+                        <h4 class="font-semibold mb-2">Dendrogram</h4>
+                        <p class="text-sm text-gray-600">
+                            Visualisasi hubungan antar faktor
+                        </p>
+                    </div>
+
+                    <div class="feature-card">
+                        <h4 class="font-semibold mb-2">Insight Penyebab</h4>
+                        <p class="text-sm text-gray-600">
+                            Identifikasi faktor dominan
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- K-Means -->
+            <div id="kmeans" class="hidden">
+                <h3 class="text-xl font-bold mb-6 text-center">
+                    Analisis Pola Waktu (K-Means)
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="feature-card">
+                        <h4 class="font-semibold mb-2">Clustering Waktu</h4>
+                        <p class="text-sm text-gray-600">
+                            Pengelompokan berdasarkan waktu
+                        </p>
+                    </div>
+
+                    <div class="feature-card">
+                        <h4 class="font-semibold mb-2">Visualisasi Pola</h4>
+                        <p class="text-sm text-gray-600">
+                            Grafik distribusi kejadian
+                        </p>
+                    </div>
+
+                    <div class="feature-card">
+                        <h4 class="font-semibold mb-2">Zona Waktu Rawan</h4>
+                        <p class="text-sm text-gray-600">
+                            Identifikasi periode berisiko
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+<script>
+function toggleDetail(id) {
+    const sections = ['zscore', 'ahc', 'kmeans'];
+
+    sections.forEach(sec => {
+        const el = document.getElementById(sec);
+
+        if (el) {
+            if (sec === id) {
+                el.classList.toggle('hidden');
+            } else {
+                el.classList.add('hidden');
+            }
+        }
+    });
+}
+</script>
+
 
     <!-- Statistics Section -->
     <section class="bg-gray-100 py-16 px-4">
@@ -216,17 +440,30 @@
     <!-- CTA Section -->
     <section class="bg-blue text-white py-16 px-4">
         <div class="max-w-7xl mx-auto text-center">
-            <h2 class="text-3xl font-bold mb-4">Siap Menggunakan Smart Accident?</h2>
-            <p class="text-lg mb-8 opacity-90">Jelajahi peta kerawanan kecelakaan dan identifikasi zona-zona berbahaya</p>
-            <a href="/peta-user/" class="inline-block bg-white text-blue px-8 py-3 rounded font-bold hover:bg-gray-100 transition">
-                <i class="fas fa-map mr-2"></i>Buka Peta Sekarang
-            </a>
+            <h2 class="text-3xl font-bold mb-4">
+                Siap Mengeksplorasi Analisis Kecelakaan?
+            </h2>
+            <p class="text-lg mb-8 opacity-90 max-w-2xl mx-auto">
+                Temukan insight dari analisis kerawanan, faktor penyebab, dan pola waktu kecelakaan 
+                untuk memahami kondisi lalu lintas secara lebih menyeluruh.
+            </p>
+
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <a href="/peta-user/" class="inline-block bg-white text-blue px-8 py-3 rounded font-bold hover:bg-gray-100 transition">
+                    <i class="fas fa-map mr-2"></i>Lihat Peta
+                </a>
+
+                <a href="#features" class="inline-block border-2 border-white px-8 py-3 rounded font-bold hover:bg-white hover:text-blue transition">
+                    <i class="fas fa-chart-line mr-2"></i>Lihat Analisis
+                </a>
+            </div>
         </div>
     </section>
 
     <!-- Footer -->
     <footer class="bg-gray-900 text-gray-300 py-8 px-4 text-center">
-        <p>&copy; 2025 Smart Accident - Sistem Pemetaan dan Analisis Kerawanan Kecelakaan Lalu Lintas</p>
+            &copy; 2025 <span class="font-semibold text-white">Smart Accident</span> — 
+            Platform analisis kecelakaan lalu lintas berbasis data
     </footer>
 
     <script>
