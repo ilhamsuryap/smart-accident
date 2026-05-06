@@ -142,10 +142,10 @@ def dashboard_view(request):
     cluster_data = ClusterData.objects.all()
     context['total_cluster_data'] = cluster_data.count()
     
-    # 1. Top 5 Jenis Kendaraan
+    # 1. Distribusi Jenis Kendaraan (Semua data)
     context['top_vehicles'] = list(cluster_data.values('jenis_kendaraan').annotate(
         count=Count('id')
-    ).order_by('-count')[:5])
+    ).order_by('-count'))
     
     # 2. Distribusi Hari (Top Days)
     context['day_dist'] = list(cluster_data.values('hari').annotate(
