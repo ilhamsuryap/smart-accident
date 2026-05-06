@@ -257,7 +257,7 @@
 
                                 <!-- Foto -->
                                 <img 
-                                    src="/static/img/default-user.png"
+                                    src="{% if request.user.profile.foto %}{{ request.user.profile.foto.url }}{% else %}/static/img/default-user.png{% endif %}"
                                     alt="profile"
                                     class="w-8 h-8 rounded-full object-cover border border-white"
                                 >
