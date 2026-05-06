@@ -3,114 +3,126 @@
 {% block title %}Profil Saya{% endblock %}
 
 {% block content %}
-<form method="POST">
+<form method="POST" enctype="multipart/form-data">
     {% csrf_token %}
 
-    <div class="max-w-4xl mx-auto">
+    <div class="max-w-5xl mx-auto space-y-6">
 
         <!-- ================= CARD ATAS ================= -->
-        <div class="bg-white rounded-2xl shadow-md p-6 mb-6 flex items-center justify-between">
+        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 flex items-center justify-between">
 
             <div class="flex items-center gap-6">
-                <img src="/static/img/default-user.png"
-                     class="w-24 h-24 rounded-full border object-cover">
 
+                <!-- FOTO PROFILE -->
+                <div class="relative group">
+                    <label for="fotoInput" class="cursor-pointer">
+                        <img id="previewFoto"
+                             src="{% if user.profile.foto %}{{ user.profile.foto.url }}{% else %}/static/img/default-user.png{% endif %}"
+                             class="w-28 h-28 rounded-full object-cover border-4 border-white shadow-md transition duration-300 group-hover:scale-105">
+
+                        <!-- overlay -->
+                        <div id="editOverlay"
+                             class="hidden absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                            Ganti Foto
+                        </div>
+                    </label>
+
+                    <input type="file" name="foto" id="fotoInput"
+                           class="hidden"
+                           accept="image/*"
+                           onchange="previewImage(event)">
+                </div>
+
+                <!-- INFO -->
                 <div>
-                    <h2 class="text-2xl font-bold">
+                    <h2 class="text-2xl font-semibold text-gray-800">
                         {{ user.username }}
                     </h2>
-                    <p class="text-gray-500">{{ user.email }}</p>
+                    <p class="text-gray-500 text-sm">{{ user.email }}</p>
                 </div>
             </div>
 
-            <!-- tombol tetap di atas -->
+            <!-- BUTTON -->
             <button type="button" onclick="toggleEdit()"
                     id="btnEdit"
-                    class="bg-blue text-white px-4 py-2 rounded">
+                    class="bg-blue-600 hover:bg-blue-700 transition text-white px-5 py-2 rounded-xl shadow-sm">
                 Edit Profil
             </button>
         </div>
 
-        <!-- ================= CARD KEDUA ================= -->
-        <div class="bg-white rounded-2xl shadow-md p-6">
+        <!-- ================= CARD DATA ================= -->
+        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
 
             <!-- ===== MODE VIEW ===== -->
-    <div id="viewData" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div id="viewData" class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        <div>
-            <p class="text-sm text-gray-500">Username</p>
-            <p class="font-semibold">{{ user.username }}</p>
+                <div class="bg-gray-50 p-4 rounded-xl">
+                    <p class="text-xs text-gray-500 mb-1">Username</p>
+                    <p class="font-semibold text-gray-800">{{ user.username }}</p>
+                </div>
+
+                <div class="bg-gray-50 p-4 rounded-xl">
+                    <p class="text-xs text-gray-500 mb-1">Nama Lengkap</p>
+                    <p class="font-semibold text-gray-800">
+                        {{ user.first_name }} {{ user.last_name }}
+                    </p>
+                </div>
+
+                <div class="bg-gray-50 p-4 rounded-xl">
+                    <p class="text-xs text-gray-500 mb-1">Alamat</p>
+                    <p class="font-semibold text-gray-800">
+                        {{ user.profile.alamat|default:"-" }}
+                    </p>
+                </div>
+
+                <div class="bg-gray-50 p-4 rounded-xl">
+                    <p class="text-xs text-gray-500 mb-1">Email</p>
+                    <p class="font-semibold text-gray-800">{{ user.email }}</p>
+                </div>
+
+            </div>
+
+            <!-- ===== MODE EDIT ===== -->
+            <div id="editData" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <div>
+                    <label class="text-sm text-gray-500">Username</label>
+                    <input type="text" name="username"
+                        value="{{ user.username }}"
+                        class="mt-1 border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none p-3 rounded-xl w-full">
+                </div>
+
+                <div>
+                    <label class="text-sm text-gray-500">Nama Lengkap</label>
+                    <input type="text" name="full_name"
+                        value="{{ user.first_name }} {{ user.last_name }}"
+                        class="mt-1 border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none p-3 rounded-xl w-full">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="text-sm text-gray-500">Email</label>
+                    <input type="email" name="email"
+                        value="{{ user.email }}"
+                        class="mt-1 border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none p-3 rounded-xl w-full">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="text-sm text-gray-500">Alamat</label>
+                    <textarea name="alamat"
+                        rows="3"
+                        class="mt-1 border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none p-3 rounded-xl w-full">{{ user.profile.alamat }}</textarea>
+                </div>
+
+                <div class="md:col-span-2">
+                    <button type="submit"
+                            class="w-full bg-green-600 hover:bg-green-700 transition text-white py-3 rounded-xl shadow-sm font-medium">
+                        Simpan Perubahan
+                    </button>
+                </div>
+
+            </div>
+
         </div>
-
-        <div>
-            <p class="text-sm text-gray-500">Nama Lengkap</p>
-            <p class="font-semibold">
-                {{ user.first_name }} {{ user.last_name }}
-            </p>
-        </div>
-
-        <div>
-            <p class="text-sm text-gray-500">Alamat</p>
-            <p class="font-semibold">
-                {{ user.profile.alamat|default:"-" }}
-            </p>
-        </div>
-
-        <div>
-            <p class="text-sm text-gray-500">Email</p>
-            <p class="font-semibold">{{ user.email }}</p>
-        </div>
-
-    </div>
-
-
-    <!-- ===== MODE EDIT ===== -->
-    <div id="editData" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
-
-        <!-- Username -->
-        <div>
-            <label class="text-sm text-gray-500">Username</label>
-            <input type="text" name="username"
-                value="{{ user.username }}"
-                class="border p-2 rounded w-full">
-        </div>
-
-        <!-- Nama Lengkap -->
-        <div>
-            <label class="text-sm text-gray-500">Nama Lengkap</label>
-            <input type="text" name="full_name"
-                value="{{ user.first_name }} {{ user.last_name }}"
-                class="border p-2 rounded w-full">
-        </div>
-
-        <!-- Email -->
-        <div class="md:col-span-2">
-            <label class="text-sm text-gray-500">Email</label>
-            <input type="email" name="email"
-                value="{{ user.email }}"
-                class="border p-2 rounded w-full">
-        </div>
-
-        <!-- Alamat -->
-        <div class="md:col-span-2">
-            <label class="text-sm text-gray-500">Alamat</label>
-            <textarea name="alamat"
-                    class="border p-2 rounded w-full"
-                    rows="3">{{ user.profile.alamat }}</textarea>
-        </div>
-
-
-        <!-- Button -->
-        <div class="md:col-span-2">
-            <button type="submit"
-                    class="bg-green-600 text-white px-4 py-2 rounded w-full">
-                Simpan Perubahan
-            </button>
-        </div>
-
-    </div>
-
-    </div>
 
     </div>
 </form>
@@ -124,28 +136,39 @@ function toggleEdit() {
     const view = document.getElementById('viewData');
     const edit = document.getElementById('editData');
     const btn = document.getElementById('btnEdit');
+    const overlay = document.getElementById('editOverlay');
 
     if (!isEdit) {
-        // masuk mode edit
         view.classList.add('hidden');
         edit.classList.remove('hidden');
 
         btn.innerText = "Batal Edit";
-        btn.classList.remove('bg-blue');
-        btn.classList.add('bg-red-600');
+        btn.classList.remove('bg-blue-600');
+        btn.classList.add('bg-red-500');
+
+        overlay.classList.remove('hidden');
 
         isEdit = true;
     } else {
-        // keluar mode edit
         view.classList.remove('hidden');
         edit.classList.add('hidden');
 
         btn.innerText = "Edit Profil";
-        btn.classList.remove('bg-red-600');
-        btn.classList.add('bg-blue');
+        btn.classList.remove('bg-red-500');
+        btn.classList.add('bg-blue-600');
+
+        overlay.classList.add('hidden');
 
         isEdit = false;
     }
+}
+
+function previewImage(event) {
+    const reader = new FileReader();
+    reader.onload = function(){
+        document.getElementById('previewFoto').src = reader.result;
+    }
+    reader.readAsDataURL(event.target.files[0]);
 }
 </script>
 {% endblock %}

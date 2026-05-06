@@ -12,7 +12,10 @@ urlpatterns = [
     
     # Dashboard (Admin)
     path('dashboard/', views.dashboard_view, name='dashboard'),
-    path('profile/', views.profile_view, name='profile'),
+    
+
+    # Profil Pengguna
+    path('profile/', views.profile, name='profile'),
     
     
     # Ruas Jalan (Admin)
