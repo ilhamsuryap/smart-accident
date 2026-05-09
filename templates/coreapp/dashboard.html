@@ -121,7 +121,7 @@
             <i class="fas fa-database text-blue-600"></i> Statistik Data Kecelakaan (Cluster Data)
         </h2>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             <!-- Total Data Cluster -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-blue-600 hover:shadow-md transition-shadow">
                 <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Data</p>
@@ -154,11 +154,27 @@
                     <p class="text-xs text-green-500 font-bold">{{ top_tkp.0.count|default:0 }} Kejadian</p>
                 </div>
             </div>
+            <!-- Top Cause -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-red-500 hover:shadow-md transition-shadow">
+                <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Penyebab Dominan</p>
+                <div class="mt-1">
+                    <p class="text-sm font-bold text-gray-800 truncate" title="{{ dominant_cause }}">{{ dominant_cause|title|default:"-" }}</p>
+                    <p class="text-xs text-red-500 font-bold">{{ dominant_cause_count|default:0 }} Kejadian</p>
+                </div>
+            </div>
+            <!-- Top Age Range -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-yellow-500 hover:shadow-md transition-shadow">
+                <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Usia Terbanyak</p>
+                <div class="mt-1">
+                    <p class="text-sm font-bold text-gray-800">{{ top_age_range|default:"-" }}</p>
+                    <p class="text-xs text-yellow-500 font-bold">{{ top_age_range_count|default:0 }} Kejadian</p>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Diagram Statistik Data Cluster -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
         <!-- Vehicle Chart -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
             <h5 class="text-lg font-bold mb-6 flex items-center gap-2">
@@ -178,6 +194,26 @@
                 <canvas id="dayChart"></canvas>
             </div>
         </div>
+
+        <!-- Age Chart -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <h5 class="text-lg font-bold mb-6 flex items-center gap-2">
+                <i class="fas fa-user-clock text-yellow-500"></i> Distribusi Umur
+            </h5>
+            <div class="h-80 relative">
+                <canvas id="ageChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Cause Chart -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow lg:col-span-3">
+            <h5 class="text-lg font-bold mb-6 flex items-center gap-2">
+                <i class="fas fa-exclamation-circle text-red-500"></i> Distribusi Penyebab Kejadian
+            </h5>
+            <div class="h-96 relative">
+                <canvas id="causeChart"></canvas>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -186,18 +222,28 @@
 {% block extra_js %}
 {{ top_vehicles|json_script:"vehicles-data" }}
 {{ day_dist|json_script:"days-data" }}
+{{ causes_dist|json_script:"causes-data" }}
+{{ age_dist|json_script:"age-data" }}
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     // Data Preparation from JSON scripts
     const vehiclesRaw = JSON.parse(document.getElementById('vehicles-data').textContent);
     const daysRaw = JSON.parse(document.getElementById('days-data').textContent);
+    const causesRaw = JSON.parse(document.getElementById('causes-data').textContent);
+    const ageRaw = JSON.parse(document.getElementById('age-data').textContent);
 
     const vehicleLabels = vehiclesRaw.map(v => v.jenis_kendaraan);
     const vehicleData = vehiclesRaw.map(v => v.count);
     
     const dayLabels = daysRaw.map(d => d.hari);
     const dayData = daysRaw.map(d => d.count);
+
+    const causeLabels = causesRaw.map(c => c.penyebab);
+    const causeData = causesRaw.map(c => c.count);
+    
+    const ageLabels = ageRaw.map(a => a.range);
+    const ageData = ageRaw.map(a => a.count);
 
     // Vehicle Chart
     const ctxV = document.getElementById('vehicleChart').getContext('2d');
@@ -251,6 +297,63 @@
             scales: {
                 y: { beginAtZero: true, grid: { color: '#f3f4f6' } },
                 x: { grid: { display: false } }
+            }
+        }
+    });
+
+    // Cause Chart (Vertical Bar)
+    const ctxC = document.getElementById('causeChart').getContext('2d');
+    new Chart(ctxC, {
+        type: 'bar',
+        data: {
+            labels: causeLabels,
+            datasets: [{
+                label: 'Jumlah Kejadian',
+                data: causeData,
+                backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                hoverBackgroundColor: '#dc2626',
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#f3f4f6' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    // Age Chart (Pie Chart)
+    const ctxA = document.getElementById('ageChart').getContext('2d');
+    new Chart(ctxA, {
+        type: 'pie',
+        data: {
+            labels: ageLabels,
+            datasets: [{
+                data: ageData,
+                backgroundColor: [
+                    '#f59e0b', '#ef4444', '#10b981', '#3b82f6', '#8b5cf6',
+                    '#ec4899', '#06b6d4'
+                ],
+                borderWidth: 1,
+                hoverOffset: 10
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: { padding: 12, cornerRadius: 10 }
             }
         }
     });
