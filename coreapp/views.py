@@ -2849,3 +2849,37 @@ from .utils_ahc import (
     ahc_ai_explain,
     ahc_rekomendasi
 )
+
+
+#profile view
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from .models import Profile
+
+@login_required
+def profile(request):
+    user = request.user
+
+    # 🔥 PASTIKAN PROFILE ADA
+    profile, created = Profile.objects.get_or_create(user=user)
+
+    if request.method == "POST":
+        user.username = request.POST.get('username')
+        user.email = request.POST.get('email')
+
+        full_name = request.POST.get('full_name').split(" ")
+        user.first_name = full_name[0]
+        user.last_name = " ".join(full_name[1:])
+
+        user.save()
+
+        profile.alamat = request.POST.get('alamat')
+
+        if request.FILES.get('foto'):
+            profile.foto = request.FILES.get('foto')
+
+        profile.save()
+
+        return redirect('profile')
+
+    return render(request, 'profile.html')
