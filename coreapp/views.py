@@ -162,6 +162,58 @@ def dashboard_view(request):
         count=Count('id')
     ).order_by('-count')[:5])
 
+    # 5. Distribusi Penyebab (Cleaned)
+    all_cluster_data = list(cluster_data)
+    causes_map = {}
+    for item in all_cluster_data:
+        cause = item.penyebab.strip().lower() if item.penyebab else 'tidak diketahui'
+        causes_map[cause] = causes_map.get(cause, 0) + 1
+        
+    sorted_causes = [{'penyebab': k, 'count': v} for k, v in sorted(causes_map.items(), key=lambda x: x[1], reverse=True)]
+    context['causes_dist'] = sorted_causes
+    
+    if sorted_causes:
+        context['dominant_cause'] = sorted_causes[0]['penyebab']
+        context['dominant_cause_count'] = sorted_causes[0]['count']
+    else:
+        context['dominant_cause'] = 'N/A'
+        context['dominant_cause_count'] = 0
+        
+    # 6. Distribusi Umur (7 Groups)
+    age_groups = {
+        '< 15': 0,
+        '15-24': 0,
+        '25-34': 0,
+        '35-44': 0,
+        '45-54': 0,
+        '55-64': 0,
+        '65+': 0
+    }
+    
+    for item in all_cluster_data:
+        age = item.umur
+        if age < 15:
+            age_groups['< 15'] += 1
+        elif 15 <= age <= 24:
+            age_groups['15-24'] += 1
+        elif 25 <= age <= 34:
+            age_groups['25-34'] += 1
+        elif 35 <= age <= 44:
+            age_groups['35-44'] += 1
+        elif 45 <= age <= 54:
+            age_groups['45-54'] += 1
+        elif 55 <= age <= 64:
+            age_groups['55-64'] += 1
+        else:
+            age_groups['65+'] += 1
+            
+    context['age_dist'] = [{'range': k, 'count': v} for k, v in age_groups.items()]
+    
+    # Find top age range
+    top_age_range = max(age_groups, key=age_groups.get) if age_groups else 'N/A'
+    context['top_age_range'] = top_age_range
+    context['top_age_range_count'] = age_groups.get(top_age_range, 0)
+
     return render(request, 'coreapp/dashboard.html', context)
 
 
