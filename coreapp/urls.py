@@ -55,6 +55,14 @@ urlpatterns = [
 
     # ================= KMEANS =================
     # ================= CLUSTER DATA (Unified) =================
+    path('laka-mentah/', views.laka_mentah_list, name='laka_mentah_list'),
+    path('laka-mentah/tambah/', views.laka_mentah_tambah, name='laka_mentah_tambah'),
+    path('laka-mentah/edit/<int:pk>/', views.laka_mentah_edit, name='laka_mentah_edit'),
+    path('laka-mentah/import/', views.laka_mentah_import, name='laka_mentah_import'),
+    path('laka-mentah/hapus/<int:pk>/', views.laka_mentah_hapus, name='laka_mentah_hapus'),
+    path('laka-mentah/hapus-duplikat/', views.laka_mentah_hapus_duplikat, name='laka_mentah_hapus_duplikat'),
+    path('laka-mentah/hapus-semua/', views.laka_mentah_hapus_semua, name='laka_mentah_hapus_semua'),
+
     path('cluster-data/', views.cluster_data_list, name='cluster_data_list'),
     path('cluster-data/tambah/', views.cluster_data_tambah, name='cluster_data_tambah'),
     path('cluster-data/edit/<int:pk>/', views.cluster_data_edit, name='cluster_data_edit'),
