@@ -1,0 +1,496 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="max-w-7xl mx-auto pt-6 pb-10">
+
+    <!-- TITLE -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">
+                Data Laka Mentah (Raw Data)
+            </h1>
+            <p class="text-gray-500 mt-1">
+                Kelola data mentah kecelakaan lalu lintas literal dari Laporan Kepolisian
+            </p>
+        </div>
+        <div class="flex gap-2 w-full md:w-auto">
+            <!-- Search bar -->
+            <form method="GET" action="{% url 'laka_mentah_list' %}" class="flex-1 md:flex-initial flex gap-2">
+                <input type="text" name="search" value="{{ search_query }}" placeholder="Cari laporan, tanggal, TKP..." class="px-4 py-2 border rounded-lg text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button type="submit" class="bg-gray-800 hover:bg-black text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                    <i class="fas fa-search"></i>
+                </button>
+                {% if search_query %}
+                <a href="{% url 'laka_mentah_list' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center">Reset</a>
+                {% endif %}
+            </form>
+            <button onclick="document.getElementById('importModal').classList.remove('hidden')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm flex items-center gap-2">
+                <i class="fas fa-file-excel"></i> Import Excel
+            </button>
+            <a href="{% url 'laka_mentah_tambah' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm flex items-center gap-2 whitespace-nowrap">
+                <i class="fas fa-plus"></i> Tambah Data
+            </a>
+        </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <p class="text-sm text-gray-500 font-medium">Total Data</p>
+            <p class="text-3xl font-bold text-blue-600">{{ total_data }}</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer" onclick="openDuplicateModal()">
+            <p class="text-sm text-gray-500 font-medium">Duplikasi Laporan</p>
+            <div class="flex items-end justify-between">
+                <p class="text-3xl font-bold text-orange-500">{{ jumlah_duplikat }}</p>
+                {% if jumlah_duplikat > 0 %}
+                <span class="text-xs text-orange-400 underline">Lihat Detail</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-500 font-medium">Kosongkan Data</p>
+                <p class="text-xs text-red-400">Tindakan ini permanen</p>
+            </div>
+            <button data-confirm-title="Hapus Semua Data Mentah"
+                    data-confirm-message="PERINGATAN! Anda akan menghapus SELURUH data laka mentah di database. Tindakan ini permanen dan tidak dapat dibatalkan."
+                    data-confirm-url="{% url 'laka_mentah_hapus_semua' %}"
+                    onclick="showConfirmModalFromBtn(this)"
+                    class="text-red-600 hover:bg-red-50 p-2 rounded-lg transition" title="Hapus Semua Data">
+                <i class="fas fa-trash-alt text-xl"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="overflow-x-auto relative">
+            <table class="w-full text-sm text-left border-collapse min-w-max">
+                <thead class="bg-gray-50 text-gray-700 border-b">
+                    <tr>
+                        <th class="px-6 py-4 font-bold text-center">NO</th>
+                        <th class="px-6 py-4 font-bold">LAP. POL</th>
+                        <th class="px-6 py-4 font-bold">TANGGAL</th>
+                        <th class="px-6 py-4 font-bold">URAIAN KEJADIAN</th>
+                        <th class="px-6 py-4 font-bold">TKP</th>
+                        <th class="px-6 py-4 font-bold">TERLAPOR</th>
+                        <th class="px-6 py-4 font-bold">KORBAN</th>
+                        <th class="px-6 py-4 font-bold">BB</th>
+                        <th class="px-6 py-4 font-bold">KET</th>
+                        <th class="px-6 py-4 font-bold text-center sticky right-0 bg-gray-50 z-20 shadow-[-4px_0_4px_-2px_rgba(0,0,0,0.05)] border-l">AKSI</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for data in data_list %}
+                    <tr class="hover:bg-gray-50 transition group">
+                        <td class="px-6 py-4 text-center font-medium text-gray-500">{{ forloop.counter0|add:data_list.start_index }}</td>
+                        <td class="px-6 py-4 font-semibold text-gray-800">
+                            <div class="w-[180px] break-all whitespace-normal" title="{{ data.lap_pol }}">
+                                {{ data.lap_pol|default:"-" }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-gray-600 max-w-xs" title="{{ data.tanggal }}">
+                            {{ data.tanggal|default:"-"|truncatechars:73 }}
+                        </td>
+                        <td class="px-6 py-4 text-gray-600 max-w-sm" title="{{ data.uraian_kejadian }}">
+                            {{ data.uraian_kejadian|default:"-"|truncatechars:73 }}
+                        </td>
+                        <td class="px-6 py-4 text-gray-600 max-w-sm" title="{{ data.tkp }}">
+                            {{ data.tkp|default:"-"|truncatechars:73 }}
+                        </td>
+                        <td class="px-6 py-4 text-gray-600 max-w-xs" title="{{ data.terlapor }}">
+                            {{ data.terlapor|default:"-"|truncatechars:73 }}
+                        </td>
+                        <td class="px-6 py-4 text-gray-600 max-w-xs" title="{{ data.korban }}">
+                            {{ data.korban|default:"-"|truncatechars:73 }}
+                        </td>
+                        <td class="px-6 py-4 text-gray-600 max-w-xs" title="{{ data.bb }}">
+                            {{ data.bb|default:"-"|truncatechars:73 }}
+                        </td>
+                        <td class="px-6 py-4 text-gray-600 max-w-xs" title="{{ data.ket }}">
+                            {{ data.ket|default:"-"|truncatechars:73 }}
+                        </td>
+                        <td class="px-6 py-4 text-center sticky right-0 bg-white z-10 shadow-[-4px_0_4px_-2px_rgba(0,0,0,0.05)] border-l group-hover:bg-gray-50 transition">
+                            <div class="flex items-center justify-center gap-3">
+                                <!-- Detail Button -->
+                                <button data-lap-pol="{{ data.lap_pol|default:'' }}"
+                                        data-tanggal="{{ data.tanggal|default:'' }}"
+                                        data-tkp="{{ data.tkp|default:'' }}"
+                                        data-ket="{{ data.ket|default:'' }}"
+                                        data-uraian="{{ data.uraian_kejadian|default:'' }}"
+                                        data-terlapor="{{ data.terlapor|default:'' }}"
+                                        data-korban="{{ data.korban|default:'' }}"
+                                        data-bb="{{ data.bb|default:'' }}"
+                                        onclick="showDetailModalFromBtn(this)"
+                                        class="text-green-500 hover:text-green-700 transition" title="Lihat Detail Kejadian">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <!-- Edit Button -->
+                                <a href="{% url 'laka_mentah_edit' data.pk %}" class="text-blue-500 hover:text-blue-700 transition" title="Edit Data">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <!-- Delete Button -->
+                                <button data-confirm-title="Hapus Data Mentah"
+                                        data-confirm-message="Apakah Anda yakin ingin menghapus data laporan polisi ini?"
+                                        data-confirm-url="{% url 'laka_mentah_hapus' data.pk %}"
+                                        onclick="showConfirmModalFromBtn(this)"
+                                        class="text-red-500 hover:text-red-700 transition" title="Hapus Data">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="px-6 py-12 text-center text-gray-500">
+                            <div class="flex flex-col items-center">
+                                <i class="fas fa-file-excel text-5xl mb-4 text-gray-300"></i>
+                                <p class="font-medium text-gray-600">Belum ada data mentah tersedia.</p>
+                                <p class="text-xs text-gray-400 mt-1">Silakan impor file Excel atau tambah secara manual.</p>
+                                <a href="{% url 'laka_mentah_tambah' %}" class="mt-4 text-blue-600 hover:underline text-sm font-semibold">Tambah data manual pertama</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- PAGINATION -->
+    {% if data_list.has_other_pages %}
+    <div class="mt-6 flex justify-center">
+        <nav class="flex items-center gap-1">
+            {% if data_list.has_previous %}
+                <a href="?page={{ data_list.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            {% endif %}
+
+            {% for i in data_list.paginator.page_range %}
+                {% if data_list.number == i %}
+                    <span class="px-4 py-2 bg-blue-600 border border-blue-600 rounded-lg text-sm text-white font-bold">{{ i }}</span>
+                {% elif i > data_list.number|add:'-3' and i < data_list.number|add:'3' %}
+                    <a href="?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">{{ i }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if data_list.has_next %}
+                <a href="?page={{ data_list.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            {% endif %}
+        </nav>
+    </div>
+    <div class="text-center mt-2">
+        <p class="text-xs text-gray-500">Menampilkan halaman {{ data_list.number }} dari {{ data_list.paginator.num_pages }}</p>
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- IMPORT MODAL -->
+<div id="importModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-gray-800">Import Data Laka Mentah</h3>
+            <button onclick="document.getElementById('importModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form action="{% url 'laka_mentah_import' %}" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Pilih File Excel Laka Mentah</label>
+                <div class="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center hover:border-blue-400 transition cursor-pointer" onclick="document.getElementById('fileInput').click()">
+                    <i class="fas fa-file-excel text-4xl text-green-500 mb-3"></i>
+                    <p class="text-sm font-semibold text-gray-600" id="fileNameLabel">Klik untuk memilih file</p>
+                    <p class="text-[10px] text-gray-400 mt-1">Mendukung format file .xlsx, .xls</p>
+                    <input type="file" name="file" id="fileInput" class="hidden" accept=".xlsx, .xls" onchange="document.getElementById('fileNameLabel').innerText = this.files[0].name">
+                </div>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button type="button" onclick="document.getElementById('importModal').classList.add('hidden')" class="px-4 py-2 text-gray-600 font-medium">Batal</button>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition">Mulai Import</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- DUPLICATE DATA MODAL -->
+<div id="duplicateModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-4xl w-full p-6 max-h-[90vh] flex flex-col">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h3 class="text-xl font-bold text-gray-800">Deteksi Laporan Polisi Duplikat</h3>
+                <p class="text-sm text-gray-500">Ditemukan {{ jumlah_duplikat }} baris data duplikat berdasarkan nomor laporan (LAP. POL)</p>
+            </div>
+            <button onclick="document.getElementById('duplicateModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <div class="overflow-y-auto flex-1 mb-6 border rounded-xl">
+            <table class="w-full text-sm text-left border-collapse">
+                <thead class="bg-gray-50 text-gray-700 border-b sticky top-0">
+                    <tr>
+                        <th class="px-4 py-3 font-bold">Nomor Laporan Polisi</th>
+                        <th class="px-4 py-3 font-bold">TKP / Tanggal Contoh</th>
+                        <th class="px-4 py-3 font-bold text-center">Jumlah Baris</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for item in duplicate_data_details %}
+                    <tr>
+                        <td class="px-4 py-3 font-semibold text-gray-800">{{ item.example.lap_pol }}</td>
+                        <td class="px-4 py-3">
+                            <div class="text-xs text-gray-600 truncate max-w-sm" title="{{ item.example.tkp }}">{{ item.example.tkp }}</div>
+                            <div class="text-[10px] text-gray-400 mt-1">{{ item.example.tanggal|truncatechars:50 }}</div>
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-bold text-xs">
+                                {{ item.count }}x
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="px-4 py-10 text-center text-gray-500">
+                            Hebat! Tidak ada data laporan polisi duplikat.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="flex justify-between items-center bg-gray-50 p-4 rounded-xl">
+            <div class="text-sm text-gray-600">
+                <i class="fas fa-info-circle text-blue-500"></i> Penghapusan akan memelihara baris data pertama dan membuang salinan lainnya secara otomatis.
+            </div>
+            <div class="flex gap-3">
+                <button type="button" onclick="document.getElementById('duplicateModal').classList.add('hidden')" class="px-4 py-2 text-gray-600 font-medium">Tutup</button>
+                {% if jumlah_duplikat > 0 %}
+                <button type="button" onclick="showDuplicateConfirm()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm">
+                    <i class="fas fa-trash-alt"></i> Hapus Semua Duplikat
+                </button>
+                <form id="deleteDuplicateForm" action="{% url 'laka_mentah_hapus_duplikat' %}" method="POST" class="hidden">
+                    {% csrf_token %}
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- DATA DETAIL MODAL (MODAL INTERAKTIF) -->
+<div id="detailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full p-6 max-h-[90vh] flex flex-col">
+        <div class="flex justify-between items-center mb-4 border-b pb-4">
+            <div>
+                <span class="text-xs text-blue-600 font-bold tracking-wider uppercase" id="detailSubTitle">Detail Data Laka Mentah</span>
+                <h3 class="text-xl font-bold text-gray-800 mt-1" id="detailTitle">Laporan Polisi</h3>
+            </div>
+            <button onclick="closeDetailModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <div class="overflow-y-auto flex-1 space-y-5 pr-2">
+            <!-- KET only - full width (no more Excel row number) -->
+            <div class="bg-gray-50 p-3 rounded-lg">
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Keterangan Korban (KET)</p>
+                <p class="text-sm font-bold text-blue-700 mt-1" id="detailKet">-</p>
+            </div>
+
+            <!-- TANGGAL MENTAH -->
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Tanggal & Waktu Kejadian</p>
+                <p class="text-sm text-gray-700 font-medium mt-1 whitespace-pre-line" id="detailTanggal">-</p>
+            </div>
+
+            <!-- TKP MENTAH -->
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Tempat Kejadian Perkara (TKP)</p>
+                <p class="text-sm text-gray-700 font-medium mt-1 whitespace-pre-line" id="detailTKP">-</p>
+            </div>
+
+            <!-- URAIAN KEJADIAN -->
+            <div class="bg-gray-50 p-4 rounded-lg border-l-4 border-blue-500">
+                <p class="text-[10px] text-blue-500 font-bold uppercase tracking-wider">Uraian / Kronologi Kejadian</p>
+                <p class="text-sm text-gray-800 mt-1 leading-relaxed whitespace-pre-line" id="detailUraian">-</p>
+            </div>
+
+            <!-- TERLAPOR -->
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Terlapor / Pengendara</p>
+                <p class="text-sm text-gray-700 mt-1 whitespace-pre-line" id="detailTerlapor">-</p>
+            </div>
+
+            <!-- KORBAN -->
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Korban Laka</p>
+                <p class="text-sm text-gray-700 mt-1 whitespace-pre-line" id="detailKorban">-</p>
+            </div>
+
+            <!-- BARANG BUKTI -->
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Barang Bukti (BB)</p>
+                <p class="text-sm text-gray-700 mt-1 whitespace-pre-line" id="detailBB">-</p>
+            </div>
+        </div>
+
+        <div class="flex justify-end pt-4 border-t mt-4">
+            <button type="button" onclick="closeDetailModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-bold transition text-sm">
+                Tutup Detail
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- UNIVERSAL CONFIRMATION MODAL -->
+<div id="confirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center transform transition-all">
+        <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-exclamation-triangle text-2xl"></i>
+        </div>
+        <h3 id="confirmTitle" class="text-xl font-bold text-gray-800 mb-2">Konfirmasi Hapus</h3>
+        <p id="confirmMessage" class="text-gray-500 mb-6 text-sm">Apakah Anda yakin ingin melakukan tindakan ini?</p>
+        
+        <div class="flex gap-3 justify-center">
+            <button onclick="closeConfirmModal()" class="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-xl transition text-sm">
+                Batal
+            </button>
+            <a id="confirmActionBtn" href="#" class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition text-sm">
+                Ya, Hapus
+            </a>
+            <button id="confirmSubmitBtn" onclick="submitConfirmForm()" class="hidden flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition text-sm">
+                Ya, Hapus
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let activeFormId = null;
+
+// ─── Scroll Lock Helpers ───────────────────────────────────────────────────
+function lockScroll()   { document.body.style.overflow = 'hidden'; }
+function unlockScroll() { document.body.style.overflow = ''; }
+
+// ─── Detail Modal ──────────────────────────────────────────────────────────
+function showDetailModal(lap_pol, tanggal, tkp, ket, uraian, terlapor, korban, bb) {
+    document.getElementById('detailTitle').innerText = lap_pol || "Laporan Tanpa Nomor";
+    document.getElementById('detailTanggal').innerText = tanggal || "-";
+    document.getElementById('detailTKP').innerText = tkp || "-";
+    document.getElementById('detailKet').innerText = ket || "-";
+    document.getElementById('detailUraian').innerText = uraian || "-";
+    document.getElementById('detailTerlapor').innerText = terlapor || "-";
+    document.getElementById('detailKorban').innerText = korban || "-";
+    document.getElementById('detailBB').innerText = bb || "-";
+    document.getElementById('detailModal').classList.remove('hidden');
+    lockScroll();
+}
+
+function closeDetailModal() {
+    document.getElementById('detailModal').classList.add('hidden');
+    unlockScroll();
+}
+
+function showDetailModalFromBtn(btn) {
+    showDetailModal(
+        btn.getAttribute('data-lap-pol'),
+        btn.getAttribute('data-tanggal'),
+        btn.getAttribute('data-tkp'),
+        btn.getAttribute('data-ket'),
+        btn.getAttribute('data-uraian'),
+        btn.getAttribute('data-terlapor'),
+        btn.getAttribute('data-korban'),
+        btn.getAttribute('data-bb')
+    );
+}
+
+// ─── Confirm Modal ─────────────────────────────────────────────────────────
+function showConfirmModal(title, message, url, formId = null) {
+    document.getElementById('confirmTitle').innerText = title;
+    document.getElementById('confirmMessage').innerText = message;
+
+    const actionBtn = document.getElementById('confirmActionBtn');
+    const submitBtn = document.getElementById('confirmSubmitBtn');
+
+    if (formId) {
+        actionBtn.classList.add('hidden');
+        submitBtn.classList.remove('hidden');
+        activeFormId = formId;
+    } else {
+        actionBtn.classList.remove('hidden');
+        submitBtn.classList.add('hidden');
+        actionBtn.href = url;
+    }
+
+    document.getElementById('confirmModal').classList.remove('hidden');
+    lockScroll();
+}
+
+function showConfirmModalFromBtn(btn) {
+    showConfirmModal(
+        btn.getAttribute('data-confirm-title'),
+        btn.getAttribute('data-confirm-message'),
+        btn.getAttribute('data-confirm-url')
+    );
+}
+
+function closeConfirmModal() {
+    document.getElementById('confirmModal').classList.add('hidden');
+    unlockScroll();
+}
+
+function submitConfirmForm() {
+    if (activeFormId) {
+        document.getElementById(activeFormId).submit();
+    }
+}
+
+// ─── Import & Duplicate Modal helpers ─────────────────────────────────────
+function openImportModal() {
+    document.getElementById('importModal').classList.remove('hidden');
+    lockScroll();
+}
+function closeImportModal() {
+    document.getElementById('importModal').classList.add('hidden');
+    unlockScroll();
+}
+
+function openDuplicateModal() {
+    document.getElementById('duplicateModal').classList.remove('hidden');
+    lockScroll();
+}
+function closeDuplicateModal() {
+    document.getElementById('duplicateModal').classList.add('hidden');
+    unlockScroll();
+}
+
+function showDuplicateConfirm() {
+    closeDuplicateModal();
+    showConfirmModal(
+        'Hapus Semua Duplikat',
+        'Sistem akan menghapus semua data laporan polisi duplikat dan menyisakan satu record unik saja. Lanjutkan?',
+        '#',
+        'deleteDuplicateForm'
+    );
+}
+
+// ─── ESC key closes any open modal ────────────────────────────────────────
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeDetailModal();
+        closeImportModal();
+        closeDuplicateModal();
+        closeConfirmModal();
+    }
+});
+</script>
+
+{% endblock %}

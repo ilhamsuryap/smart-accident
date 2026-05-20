@@ -43,7 +43,8 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import silhouette_score
 
-from .models import RuasJalan, SegmenJalan, Kecelakaan, RekapSegmen, AnalisisZScore, KecelakaanRaw, KecelakaanPreprosesing
+from .models import RuasJalan, SegmenJalan, Kecelakaan, RekapSegmen, AnalisisZScore, KecelakaanRaw, KecelakaanPreprosesing, LakaMentah
+from django.core.paginator import Paginator
 from .forms import (
     UserRegistrationForm, RuasJalanForm, SegmenJalanForm, 
     KecelakaanForm, RekapSegmenForm, UploadKecelakaanRawForm, UploadKecelakaanPreprosesForm
@@ -2075,7 +2076,11 @@ def get_ai_recommendation(request):
         
         if 'candidates' not in res_json or not res_json['candidates']:
             error_msg = res_json.get('error', {}).get('message', 'Gemini API tidak mengembalikan hasil.')
-            return JsonResponse({"success": False, "message": f"AI Error: {error_msg}"}, status=400)
+            http_code = response.status_code
+            # Jika error dari sisi Google (5xx/429), jangan propagate sebagai 400
+            friendly = "Server AI sedang sibuk atau overload. Silakan coba beberapa saat lagi." \
+                if http_code in (429, 503, 500, 502, 504) else f"AI Error: {error_msg}"
+            return JsonResponse({"success": False, "message": friendly}, status=200)
 
         raw_text = res_json['candidates'][0]['content']['parts'][0]['text']
         clean_text = raw_text.replace('```json', '').replace('```', '').strip()
@@ -2213,7 +2218,10 @@ def analyze_accident_clustering(request):
         
         if 'candidates' not in res_json or not res_json['candidates']:
             error_msg = res_json.get('error', {}).get('message', 'Gemini API tidak mengembalikan hasil.')
-            return JsonResponse({"success": False, "message": f"AI Error: {error_msg}"}, status=400)
+            http_code = response.status_code
+            friendly = "Server AI sedang sibuk atau overload. Silakan coba beberapa saat lagi." \
+                if http_code in (429, 503, 500, 502, 504) else f"AI Error: {error_msg}"
+            return JsonResponse({"success": False, "message": friendly}, status=200)
             
         raw_text = res_json['candidates'][0]['content']['parts'][0]['text']
         # Pembersihan jika ada markdown
@@ -2935,3 +2943,238 @@ def profile(request):
         return redirect('profile')
 
     return render(request, 'profile.html')
+
+
+# ==========================================
+# DATA LAKA MENTAH MANAGEMENT (CLUSTERING RAW DATA)
+# ==========================================
+
+@login_required(login_url='login')
+def laka_mentah_list(request):
+    all_data = LakaMentah.objects.all()
+    
+    # Pencarian
+    search = request.GET.get('search')
+    if search:
+        all_data = all_data.filter(
+            Q(lap_pol__icontains=search) |
+            Q(tanggal__icontains=search) |
+            Q(tkp__icontains=search) |
+            Q(uraian_kejadian__icontains=search)
+        )
+    
+    total_count = all_data.count()
+    
+    # Hitung duplikasi berdasarkan Nomor Laporan Polisi (LAP. POL) yang tidak kosong
+    duplicate_groups = LakaMentah.objects.exclude(lap_pol='').exclude(lap_pol__isnull=True).values(
+        'lap_pol'
+    ).annotate(count=Count('id')).filter(count__gt=1)
+    
+    jumlah_duplikat = sum(group['count'] - 1 for group in duplicate_groups)
+
+    # Ambil rincian data duplikat untuk modal
+    duplicate_data_details = []
+    for group in duplicate_groups:
+        example = LakaMentah.objects.filter(lap_pol=group['lap_pol']).first()
+        if example:
+            duplicate_data_details.append({
+                'example': example,
+                'count': group['count']
+            })
+
+    data_list = all_data.order_by('-id')  # data terbaru di atas
+
+    # Paginasi 20 item per halaman
+    paginator = Paginator(data_list, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'data_list': page_obj,
+        'total_data': total_count,
+        'jumlah_duplikat': jumlah_duplikat,
+        'duplicate_data_details': duplicate_data_details,
+        'search_query': search or '',
+    }
+    return render(request, 'coreapp/laka_mentah/list.html', context)
+
+
+@login_required(login_url='login')
+def laka_mentah_tambah(request):
+    if request.method == "POST":
+        LakaMentah.objects.create(
+            tanggal=request.POST.get('tanggal', '').strip(),
+            lap_pol=request.POST.get('lap_pol', '').strip(),
+            uraian_kejadian=request.POST.get('uraian_kejadian', '').strip(),
+            tkp=request.POST.get('tkp', '').strip(),
+            terlapor=request.POST.get('terlapor', '').strip(),
+            korban=request.POST.get('korban', '').strip(),
+            bb=request.POST.get('bb', '').strip(),
+            ket=request.POST.get('ket', '').strip()
+        )
+        messages.success(request, "Data Laka Mentah berhasil ditambahkan secara manual.")
+        return redirect('laka_mentah_list')
+
+    return render(request, 'coreapp/laka_mentah/tambah.html')
+
+
+@login_required(login_url='login')
+def laka_mentah_edit(request, pk):
+    data = get_object_or_404(LakaMentah, pk=pk)
+    
+    if request.method == "POST":
+        data.tanggal = request.POST.get('tanggal', '').strip()
+        data.lap_pol = request.POST.get('lap_pol', '').strip()
+        data.uraian_kejadian = request.POST.get('uraian_kejadian', '').strip()
+        data.tkp = request.POST.get('tkp', '').strip()
+        data.terlapor = request.POST.get('terlapor', '').strip()
+        data.korban = request.POST.get('korban', '').strip()
+        data.bb = request.POST.get('bb', '').strip()
+        data.ket = request.POST.get('ket', '').strip()
+        data.save()
+        
+        messages.success(request, "Data Laka Mentah berhasil diperbarui.")
+        return redirect('laka_mentah_list')
+
+    return render(request, 'coreapp/laka_mentah/edit.html', {'data': data})
+
+
+@login_required(login_url='login')
+def laka_mentah_import(request):
+    if request.method == "POST":
+        file = request.FILES.get('file')
+        if not file:
+            messages.error(request, "Silakan pilih file Excel terlebih dahulu.")
+            return redirect('laka_mentah_list')
+        
+        try:
+            # 1. Cari baris header secara dinamis (mencari baris yang mengandung 'LAP. POL' atau 'TANGGAL')
+            df_raw = pd.read_excel(file, header=None)
+            header_row_idx = None
+            for idx, row in df_raw.iterrows():
+                row_strs = [str(val).strip().upper() for val in row.values if pd.notna(val)]
+                # Periksa kecocokan nama kolom utama
+                if any('LAP. POL' in s or 'LAP.POL' in s or 'LAP POL' in s or 'LAPORAN POLISI' in s for s in row_strs):
+                    header_row_idx = idx
+                    break
+            
+            # Jika ditemukan, baca ulang file dengan baris header tersebut
+            if header_row_idx is not None:
+                df = pd.read_excel(file, header=header_row_idx)
+            else:
+                # Fallback default ke baris ke-6 (0-indexed)
+                df = pd.read_excel(file, header=6)
+            
+            df.columns = df.columns.str.strip()
+            
+            # 2. Mapping kolom agar sesuai dengan database (case-insensitive & clean)
+            col_map = {}
+            mapped_targets = set()
+            for col in df.columns:
+                low = str(col).lower()
+                target = None
+                if 'tanggal' in low and 'tanggal' not in mapped_targets:
+                    target = 'tanggal'
+                elif ('lap' in low or 'pol' in low) and 'lap_pol' not in mapped_targets:
+                    target = 'lap_pol'
+                elif ('uraian' in low or 'kejadian' in low) and 'uraian_kejadian' not in mapped_targets:
+                    target = 'uraian_kejadian'
+                elif ('tkp' in low or 'lokasi' in low) and 'tkp' not in mapped_targets:
+                    target = 'tkp'
+                elif 'terlapor' in low and 'terlapor' not in mapped_targets:
+                    target = 'terlapor'
+                elif 'korban' in low and 'korban' not in mapped_targets:
+                    target = 'korban'
+                elif ('bb' in low or 'bukti' in low) and 'bb' not in mapped_targets:
+                    target = 'bb'
+                elif 'ket' in low and 'ket' not in mapped_targets:
+                    target = 'ket'
+                
+                if target:
+                    col_map[col] = target
+                    mapped_targets.add(target)
+            
+            df = df.rename(columns=col_map)
+            
+            # 3. Masukkan data literal baris demi baris secara aman
+            count = 0
+            for _, row in df.iterrows():
+                # Helper untuk mendapatkan nilai tunggal secara aman (mengantisipasi Series duplikat)
+                def get_row_value(col_name):
+                    val = row.get(col_name)
+                    if isinstance(val, pd.Series):
+                        non_null = val.dropna()
+                        val = non_null.iloc[0] if not non_null.empty else None
+                    return val
+
+                tanggal_val = get_row_value('tanggal')
+                lap_pol_val = get_row_value('lap_pol')
+                tkp_val = get_row_value('tkp')
+
+                # Cek baris kosong atau baris penutup halaman excel
+                if (tanggal_val is None or pd.isna(tanggal_val) or str(tanggal_val).strip() == '') and \
+                   (lap_pol_val is None or pd.isna(lap_pol_val) or str(lap_pol_val).strip() == '') and \
+                   (tkp_val is None or pd.isna(tkp_val) or str(tkp_val).strip() == ''):
+                    continue
+                
+                # Helper untuk membersihkan nilai text/nan
+                def clean_val(val):
+                    if pd.isna(val) or val is None or str(val).strip().upper() in ['NAN', 'NAT', '-']:
+                        return ''
+                    return str(val).strip()
+
+                LakaMentah.objects.create(
+                    tanggal=clean_val(tanggal_val),
+                    lap_pol=clean_val(lap_pol_val),
+                    uraian_kejadian=clean_val(get_row_value('uraian_kejadian')),
+                    tkp=clean_val(tkp_val),
+                    terlapor=clean_val(get_row_value('terlapor')),
+                    korban=clean_val(get_row_value('korban')),
+                    bb=clean_val(get_row_value('bb')),
+                    ket=clean_val(get_row_value('ket'))
+                )
+                count += 1
+            
+            messages.success(request, f"Berhasil mengimpor {count} data Laka Mentah secara literal.")
+        except Exception as e:
+            messages.error(request, f"Gagal mengimpor data: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            
+        return redirect('laka_mentah_list')
+    
+    return redirect('laka_mentah_list')
+
+
+@login_required(login_url='login')
+def laka_mentah_hapus(request, pk):
+    LakaMentah.objects.filter(pk=pk).delete()
+    messages.success(request, "Data Laka Mentah berhasil dihapus.")
+    return redirect('laka_mentah_list')
+
+
+@login_required(login_url='login')
+def laka_mentah_hapus_semua(request):
+    LakaMentah.objects.all().delete()
+    messages.success(request, "Seluruh data Laka Mentah berhasil dibersihkan.")
+    return redirect('laka_mentah_list')
+
+
+@login_required(login_url='login')
+def laka_mentah_hapus_duplikat(request):
+    if request.method == "POST":
+        duplicate_groups = LakaMentah.objects.exclude(lap_pol='').exclude(lap_pol__isnull=True).values(
+            'lap_pol'
+        ).annotate(count=Count('id')).filter(count__gt=1)
+        
+        deleted_count = 0
+        for group in duplicate_groups:
+            ids = list(LakaMentah.objects.filter(lap_pol=group['lap_pol']).values_list('id', flat=True))
+            
+            # Pertahankan data pertama (ids[0]), hapus selebihnya
+            ids_to_delete = ids[1:]
+            LakaMentah.objects.filter(id__in=ids_to_delete).delete()
+            deleted_count += len(ids_to_delete)
+            
+        messages.success(request, f"Berhasil membersihkan {deleted_count} data duplikat berdasarkan Nomor Laporan Polisi.")
+    return redirect('laka_mentah_list')
