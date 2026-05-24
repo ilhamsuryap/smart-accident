@@ -62,6 +62,10 @@ MIDDLEWARE = [
     'allauth.account.middleware.AccountMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Custom security middleware
+    'coreapp.auth_middleware.SecurityHeadersMiddleware',
+    'coreapp.auth_middleware.AuditLoggingMiddleware',
+    'coreapp.auth_middleware.UserStatusCheckMiddleware',
 ]
 
 ROOT_URLCONF = 'SmartAccident.urls'
@@ -156,6 +160,7 @@ TEMPLATES = [
 # GeoDjango settings (removed - using standard MySQL)
 
 # User authentication
+AUTH_USER_MODEL = 'coreapp.User'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
@@ -164,42 +169,46 @@ LOGOUT_REDIRECT_URL = 'login'
 SITE_ID = 1
 
 AUTHENTICATION_BACKENDS = [
-    'coreapp.backends.EmailBackend',         # Login email+password kustom
-    'django.contrib.auth.backends.ModelBackend',  # Fallback untuk Django admin
+   'django.contrib.auth.backends.ModelBackend',  # default Django
+    'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
-# Allauth: Login & Signup settings
+# Custom account adapter untuk prevent auto-register
+ACCOUNT_ADAPTER = 'coreapp.auth_adapters.CustomAccountAdapter'
+SOCIALACCOUNT_ADAPTER = 'coreapp.auth_adapters.CustomSocialAccountAdapter'
+
+# Allauth configuration
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_SIGNUP_EMAIL_VERIFICATION = 'none'
 ACCOUNT_EMAIL_VERIFICATION = 'none'
-
-# Adapter kustom: nonaktifkan signup publik & blok auto-register Google
-ACCOUNT_ADAPTER = 'coreapp.adapters.CustomAccountAdapter'
-SOCIALACCOUNT_ADAPTER = 'coreapp.adapters.CustomSocialAccountAdapter'
-
-# Larang auto-signup dari social account (Google)
-SOCIALACCOUNT_AUTO_SIGNUP = False
-SOCIALACCOUNT_EMAIL_REQUIRED = True
+# ACCOUNT_AUTHENTICATION_EMAIL_VERIFICATION = 'none'
 
 # Google OAuth settings
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
-        'APP': {
-            'client_id': os.getenv('GOOGLE_CLIENT_ID', ''),
-            'secret': os.getenv('GOOGLE_CLIENT_SECRET', ''),
-            'key': ''
-        },
+        'VERIFIED_EMAIL': False,
+        'VERSION': 'v2',
         'SCOPE': [
             'profile',
             'email',
         ],
         'AUTH_PARAMS': {
             'access_type': 'online',
+        },
+        'APP': {
+            'client_id': os.getenv('GOOGLE_CLIENT_ID', ''),
+            'secret': os.getenv('GOOGLE_CLIENT_SECRET', ''),
+            'key': ''
         }
     }
 }
+
+# Prevent auto signup via allauth
+SOCIALACCOUNT_AUTO_SIGNUP = False
 
 # REST Framework settings
 REST_FRAMEWORK = {

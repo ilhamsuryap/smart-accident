@@ -264,7 +264,7 @@
 
                                 <!-- Nama -->
                                 <span class="font-medium">
-                                    {{ user.display_name }}
+                                     {{ user.display_name }}
                                 </span>
                             </a>
 </li>
@@ -294,8 +294,7 @@
             <i class="fas fa-chart-line icon-left"></i>
             <span>Dashboard</span>
         </a>
-
-        {% if request.user.profile.role == 'superadmin' %}
+   {% if request.user.profile.role == 'superadmin' %}
         <a class="sidebar-link {% if current == 'admin_list' or current == 'admin_create' or current == 'admin_update' or current == 'admin_delete' %}active{% endif %}" 
            href="{% url 'admin_list' %}">
             <i class="fas fa-user-shield icon-left"></i>
@@ -350,7 +349,7 @@
             </div>
         </div>
 
-        <!-- ================= MANAJEMEN DATA ================= -->
+         <!-- ================= MANAJEMEN DATA ================= -->
         <div class="sidebar-divider"></div>
         <div class="sidebar-section-label">Manajemen Data</div>
 
@@ -387,9 +386,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- ================= ANALISIS CLUSTER ================= -->
-
         <!-- ================= KMEANS ================= -->
         <div>
             <button type="button" id="btnKmeans" onclick="toggleSidebar('kmeansDropdown','btnKmeans')"
