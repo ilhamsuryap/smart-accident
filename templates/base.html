@@ -350,16 +350,45 @@
             </div>
         </div>
 
-        <!-- ================= MANAJEMEN CLUSTER ================= -->
+        <!-- ================= MANAJEMEN DATA ================= -->
         <div class="sidebar-divider"></div>
-        <div class="sidebar-section-label">Manajemen Cluster</div>
+        <div class="sidebar-section-label">Manajemen Data</div>
 
-        <!-- Cluster Data (Previously KMeans Data) -->
-        <a class="sidebar-link {% if current == 'cluster_data_list' or current == 'cluster_data_tambah' %}active{% endif %}" 
-           href="{% url 'cluster_data_list' %}">
-            <i class="fas fa-database icon-left"></i>
-            <span>Cluster Data</span>
-        </a>
+        <!-- Dropdown Manajemen Data -->
+        <div>
+            <button type="button" id="btnManajemenData" onclick="toggleSidebar('manajemenDataDropdown','btnManajemenData')"
+                class="sidebar-link
+                {% if current == 'laka_mentah_list' or current == 'laka_mentah_tambah' or current == 'laka_mentah_edit' or current == 'cluster_data_list' or current == 'cluster_data_tambah' or current == 'cluster_data_edit' %}
+                    active dropdown-open
+                {% endif %}">
+                <i class="fas fa-folder-open icon-left"></i>
+                <span>Manajemen Data</span>
+                <i class="fas fa-chevron-down sidebar-chevron"></i>
+            </button>
+
+            <div id="manajemenDataDropdown"
+                class="sidebar-dropdown
+                {% if current == 'laka_mentah_list' or current == 'laka_mentah_tambah' or current == 'laka_mentah_edit' or current == 'cluster_data_list' or current == 'cluster_data_tambah' or current == 'cluster_data_edit' %}
+                    open
+                {% endif %}">
+                <div class="sidebar-dropdown-inner">
+                    <!-- Data Laka Mentah -->
+                    <a class="sidebar-link {% if current == 'laka_mentah_list' or current == 'laka_mentah_tambah' or current == 'laka_mentah_edit' %}active{% endif %}"
+                       href="{% url 'laka_mentah_list' %}">
+                        <i class="fas fa-file-excel icon-left"></i>
+                        <span>Data Laka Mentah</span>
+                    </a>
+                    <!-- Data Cluster -->
+                    <a class="sidebar-link {% if current == 'cluster_data_list' or current == 'cluster_data_tambah' or current == 'cluster_data_edit' %}active{% endif %}"
+                       href="{% url 'cluster_data_list' %}">
+                        <i class="fas fa-database icon-left"></i>
+                        <span>Data Cluster</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= ANALISIS CLUSTER ================= -->
 
         <!-- ================= KMEANS ================= -->
         <div>

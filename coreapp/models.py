@@ -1024,6 +1024,29 @@ class AIConfig(models.Model):
         return f"Config {self.tipe}"
 
 
+class LakaMentah(models.Model):
+    """Model untuk menyimpan data laka mentah secara literal dari Excel"""
+    id = models.AutoField(primary_key=True)
+    tanggal = models.TextField(null=True, blank=True)
+    lap_pol = models.TextField(null=True, blank=True)
+    uraian_kejadian = models.TextField(null=True, blank=True)
+    tkp = models.TextField(null=True, blank=True)
+    terlapor = models.TextField(null=True, blank=True)
+    korban = models.TextField(null=True, blank=True)
+    bb = models.TextField(null=True, blank=True)
+    ket = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = "Data Laka Mentah"
+        ordering = ['-id']
+        db_table = 'laka_mentah'
+
+    def __str__(self):
+        return f"Raw Laka #{self.id} - {self.lap_pol}"
+
+
 # ================= PROFILE =================
 class Profile(models.Model):
     ROLE_CHOICES = (
