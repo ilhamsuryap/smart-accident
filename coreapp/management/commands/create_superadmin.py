@@ -4,9 +4,12 @@ Usage:
     python manage.py create_superadmin
     python manage.py create_superadmin --email admin@polres.go.id --password rahasia123
 """
+
 from django.core.management.base import BaseCommand, CommandError
-from django.contrib.auth.models import User
-from coreapp.models import Profile, POLRES_CHOICES
+from django.contrib.auth import get_user_model
+from coreapp.models import Profile, Polres
+
+User = get_user_model()
 
 
 class Command(BaseCommand):
@@ -17,41 +20,35 @@ class Command(BaseCommand):
             '--email',
             type=str,
             help='Email akun superadmin',
-            default=None,
         )
         parser.add_argument(
             '--password',
             type=str,
             help='Password akun superadmin',
-            default=None,
         )
         parser.add_argument(
-            '--username',
-            type=str,
-            help='Username akun superadmin (default: superadmin)',
-            default='superadmin',
-        )
-        parser.add_argument(
-            '--polres',
-            type=str,
-            help='Polres untuk superadmin (default: madiun)',
-            default='madiun',
+            '--polres_id',
+            type=int,
+            help='ID Polres (default: polres pertama di database)',
         )
 
     def handle(self, *args, **options):
+        
         self.stdout.write(self.style.MIGRATE_HEADING('=== Buat Akun Superadmin ===\n'))
 
         email = options.get('email')
         password = options.get('password')
-        username = options.get('username', 'superadmin')
-        polres = options.get('polres', 'madiun')
+        polres_id = options.get('polres_id')
 
-        # Input interaktif jika tidak ada argumen
+        # ==== EMAIL ====
         if not email:
             email = input('Email superadmin: ').strip()
         if not email:
             raise CommandError('Email tidak boleh kosong.')
 
+        email = email.lower()
+
+        # ==== PASSWORD ====
         if not password:
             import getpass
             password = getpass.getpass('Password superadmin: ')
@@ -62,60 +59,52 @@ class Command(BaseCommand):
         if len(password) < 8:
             raise CommandError('Password minimal 8 karakter.')
 
-        email = email.lower()
-
-        # Cek apakah email sudah ada
-        if User.objects.filter(email__iexact=email).exists():
-            existing_user = User.objects.get(email__iexact=email)
+        # ==== POLRES ====
+        if polres_id:
             try:
-                profile = existing_user.profile
-                if profile.role == 'superadmin':
-                    self.stdout.write(
-                        self.style.WARNING(f'User dengan email {email} sudah menjadi superadmin.')
-                    )
-                    return
-                else:
-                    # Upgrade ke superadmin
-                    profile.role = 'superadmin'
-                    profile.is_active = True
-                    profile.save()
-                    self.stdout.write(
-                        self.style.SUCCESS(f'User {email} berhasil diupgrade ke superadmin.')
-                    )
-                    return
-            except Profile.DoesNotExist:
-                pass
+                polres = Polres.objects.get(id=polres_id, is_active=True)
+            except Polres.DoesNotExist:
+                raise CommandError('Polres dengan ID tersebut tidak ditemukan atau tidak aktif.')
+        else:
+            polres = Polres.objects.filter(is_active=True).first()
+            if not polres:
+                polres = Polres.objects.create(
+                    nama='Madiun',
+                    kode='MDN',
+                    is_active=True
+                )
+                self.stdout.write(self.style.WARNING(f'⚠️  Tidak ditemukan Polres aktif. Membuat Polres default: {polres.nama} (ID: {polres.id})'))
+               
 
-        # Generate username unik
-        base_username = username
-        counter = 1
-        while User.objects.filter(username=base_username).exists():
-            base_username = f"{username}{counter}"
-            counter += 1
+        # ==== CEK USER EXIST ====
+        if User.objects.filter(email__iexact=email).exists():
+            raise CommandError(f'User dengan email {email} sudah ada.')
 
-        # Buat user baru
-        user = User.objects.create_user(
-            username=base_username,
-            email=email,
-            password=password,
-            is_staff=True,        # Agar bisa akses Django admin
-            is_superuser=False,   # Bukan superuser Django, tapi superadmin sistem kita
-        )
+        # ==== CREATE USER ====
+        user = User.objects.create_superuser(
+        email=email,
+        name='Super Admin',
+        password=password,
+        role='superadmin',
+        is_active=True,
+    )
 
-        # Update profile
-        try:
-            profile = user.profile
-        except Profile.DoesNotExist:
-            profile = Profile.objects.create(user=user)
+        # ==== PROFILE ====
+        profile, created = Profile.objects.get_or_create(
+           user=user,
+           defaults={
+               'polres': polres
+               }
+               )
 
+# pastikan role & status benar
         profile.role = 'superadmin'
         profile.is_active = True
         profile.polres = polres
         profile.save()
 
         self.stdout.write(self.style.SUCCESS('\n✓ Akun superadmin berhasil dibuat!'))
-        self.stdout.write(f'  Email    : {email}')
-        self.stdout.write(f'  Username : {base_username}')
-        self.stdout.write(f'  Role     : superadmin')
-        self.stdout.write(f'  Polres   : {polres}')
-        self.stdout.write('\nSilakan login di /login/ menggunakan email dan password di atas.')
+        self.stdout.write(f'  Email  : {email}')
+        self.stdout.write(f'  Role   : superadmin')
+        self.stdout.write(f'  Polres : {polres.nama}')
+        self.stdout.write('\nSilakan login di /login/')

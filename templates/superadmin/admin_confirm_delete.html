@@ -33,7 +33,7 @@
         </div>
 
         <p class="mb-6 text-gray-700">
-          Apakah Anda yakin ingin menghapus akun admin <strong>"{{ target_user.get_full_name|default:target_user.username }}"</strong>?
+          Apakah Anda yakin ingin menghapus akun admin <strong>"{{ target_user.first_name }} {{ target_user.last_name|default:target_user.email }}"</strong>?
         </p>
 
         <!-- Account details -->

@@ -1,22 +1,336 @@
 from django.db import models
+from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.utils import timezone
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.contrib.auth.models import (
+    AbstractBaseUser, BaseUserManager, PermissionsMixin
+)
 from geopy.distance import geodesic
-from django.contrib.auth.models import User
 import math
 import requests
 import json
 import decimal
 import traceback
 
+# ============================================================================
+# MODEL POLRES (Dinamis — tidak pakai enum)
+# ============================================================================
 
-# PILIHAN POLRES
-POLRES_CHOICES = (
-    ('madiun', 'Polres Madiun'),
-    ('madiun_kota', 'Polres Madiun Kota'),
-)
+class Polres(models.Model):
+    """Model untuk data Polres yang dikelola secara dinamis oleh superadmin"""
+    nama = models.CharField(max_length=100, verbose_name='Nama Polres')
+    kode = models.CharField(max_length=50, unique=True, verbose_name='Kode Polres', help_text='Contoh: polres_madiun')
+    alamat = models.TextField(blank=True, null=True, verbose_name='Alamat')
+    telepon = models.CharField(max_length=20, blank=True, null=True, verbose_name='Telepon')
+    is_active = models.BooleanField(default=True, verbose_name='Aktif')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Polres'
+        verbose_name_plural = 'Polres'
+        ordering = ['nama']
+
+    def __str__(self):
+        return self.nama
+
+
+# ============================================================================
+# CUSTOM USER MODEL & AUTHENTICATION
+# ============================================================================
+
+from django.contrib.auth.models import BaseUserManager
+
+
+class CustomUserManager(BaseUserManager):
+    """Manager untuk Custom User Model"""
+
+    def create_user(self, email, name, password=None, **extra_fields):
+        if not email:
+            raise ValueError("Email harus diisi")
+        if not name:
+            raise ValueError("Nama harus diisi")
+
+        email = self.normalize_email(email)
+
+        # Default keamanan
+        extra_fields.setdefault("is_active", True)
+        extra_fields.setdefault("role", "admin")
+
+        if extra_fields["role"] not in ["admin", "superadmin"]:
+            raise ValueError("Role tidak valid")
+
+        user = self.model(
+            email=email,
+            name=name,
+            **extra_fields
+        )
+
+        if password:
+            user.set_password(password)
+        else:
+            user.set_unusable_password()  # untuk Google OAuth
+
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, name, password, **extra_fields):
+        extra_fields.setdefault("role", "superadmin")
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("is_active", True)
+
+        if extra_fields.get("role") != "superadmin":
+            raise ValueError("Superuser harus memiliki role=superadmin")
+        if not extra_fields.get("is_staff"):
+            raise ValueError("Superuser harus memiliki is_staff=True")
+        if not extra_fields.get("is_superuser"):
+            raise ValueError("Superuser harus memiliki is_superuser=True")
+
+        return self.create_user(email, name, password, **extra_fields)
+    
+class User(AbstractBaseUser, PermissionsMixin):
+    """Custom User Model untuk sistem autentikasi internal"""
+    
+    ROLE_CHOICES = (
+        ('superadmin', 'Super Admin'),
+        ('admin', 'Admin'),
+    )
+    
+    id = models.AutoField(primary_key=True)
+    username = models.CharField(max_length=150, unique=True, null=True, blank=True, verbose_name='Username')
+    first_name = models.CharField(max_length=150, blank=True, verbose_name='Nama Depan')
+    last_name = models.CharField(max_length=150, blank=True, verbose_name='Nama Belakang')
+    name = models.CharField(max_length=255, verbose_name='Nama Lengkap')
+    email = models.EmailField(unique=True, verbose_name='Email Institusi')
+    password = models.CharField(max_length=128, null=True, blank=True, verbose_name='Password')
+    google_id = models.CharField(max_length=255, null=True, blank=True, unique=True, verbose_name='Google ID')
+    role = models.CharField(
+        max_length=20, 
+        choices=ROLE_CHOICES, 
+        default='admin',
+        verbose_name='Role'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Aktif',
+        help_text='Tentukan apakah user dapat login'
+    )
+    is_staff = models.BooleanField(
+        default=False,
+        verbose_name='Staff Status',
+        help_text='Tentukan apakah user dapat mengakses admin panel'
+    )
+    created_by = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_users',
+        verbose_name='Dibuat Oleh',
+        help_text='Superadmin yang membuat akun ini'
+    )
+    last_login_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Login Terakhir'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Dibuat Pada'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Diperbarui Pada'
+    )
+    
+    objects = CustomUserManager()
+    
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['name']
+    
+    class Meta:
+        verbose_name = 'User'
+        verbose_name_plural = 'Users'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.name} ({self.email}) - {self.get_role_display()}"
+    
+    def is_superadmin(self):
+        """Check apakah user adalah superadmin"""
+        return self.role == 'superadmin'
+    
+    def is_admin_user(self):
+        """Check apakah user adalah admin"""
+        return self.role == 'admin'
+
+
+class AuditLog(models.Model):
+    ACTION_CHOICES = (
+        ('login_success', 'Login Berhasil'),
+        ('login_failed', 'Login Gagal'),
+        ('logout', 'Logout'),
+        ('login_oauth_success', 'Login OAuth Berhasil'),
+        ('login_oauth_failed', 'Login OAuth Gagal'),
+        ('user_created', 'User Dibuat'),
+        ('user_updated', 'User Diperbarui'),
+        ('user_deleted', 'User Dihapus'),
+        ('user_deactivated', 'User Dinonaktifkan'),
+        ('user_reactivated', 'User Diaktifkan Kembali'),
+        ('role_changed', 'Role Diubah'),
+    )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,   # ✅ WAJIB
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='audit_logs'
+    )
+
+    action = models.CharField(
+        max_length=30,
+        choices=ACTION_CHOICES
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=(('success', 'Sukses'), ('failed', 'Gagal')),
+        default='success'
+    )
+
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(null=True, blank=True)
+    details = models.JSONField(default=dict, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = 'Audit Log'
+        verbose_name_plural = 'Audit Logs'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', '-created_at']),
+            models.Index(fields=['action', '-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.email if self.user else 'Unknown'} - {self.get_action_display()} ({self.get_status_display()})"
+
+
+class Profile(models.Model):
+    """Model untuk profil tambahan user"""
+    
+    ROLE_CHOICES = (
+        ('superadmin', 'Super Admin'),
+        ('admin', 'Admin'),
+    )
+
+    id = models.AutoField(primary_key=True)
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='profile',
+        verbose_name='User'
+    )
+    role = models.CharField(
+        max_length=20,
+        choices=ROLE_CHOICES,
+        default='admin',
+        help_text="Role pengguna dalam sistem"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Status aktif akun. Jika False, user tidak dapat login."
+    )
+    polres = models.ForeignKey(
+        'Polres',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Polres',
+        help_text="Polres yang dikelola oleh user ini (dinamis dari database)"
+    )
+    alamat = models.TextField(blank=True, null=True, verbose_name='Alamat')
+    foto = models.ImageField(upload_to='profile/', blank=True, null=True, verbose_name='Foto')
+    phone = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        verbose_name='Nomor Telepon'
+    )
+    avatar = models.ImageField(
+        upload_to='profile/',
+        null=True,
+        blank=True,
+        verbose_name='Avatar'
+    )
+    bio = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name='Bio'
+    )
+    institution = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        verbose_name='Institusi'
+    )
+    position = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        verbose_name='Jabatan'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Dibuat Pada'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Diperbarui Pada'
+    )
+    
+    class Meta:
+        verbose_name = 'User Profile'
+        verbose_name_plural = 'User Profiles'
+    
+    def __str__(self):
+        return f"Profile - {self.user.name or self.user.username}"
+
+    def is_superadmin(self):
+        return self.role == 'superadmin'
+
+    def is_admin_role(self):
+        return self.role in ('superadmin', 'admin')
+
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    """Otomatis buat Profile ketika User baru dibuat — sinkronkan role dari User ke Profile"""
+    if created:
+        profile, _ = Profile.objects.get_or_create(user=instance)
+        # Sinkronkan role dari User ke Profile
+        if profile.role != instance.role:
+            profile.role = instance.role
+            profile.is_active = instance.is_active
+            profile.save(update_fields=['role', 'is_active'])
+    else:
+        # Update profile saat user diupdate
+        try:
+            profile = instance.profile
+            profile.role = instance.role
+            profile.is_active = instance.is_active
+            profile.save(update_fields=['role', 'is_active'])
+        except Profile.DoesNotExist:
+            Profile.objects.create(
+                user=instance,
+                role=instance.role,
+                is_active=instance.is_active
+            )
+
 
 
 class RuasJalan(models.Model):
@@ -40,7 +354,14 @@ class RuasJalan(models.Model):
     lat_akhir = models.DecimalField(max_digits=25, decimal_places=20, null=True, blank=True, help_text="Latitude titik akhir ruas jalan")
     lon_akhir = models.DecimalField(max_digits=25, decimal_places=20, null=True, blank=True, help_text="Longitude titik akhir ruas jalan")
     geometry = models.TextField(null=True, blank=True, help_text="GeoJSON LineString untuk seluruh ruas jalan")
-    polres = models.CharField(max_length=20, choices=POLRES_CHOICES, default='madiun', help_text="Polres yang menambahkan ruas jalan ini")
+    polres = models.ForeignKey(
+        'Polres',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Polres',
+        help_text="Polres yang menambahkan ruas jalan ini"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -783,7 +1104,14 @@ class KecelakaanRaw(models.Model):
     kecamatan = models.CharField(max_length=100)
     kabupaten_kota = models.CharField(max_length=100)
     keterangan = models.TextField(blank=True)
-    polres = models.CharField(max_length=20, choices=POLRES_CHOICES, default='madiun', help_text="Polres yang upload data raw ini")
+    polres = models.ForeignKey(
+        'Polres',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Polres',
+        help_text="Polres yang upload data raw ini"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -816,7 +1144,14 @@ class KecelakaanPreprosesing(models.Model):
     kecamatan = models.CharField(max_length=100)
     kabupaten_kota = models.CharField(max_length=100)
     keterangan = models.TextField(blank=True)
-    polres = models.CharField(max_length=20, choices=POLRES_CHOICES, default='madiun', help_text="Polres yang upload data preprocessing ini")
+    polres = models.ForeignKey(
+        'Polres',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Polres',
+        help_text="Polres yang upload data preprocessing ini"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -1046,51 +1381,3 @@ class LakaMentah(models.Model):
     def __str__(self):
         return f"Raw Laka #{self.id} - {self.lap_pol}"
 
-
-# ================= PROFILE =================
-class Profile(models.Model):
-    ROLE_CHOICES = (
-        ('superadmin', 'Super Admin'),
-        ('admin', 'Admin'),
-    )
-
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    role = models.CharField(
-        max_length=20,
-        choices=ROLE_CHOICES,
-        default='admin',
-        help_text="Role pengguna dalam sistem"
-    )
-    is_active = models.BooleanField(
-        default=True,
-        help_text="Status aktif akun. Jika False, user tidak dapat login."
-    )
-    polres = models.CharField(
-        max_length=20,
-        choices=POLRES_CHOICES,
-        default='madiun',
-        help_text="Polres yang dikelola oleh user ini"
-    )
-    alamat = models.TextField(blank=True)
-    foto = models.ImageField(upload_to='profile/', blank=True, null=True)
-
-    def __str__(self):
-        return f"{self.user.username} ({self.get_role_display()})"
-
-    def is_superadmin(self):
-        return self.role == 'superadmin'
-
-    def is_admin_role(self):
-        return self.role in ('superadmin', 'admin')
-
-
-@receiver(post_save, sender=User)
-def create_user_profile(sender, instance, created, **kwargs):
-    if created:
-        Profile.objects.create(user=instance)
-
-
-@receiver(post_save, sender=User)
-def save_user_profile(sender, instance, **kwargs):
-    if hasattr(instance, 'profile'):
-        instance.profile.save()

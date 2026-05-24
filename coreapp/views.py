@@ -1,8 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse, Http404
 from django.views.generic import (
@@ -10,15 +9,14 @@ from django.views.generic import (
 )
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy
-from django.http import JsonResponse
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from sklearn.discriminant_analysis import StandardScaler
 from .models import (
     RuasJalan, SegmenJalan, Kecelakaan, AnalisisZScore, RekapSegmen,
-    Kota, Kecamatan, Kelurahan, ClusterData, AIConfig, Profile, POLRES_CHOICES
+    Kota, Kecamatan, Kelurahan, ClusterData, AIConfig, Profile, Polres,
+    KecelakaanRaw, KecelakaanPreprosesing, LakaMentah
 )
 from rest_framework import status
 import json
@@ -28,41 +26,38 @@ import requests
 from datetime import datetime
 import os
 
-import os
+from coreapp.models import Polres
+
 import pandas as pd
 from sklearn.cluster import KMeans
-
 from django.conf import settings
-from django.shortcuts import render, redirect   
 from io import StringIO, BytesIO
-from django.shortcuts import redirect
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
-
-from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import StandardScaler, LabelEncoder
-
+from sklearn.discriminant_analysis import StandardScaler as LdaScaler
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import silhouette_score
-
-from .models import RuasJalan, SegmenJalan, Kecelakaan, RekapSegmen, AnalisisZScore, KecelakaanRaw, KecelakaanPreprosesing, LakaMentah
 from django.core.paginator import Paginator
 from .forms import (
-    LoginForm, AdminCreateForm, AdminUpdateForm,
+    LoginForm, AdminCreateForm, AdminUpdateForm, PolresForm,
     RuasJalanForm, SegmenJalanForm,
     KecelakaanForm, RekapSegmenForm, UploadKecelakaanRawForm, UploadKecelakaanPreprosesForm
 )
+
+User = get_user_model()
+
 
 
 # ============================================================
 # HELPER FUNCTIONS — Role Checking
 # ============================================================
 def is_admin(user):
-    """Cek apakah user adalah admin atau superadmin (berdasarkan Profile)"""
+    """Cek apakah user adalah admin atau superadmin (berdasarkan User.role)"""
     if not user.is_authenticated:
         return False
     try:
-        return user.profile.role in ('admin', 'superadmin') and user.profile.is_active
+        return user.role in ('admin', 'superadmin') and user.is_active
     except Exception:
         return False
 
@@ -71,18 +66,13 @@ def is_superadmin(user):
     """Cek apakah user adalah superadmin"""
     if not user.is_authenticated:
         return False
-    try:
-        return user.profile.role == 'superadmin' and user.profile.is_active
-    except Exception:
-        return False
+    return user.role == 'superadmin' and user.is_active
 
 
 def superadmin_required(view_func):
-    """Decorator untuk view yang hanya bisa diakses superadmin"""
-    decorated = login_required(login_url='login')(
+    return login_required(login_url='login')(
         user_passes_test(is_superadmin, login_url='dashboard')(view_func)
     )
-    return decorated
 
 
 # ============================================================
@@ -94,6 +84,70 @@ def register_view(request):
     return redirect('login')
 
 
+@login_required
+def polres_list(request):
+    if request.user.role != 'superadmin':
+        return redirect('/')
+
+    polres_list = Polres.objects.all()
+    active_count = polres_list.filter(is_active=True).count()
+
+    return render(request, 'coreapp/polres/list.html', {
+        'polres_list': polres_list,
+        'active_count': active_count
+    })
+
+@login_required
+def polres_create(request):
+    if request.user.role != 'superadmin':
+        return redirect('/')
+
+    form = PolresForm(request.POST or None)
+    if form.is_valid():
+        form.save()
+        messages.success(request, 'Polres berhasil ditambahkan.')
+        return redirect('polres_list')
+
+    return render(request, 'coreapp/polres/form.html', {
+        'form': form,
+        'title': 'Tambah Polres Baru',
+        'polres': None
+    })
+
+@login_required
+def polres_update(request, pk):
+    if request.user.role != 'superadmin':
+        return redirect('/')
+
+    polres = get_object_or_404(Polres, pk=pk)
+    form = PolresForm(request.POST or None, instance=polres)
+    if form.is_valid():
+        form.save()
+        messages.success(request, 'Polres berhasil diperbarui.')
+        return redirect('polres_list')
+
+    return render(request, 'coreapp/polres/form.html', {
+        'form': form,
+        'title': f'Edit Polres: {polres.nama}',
+        'polres': polres
+    })
+@login_required
+def polres_delete(request, pk):
+    if request.user.role != 'superadmin':
+        return redirect('/')
+
+    polres = get_object_or_404(Polres, pk=pk)
+    if request.method == 'POST':
+        polres_name = polres.nama
+        polres.delete()
+        messages.success(request, f'Polres "{polres_name}" berhasil dihapus.')
+        return redirect('polres_list')
+
+    return render(
+        request,
+        'coreapp/polres/polres_confirm_delete.html',
+        {'polres': polres}
+    )
 def login_view(request):
     """View login berbasis EMAIL + PASSWORD dengan validasi role dan is_active."""
     if request.user.is_authenticated:
@@ -119,41 +173,37 @@ def login_view(request):
             email = form.cleaned_data['email'].strip().lower()
             password = form.cleaned_data['password']
 
-            # Cari user berdasarkan email
+            # 1. Cari user berdasarkan email
             try:
                 user_obj = User.objects.get(email__iexact=email)
             except User.DoesNotExist:
                 messages.error(request, 'Email tidak terdaftar dalam sistem.')
                 return render(request, 'registration/login.html', {'form': form})
             except User.MultipleObjectsReturned:
-                user_obj = User.objects.filter(email__iexact=email).order_by('-date_joined').first()
+                user_obj = User.objects.filter(email__iexact=email).order_by('-created_at').first()
+                if not user_obj:
+                    messages.error(request, 'Email tidak terdaftar dalam sistem.')
+                    return render(request, 'registration/login.html', {'form': form})
 
-            # Cek profile
-            try:
-                profile = user_obj.profile
-            except Exception:
-                messages.error(request, 'Profil akun tidak ditemukan. Hubungi Super Admin.')
-                return render(request, 'registration/login.html', {'form': form})
-
-            # Cek is_active
-            if not profile.is_active:
+            # 2. Cek is_active dari User model langsung
+            if not user_obj.is_active:
                 messages.error(request, 'Akun Anda telah dinonaktifkan. Hubungi Super Admin.')
                 return render(request, 'registration/login.html', {'form': form})
 
-            # Cek role
-            if profile.role not in ('superadmin', 'admin'):
+            # 3. Cek role harus superadmin atau admin
+            if user_obj.role not in ('superadmin', 'admin'):
                 messages.error(request, 'Akun Anda tidak memiliki akses ke sistem ini.')
                 return render(request, 'registration/login.html', {'form': form})
 
-            # Autentikasi password via custom backend
+            # 4. Autentikasi password via custom EmailBackend
             user = authenticate(request, username=email, password=password)
             if user is None:
                 messages.error(request, 'Password salah. Silakan coba lagi.')
                 return render(request, 'registration/login.html', {'form': form})
 
-            # Login berhasil
-            login(request, user)
-            nama = user.first_name or user.email
+            # 5. Login berhasil
+            login(request, user, backend='coreapp.backends.EmailBackend')
+            nama = user.first_name or user.name or user.email
             messages.success(request, f'Selamat datang, {nama}!')
             next_url = request.GET.get('next', 'dashboard')
             return redirect(next_url)
@@ -161,6 +211,7 @@ def login_view(request):
             messages.error(request, 'Data yang dimasukkan tidak valid.')
 
     return render(request, 'registration/login.html', {'form': form})
+
 
 
 def logout_view(request):
@@ -183,7 +234,7 @@ def admin_list(request):
 
     context = {
         'profiles': profiles,
-        'polres_choices': POLRES_CHOICES,
+        'polres_choices': Polres.objects.all(),
     }
     return render(request, 'superadmin/admin_list.html', context)
 
@@ -195,7 +246,7 @@ def admin_create(request):
         form = AdminCreateForm(request.POST)
         if form.is_valid():
             user = form.save()
-            nama = user.get_full_name() or user.email
+            nama = f"{user.first_name} {user.last_name}".strip() or user.email
             messages.success(request, f'Akun admin "{nama}" berhasil dibuat.')
             return redirect('admin_list')
         else:
@@ -234,7 +285,7 @@ def admin_update(request, user_id):
         form = AdminUpdateForm(request.POST, user_instance=target_user)
         if form.is_valid():
             form.save(target_user)
-            nama = target_user.get_full_name() or target_user.email
+            nama = f"{target_user.first_name} {target_user.last_name}".strip() or target_user.email
             messages.success(request, f'Akun "{nama}" berhasil diperbarui.')
             return redirect('admin_list')
         else:
@@ -258,7 +309,7 @@ def admin_update(request, user_id):
 
     context = {
         'form': form,
-        'title': f'Edit Akun: {target_user.get_full_name() or target_user.email}',
+        'title': f'Edit Akun: {f"{target_user.first_name} {target_user.last_name}".strip() or target_user.email}',
         'target_user': target_user,
         'target_profile': target_profile,
         'action': 'update',
@@ -277,7 +328,7 @@ def admin_delete(request, user_id):
         return redirect('admin_list')
 
     if request.method == 'POST':
-        nama = target_user.get_full_name() or target_user.email
+        nama = f"{target_user.first_name} {target_user.last_name}".strip() or target_user.email
         target_user.delete()
         messages.success(request, f'Akun "{nama}" berhasil dihapus.')
         return redirect('admin_list')
@@ -303,7 +354,7 @@ def admin_toggle_active(request, user_id):
         profile.is_active = not profile.is_active
         profile.save()
         status_text = 'diaktifkan' if profile.is_active else 'dinonaktifkan'
-        nama = target_user.get_full_name() or target_user.email
+        nama = f"{target_user.first_name} {target_user.last_name}".strip() or target_user.email
         messages.success(request, f'Akun "{nama}" berhasil {status_text}.')
     except Exception as e:
         messages.error(request, f'Gagal mengubah status akun: {e}')
@@ -432,7 +483,7 @@ def dashboard_view(request):
 @login_required(login_url='login')
 def ruas_jalan_list(request):
     """Daftar ruas jalan"""
-    from .models import POLRES_CHOICES
+    from .models import Polres
     
     ruas_jalan = RuasJalan.objects.all()
     
@@ -451,7 +502,7 @@ def ruas_jalan_list(request):
     context = {
         'ruas_jalan': ruas_jalan,
         'is_admin': is_admin(request.user),
-        'polres_choices': POLRES_CHOICES,
+        'polres_choices': Polres.objects.all(),
         'selected_polres': selected_polres
     }
     return render(request, 'coreapp/ruas_jalan/list.html', context)
@@ -2978,7 +3029,7 @@ def upload_kecelakaan_raw(request):
 @login_required(login_url='login')
 def kecelakaan_raw_list(request):
     """Daftar data kecelakaan raw"""
-    from .models import POLRES_CHOICES
+    from .models import Polres
     
     kecelakaan = KecelakaanRaw.objects.all()
     
@@ -3004,7 +3055,7 @@ def kecelakaan_raw_list(request):
         'is_admin': is_admin(request.user),
         'tahun_options': range(2020, timezone.now().year + 1),
         'title': 'Data Kecelakaan Raw',
-        'polres_choices': POLRES_CHOICES,
+        'polres_choices': Polres.objects.all(),
         'selected_polres': selected_polres
     }
     return render(request, 'coreapp/kecelakaan/list_raw.html', context)
@@ -3240,7 +3291,7 @@ def download_template_preprosesing(request):
 @login_required(login_url='login')
 def kecelakaan_preprosesing_list(request):
     """Daftar data kecelakaan preprocessing"""
-    from .models import POLRES_CHOICES
+    from .models import Polres
     
     kecelakaan = KecelakaanPreprosesing.objects.all()
     
@@ -3266,7 +3317,7 @@ def kecelakaan_preprosesing_list(request):
         'is_admin': is_admin(request.user),
         'tahun_options': range(2020, timezone.now().year + 1),
         'title': 'Data Kecelakaan Preprosesing',
-        'polres_choices': POLRES_CHOICES,
+        'polres_choices': Polres.objects.all(),
         'selected_polres': selected_polres
     }
     return render(request, 'coreapp/kecelakaan/list_preprosesing.html', context)
@@ -3293,7 +3344,7 @@ from .models import Profile
 
 @login_required
 def profile(request):
-    from .models import POLRES_CHOICES
+    from .models import Polres
     
     user = request.user
 
@@ -3301,27 +3352,37 @@ def profile(request):
     profile, created = Profile.objects.get_or_create(user=user)
 
     if request.method == "POST":
-        user.username = request.POST.get('username')
-        user.email = request.POST.get('email')
+        user.username = request.POST.get('username', '').strip()
+        user.email = request.POST.get('email', '').strip()
 
-        full_name = request.POST.get('full_name').split(" ")
-        user.first_name = full_name[0]
-        user.last_name = " ".join(full_name[1:])
+        full_name = request.POST.get('full_name', '').strip().split(" ")
+        user.first_name = full_name[0] if len(full_name) > 0 else ''
+        user.last_name = " ".join(full_name[1:]) if len(full_name) > 1 else ''
 
         user.save()
 
         profile.alamat = request.POST.get('alamat')
-        profile.polres = request.POST.get('polres', 'madiun')
+        
+        # Assign Polres instance, not string
+        polres_id = request.POST.get('polres')
+        if polres_id:
+            try:
+                profile.polres = Polres.objects.get(id=polres_id)
+            except Polres.DoesNotExist:
+                profile.polres = None
+        else:
+            profile.polres = None
 
         if request.FILES.get('foto'):
             profile.foto = request.FILES.get('foto')
 
         profile.save()
+        messages.success(request, 'Profil berhasil diperbarui.')
 
         return redirect('profile')
 
     context = {
-        'polres_choices': POLRES_CHOICES
+        'polres_choices': [(p.id, p.nama) for p in Polres.objects.all()]
     }
     return render(request, 'profile.html', context)
 

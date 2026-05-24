@@ -1,13 +1,16 @@
 from django.contrib.auth.backends import ModelBackend
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 class EmailBackend(ModelBackend):
     """
     Authentication backend kustom:
     - Login menggunakan EMAIL (bukan username)
+    - Validasi is_active dari User model langsung
     - Validasi role: hanya superadmin atau admin yang diizinkan
-    - Validasi is_active dari Profile (bukan dari User.is_active bawaan Django)
+    - Dilarang membuat user baru dari Google OAuth
     """
 
     def authenticate(self, request, username=None, password=None, email=None, **kwargs):
@@ -20,33 +23,27 @@ class EmailBackend(ModelBackend):
         # Normalisasi email (lowercase)
         login_email = login_email.strip().lower()
 
+        # 1. Cari user berdasarkan email
         try:
             user = User.objects.get(email__iexact=login_email)
         except User.DoesNotExist:
             return None
         except User.MultipleObjectsReturned:
             # Ambil yang paling baru jika ada duplikat
-            user = User.objects.filter(email__iexact=login_email).order_by('-date_joined').first()
+            user = User.objects.filter(email__iexact=login_email).order_by('-created_at').first()
             if not user:
                 return None
 
-        # Cek password
+        # 2. Cek password
         if not user.check_password(password):
             return None
 
-        # Cek profile dan role
-        try:
-            profile = user.profile
-        except Exception:
-            # Jika tidak ada profile, tolak login
+        # 3. Cek is_active dari User model langsung
+        if not user.is_active:
             return None
 
-        # Cek is_active di profile
-        if not profile.is_active:
-            return None
-
-        # Cek role harus superadmin atau admin
-        if profile.role not in ('superadmin', 'admin'):
+        # 4. Cek role harus superadmin atau admin
+        if user.role not in ('superadmin', 'admin'):
             return None
 
         return user

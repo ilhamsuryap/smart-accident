@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Kelola Polres - Smart Accident{% endblock %}
+
+{% block content %}
+<div class="w-full">
+
+  <!-- Header -->
+  <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div>
+      <h1 class="text-3xl font-bold flex items-center gap-2 text-gray-800">
+        <i class="fas fa-building text-blue-600"></i> Kelola Polres
+      </h1>
+      <p class="text-gray-500 mt-1">Super Admin &mdash; Manajemen data kepolisian regional</p>
+    </div>
+    <div class="flex flex-col sm:flex-row gap-2">
+      
+      <a href="{% url 'polres_create' %}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 shadow-sm font-semibold transition text-sm">
+        <i class="fas fa-plus"></i>
+        <span>Tambah Polres</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    <!-- Card Total -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-blue-600 hover:shadow-md transition">
+      <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Polres</p>
+      <div class="flex items-end justify-between mt-1">
+        <p class="text-3xl font-black text-blue-600">{{ polres_list.count }}</p>
+        <i class="fas fa-building text-blue-100 text-2xl"></i>
+      </div>
+    </div>
+    <!-- Card Aktif -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-emerald-500 hover:shadow-md transition">
+      <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Polres Aktif</p>
+      <div class="flex items-end justify-between mt-1">
+        <p class="text-3xl font-black text-emerald-500">{{ active_count }}</p>
+        <i class="fas fa-check-circle text-emerald-100 text-2xl"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Card -->
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="border-b border-gray-100 p-5 flex flex-col md:flex-row justify-between items-center gap-4">
+      <h5 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+        <i class="fas fa-list text-blue-600"></i> Daftar Polres
+      </h5>
+      <!-- Search Input -->
+      <div class="relative w-full md:w-64">
+        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+          <i class="fas fa-search"></i>
+        </span>
+        <input type="text" id="searchInput" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 text-sm transition" placeholder="Cari nama polres..." autocomplete="off">
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      {% if polres_list %}
+      <table class="w-full text-left border-collapse" id="polresTable">
+        <thead class="bg-gray-50 border-b border-gray-100">
+          <tr>
+            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider w-16">#</th>
+            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Nama Polres</th>
+            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for polres in polres_list %}
+          <tr class="hover:bg-gray-50/55 transition polres-row">
+            <td class="px-6 py-4 text-sm text-gray-500">{{ forloop.counter }}</td>
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm bg-gradient-to-br from-blue-500 to-indigo-600">
+                  <i class="fas fa-home"></i>
+                </div>
+                <div>
+                  <div class="font-semibold text-gray-800">{{ polres.nama }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="px-6 py-4">
+              {% if polres.is_active %}
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                  <i class="fas fa-circle-check text-emerald-600"></i>
+                  Aktif
+                </span>
+              {% else %}
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
+                  <i class="fas fa-circle-xmark text-gray-500"></i>
+                  Nonaktif
+                </span>
+              {% endif %}
+            </td>
+            <td class="px-6 py-4 text-center">
+              <div class="flex items-center justify-center gap-2">
+                <a href="{% url 'polres_update' polres.id %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-amber-500 hover:bg-amber-600 rounded-lg transition shadow-sm">
+                  <i class="fas fa-edit"></i>
+                  <span>Edit</span>
+                </a>
+                <a href="{% url 'polres_delete' polres.id %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition shadow-sm">
+                  <i class="fas fa-trash"></i>
+                  <span>Hapus</span>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="p-8 text-center">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+          <i class="fas fa-inbox text-gray-400 text-2xl"></i>
+        </div>
+        <p class="text-gray-500 font-medium">Belum ada data Polres</p>
+        <p class="text-gray-400 text-sm mt-1">Mulai dengan menambahkan polres baru</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Search functionality
+  document.getElementById('searchInput').addEventListener('keyup', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('.polres-row');
+    
+    rows.forEach(row => {
+      const text = row.textContent.toLowerCase();
+      row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+  });
+</script>
+{% endblock %}
