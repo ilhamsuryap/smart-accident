@@ -19,7 +19,7 @@
                 </p>
             </div>
 
-            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+            <!-- <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
                 <h3 class="text-blue-900 font-semibold mb-2">Format File</h3>
                 <p class="text-blue-800 text-sm mb-3">File harus berisi kolom-kolom berikut:</p>
                 <ul class="text-blue-800 text-sm space-y-1 ml-4 list-disc">
@@ -36,7 +36,7 @@
                     <li>kabupaten_kota (text)</li>
                     <li>keterangan (text)</li>
                 </ul>
-            </div>
+            </div> -->
 
             <form method="post" enctype="multipart/form-data" class="space-y-4">
                 {% csrf_token %}
@@ -57,6 +57,9 @@
                     <button type="submit" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
                         <i class="fas fa-upload mr-2"></i>Upload
                     </button>
+                    <a href="{% url 'download_template_preprosesing' %}" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+                        <i class="fas fa-download mr-2"></i>Download Template
+                    </a>
                     <a href="{% url 'kecelakaan_preprosesing_list' %}" class="px-6 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 font-medium">
                         <i class="fas fa-arrow-left mr-2"></i>Batal
                     </a>
@@ -74,11 +77,11 @@
                 <li>Siap untuk analisis</li>
             </ol>
             
-            <div class="mt-4 pt-4 border-t border-gray-300">
+            <!-- <div class="mt-4 pt-4 border-t border-gray-300">
                 <p class="text-gray-600 text-sm mb-2"><strong>Kapasitas:</strong> Hingga 10,000 baris per file</p>
                 <p class="text-gray-600 text-sm mb-2"><strong>Threshold Jarak:</strong> 5 km dari segmen</p>
-                <p class="text-gray-600 text-sm"><strong>Data Yang Tidak Cocok:</strong> Secara otomatis tidak diassign</p>
-            </div>
+                <p class="text-gray-600 text-sm"><strong>Data Yang Tidak Cocok:</strong> Tetap diimport, tanpa segmen assignment</p>
+            </div> -->
         </div>
     </div>
 </div>

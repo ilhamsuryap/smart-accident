@@ -9,10 +9,16 @@ urlpatterns = [
     path('register/', views.register_view, name='register'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
-    
+
+    # ── Superadmin: Kelola Akun Admin ──
+    path('superadmin/admins/', views.admin_list, name='admin_list'),
+    path('superadmin/admins/create/', views.admin_create, name='admin_create'),
+    path('superadmin/admins/<int:user_id>/edit/', views.admin_update, name='admin_update'),
+    path('superadmin/admins/<int:user_id>/delete/', views.admin_delete, name='admin_delete'),
+    path('superadmin/admins/<int:user_id>/toggle/', views.admin_toggle_active, name='admin_toggle_active'),
+
     # Dashboard (Admin)
     path('dashboard/', views.dashboard_view, name='dashboard'),
-    
 
     # Profil Pengguna
     path('profile/', views.profile, name='profile'),
@@ -42,6 +48,7 @@ urlpatterns = [
     
     # Upload Kecelakaan Preprosesing
     path('kecelakaan-preprosesing/upload/', views.upload_kecelakaan_preprosesing, name='upload_kecelakaan_preprosesing'),
+    path('kecelakaan-preprosesing/download-template/', views.download_template_preprosesing, name='download_template_preprosesing'),
     path('kecelakaan-preprosesing/', views.kecelakaan_preprosesing_list, name='kecelakaan_preprosesing_list'),
     path('kecelakaan-preprosesing/<int:pk>/', views.kecelakaan_preprosesing_detail, name='kecelakaan_preprosesing_detail'),
     path('kecelakaan-preprosesing/<int:pk>/delete/', views.kecelakaan_preprosesing_delete, name='kecelakaan_preprosesing_delete'),

@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Hapus Akun Admin - Smart Accident{% endblock %}
+
+{% block content %}
+<div class="w-full">
+  <!-- Header -->
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold flex items-center gap-2 text-gray-800">
+      <i class="fas fa-trash text-red-600"></i> Konfirmasi Penghapusan
+    </h1>
+  </div>
+
+  <div class="max-w-xl mx-auto mt-8">
+    <div class="bg-white rounded-2xl shadow-md border-2 border-red-500 overflow-hidden">
+      <!-- Title Bar -->
+      <div class="bg-red-500 text-white p-4">
+        <h5 class="font-bold text-lg flex items-center gap-2">
+          <i class="fas fa-user-times"></i> Hapus Akun Admin
+        </h5>
+      </div>
+
+      <!-- Card Body -->
+      <div class="p-6">
+        <!-- Warning Alert -->
+        <div class="p-4 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 mb-6 flex items-start gap-3">
+          <i class="fas fa-exclamation-triangle mt-1"></i>
+          <div>
+            <strong class="block">Perhatian!</strong>
+            Tindakan ini tidak dapat dibatalkan. Akun yang dihapus akan terhapus secara permanen dari sistem.
+          </div>
+        </div>
+
+        <p class="mb-6 text-gray-700">
+          Apakah Anda yakin ingin menghapus akun admin <strong>"{{ target_user.get_full_name|default:target_user.username }}"</strong>?
+        </p>
+
+        <!-- Account details -->
+        <div class="bg-gray-50 p-4 rounded-xl space-y-3 border border-gray-100 text-sm">
+          <div class="grid grid-cols-3">
+            <span class="text-gray-500 font-bold">Email:</span>
+            <span class="text-gray-800 col-span-2 font-mono">{{ target_user.email }}</span>
+          </div>
+          <div class="grid grid-cols-3">
+            <span class="text-gray-500 font-bold">Role:</span>
+            <span class="col-span-2">
+              {% if target_profile.role == 'superadmin' %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700">
+                  Super Admin
+                </span>
+              {% else %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700">
+                  Admin
+                </span>
+              {% endif %}
+            </span>
+          </div>
+          <div class="grid grid-cols-3">
+            <span class="text-gray-500 font-bold">Polres:</span>
+            <span class="text-gray-800 col-span-2">{{ target_profile.get_polres_display }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="bg-gray-50 p-4 border-t border-gray-100 flex gap-2">
+        <form method="post" class="flex gap-2 w-full">
+          {% csrf_token %}
+          <button type="submit" class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl shadow-sm hover:shadow-md transition text-sm flex items-center gap-2">
+            <i class="fas fa-trash-alt"></i> Ya, Hapus Akun
+          </button>
+          <a href="{% url 'admin_list' %}" class="px-5 py-2.5 border border-gray-200 text-gray-700 bg-white font-semibold rounded-xl hover:bg-gray-50 transition text-sm text-center">
+            Batal
+          </a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

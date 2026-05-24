@@ -164,17 +164,24 @@ LOGOUT_REDIRECT_URL = 'login'
 SITE_ID = 1
 
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
+    'coreapp.backends.EmailBackend',         # Login email+password kustom
+    'django.contrib.auth.backends.ModelBackend',  # Fallback untuk Django admin
 ]
 
-ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
+# Allauth: Login & Signup settings
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_USERNAME_REQUIRED = True
-ACCOUNT_ADAPTER = 'allauth.account.adapter.DefaultAccountAdapter'
-SOCIALACCOUNT_ADAPTER = 'allauth.socialaccount.adapter.DefaultSocialAccountAdapter'
-ACCOUNT_SIGNUP_EMAIL_VERIFICATION = 'optional'
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+
+# Adapter kustom: nonaktifkan signup publik & blok auto-register Google
+ACCOUNT_ADAPTER = 'coreapp.adapters.CustomAccountAdapter'
+SOCIALACCOUNT_ADAPTER = 'coreapp.adapters.CustomSocialAccountAdapter'
+
+# Larang auto-signup dari social account (Google)
+SOCIALACCOUNT_AUTO_SIGNUP = False
+SOCIALACCOUNT_EMAIL_REQUIRED = True
 
 # Google OAuth settings
 SOCIALACCOUNT_PROVIDERS = {

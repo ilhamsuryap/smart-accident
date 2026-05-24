@@ -264,7 +264,7 @@
 
                                 <!-- Nama -->
                                 <span class="font-medium">
-                                    {{ user.username|default:user.username }}
+                                    {{ user.display_name }}
                                 </span>
                             </a>
 </li>
@@ -295,6 +295,14 @@
             <span>Dashboard</span>
         </a>
 
+        {% if request.user.profile.role == 'superadmin' %}
+        <a class="sidebar-link {% if current == 'admin_list' or current == 'admin_create' or current == 'admin_update' or current == 'admin_delete' %}active{% endif %}" 
+           href="{% url 'admin_list' %}">
+            <i class="fas fa-user-shield icon-left"></i>
+            <span>Kelola Akun Admin</span>
+        </a>
+        {% endif %}
+
         <div class="sidebar-divider"></div>
 
         <!-- ANALISIS -->
@@ -321,17 +329,17 @@
                     <a class="sidebar-link {% if current == 'ruas_jalan_list' %}active{% endif %}" 
                        href="{% url 'ruas_jalan_list' %}">
                         <i class="fas fa-road icon-left"></i>
-                        <span>Ruas Jalan</span>
+                        <span>Kelola Ruas Jalan</span>
                     </a>
                     <a class="sidebar-link {% if current == 'upload_kecelakaan_raw' or current == 'kecelakaan_raw_list' %}active{% endif %}" 
                        href="{% url 'kecelakaan_raw_list' %}">
                         <i class="fas fa-upload icon-left"></i>
-                        <span>Data Raw</span>
+                        <span>Kelola Data Raw</span>
                     </a>
                     <a class="sidebar-link {% if current == 'upload_kecelakaan_preprosesing' or current == 'kecelakaan_preprosesing_list' %}active{% endif %}" 
                        href="{% url 'kecelakaan_preprosesing_list' %}">
                         <i class="fas fa-database icon-left"></i>
-                        <span>Data Preprosesing</span>
+                        <span>Kelola Data Preprosesing</span>
                     </a>
                     <a class="sidebar-link {% if current == 'map' %}active{% endif %}" 
                        href="{% url 'map' %}">

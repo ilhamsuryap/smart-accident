@@ -156,41 +156,33 @@
                         </div>
                     </li>
 
-                    <!-- {% if user.is_authenticated %} -->
-                        <!-- USER MENU -->
-                        <!-- <li class="relative group"> -->
-                            <!-- <button class="text-white flex items-center gap-2 hover:text-gray-200">
-                                <i class="fas fa-user"></i> {{ user.first_name|default:user.username }}
-                            </button>
+                   {% if user.is_authenticated %}
+<li class="relative group">
+    <button class="text-white flex items-center gap-2 hover:text-gray-200">
+        <i class="fas fa-user"></i> {{ user.display_name }}
+    </button>
 
-                            <div class="absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded-lg shadow-lg hidden group-hover:block z-50">
-                                {% if user.is_staff %}
-                                    <a href="/dashboard/" class="block px-4 py-2 hover:bg-gray-100">Dashboard Admin</a>
-                                    <hr>
-                                {% endif %}
-                                <a href="{% url 'logout' %}" class="block px-4 py-2 hover:bg-gray-100">Logout</a>
-                            </div>
-                        </li>
-
-                    {% else %}
-                        LOGIN BUTTON -->
-                        <!-- <li>
-                            <a href="{% url 'login' %}" 
-                            class="flex items-center gap-2 bg-white text-blue px-4 py-2 rounded font-semibold hover:bg-gray-100 transition">
-                                <i class="fas fa-right-to-bracket"></i>
-                                Masuk
-                            </a>
-                        </li> -->
-                    <!-- {% endif %} -->
-
-                    <li>
-                        <a href="{% url 'login' %}" 
-                        class="flex items-center gap-2 bg-white text-blue px-4 py-2 rounded font-semibold hover:bg-gray-100 transition">
-                            <i class="fas fa-right-to-bracket"></i>
-                            Masuk
-                        </a>
-                    </li>
-
+    <div class="absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded-lg shadow-lg hidden group-hover:block z-50">
+        {% if user.is_staff %}
+            <a href="/dashboard/" class="block px-4 py-2 hover:bg-gray-100">
+                Dashboard Admin
+            </a>
+            <hr>
+        {% endif %}
+        <a href="{% url 'logout' %}" class="block px-4 py-2 hover:bg-gray-100">
+            Logout
+        </a>
+    </div>
+</li>
+{% else %}
+<li>
+    <a href="{% url 'login' %}" 
+       class="flex items-center gap-2 bg-white text-blue px-4 py-2 rounded font-semibold hover:bg-gray-100 transition">
+        <i class="fas fa-right-to-bracket"></i>
+        Masuk
+    </a>
+</li>
+{% endif %}
                 </ul>
                 </div>
             </div>

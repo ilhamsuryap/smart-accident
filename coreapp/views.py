@@ -4,7 +4,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse, Http404
 from django.views.generic import (
     ListView, DetailView, CreateView, UpdateView, DeleteView
 )
@@ -18,7 +18,7 @@ from rest_framework.response import Response
 from sklearn.discriminant_analysis import StandardScaler
 from .models import (
     RuasJalan, SegmenJalan, Kecelakaan, AnalisisZScore, RekapSegmen,
-    Kota, Kecamatan, Kelurahan, ClusterData, AIConfig
+    Kota, Kecamatan, Kelurahan, ClusterData, AIConfig, Profile, POLRES_CHOICES
 )
 from rest_framework import status
 import json
@@ -34,8 +34,10 @@ from sklearn.cluster import KMeans
 
 from django.conf import settings
 from django.shortcuts import render, redirect   
-from io import StringIO
+from io import StringIO, BytesIO
 from django.shortcuts import redirect
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import StandardScaler, LabelEncoder
@@ -45,52 +47,119 @@ from sklearn.metrics import silhouette_score
 
 from .models import RuasJalan, SegmenJalan, Kecelakaan, RekapSegmen, AnalisisZScore, KecelakaanRaw, KecelakaanPreprosesing
 from .forms import (
-    UserRegistrationForm, RuasJalanForm, SegmenJalanForm, 
+    LoginForm, AdminCreateForm, AdminUpdateForm,
+    RuasJalanForm, SegmenJalanForm,
     KecelakaanForm, RekapSegmenForm, UploadKecelakaanRawForm, UploadKecelakaanPreprosesForm
 )
-# Helper function
+
+
+# ============================================================
+# HELPER FUNCTIONS — Role Checking
+# ============================================================
 def is_admin(user):
-    return user.is_staff or user.is_superuser
+    """Cek apakah user adalah admin atau superadmin (berdasarkan Profile)"""
+    if not user.is_authenticated:
+        return False
+    try:
+        return user.profile.role in ('admin', 'superadmin') and user.profile.is_active
+    except Exception:
+        return False
 
 
-# Authentication Views
+def is_superadmin(user):
+    """Cek apakah user adalah superadmin"""
+    if not user.is_authenticated:
+        return False
+    try:
+        return user.profile.role == 'superadmin' and user.profile.is_active
+    except Exception:
+        return False
+
+
+def superadmin_required(view_func):
+    """Decorator untuk view yang hanya bisa diakses superadmin"""
+    decorated = login_required(login_url='login')(
+        user_passes_test(is_superadmin, login_url='dashboard')(view_func)
+    )
+    return decorated
+
+
+# ============================================================
+# AUTHENTICATION VIEWS
+# ============================================================
 def register_view(request):
-    """View untuk registrasi user baru"""
-    if request.method == 'POST':
-        form = UserRegistrationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            messages.success(request, 'Registrasi berhasil! Silakan login.')
-            return redirect('login')
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{field}: {error}")
-    else:
-        form = UserRegistrationForm()
-    
-    context = {'form': form}
-    return render(request, 'registration/register.html', context)
+    """Registrasi publik dinonaktifkan — hanya superadmin yang bisa membuat akun."""
+    messages.error(request, 'Pendaftaran akun tidak tersedia. Hubungi Super Admin.')
+    return redirect('login')
 
 
 def login_view(request):
-    """View untuk login"""
+    """View login berbasis EMAIL + PASSWORD dengan validasi role dan is_active."""
     if request.user.is_authenticated:
         return redirect('dashboard')
-    
+
+    # Tangani pesan error dari Google OAuth redirect
+    google_error = request.GET.get('error', '')
+    google_error_messages = {
+        'google_no_email': 'Akun Google tidak memiliki email yang dapat digunakan.',
+        'google_not_registered': 'Email Google Anda tidak terdaftar dalam sistem. Hubungi Super Admin.',
+        'google_inactive': 'Akun Anda telah dinonaktifkan. Hubungi Super Admin.',
+        'google_role_denied': 'Akun Anda tidak memiliki akses ke sistem ini.',
+        'google_no_profile': 'Profil akun tidak ditemukan. Hubungi Super Admin.',
+    }
+    if google_error and google_error in google_error_messages:
+        messages.error(request, google_error_messages[google_error])
+
+    form = LoginForm()
+
     if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        user = authenticate(request, username=username, password=password)
-        
-        if user is not None:
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email'].strip().lower()
+            password = form.cleaned_data['password']
+
+            # Cari user berdasarkan email
+            try:
+                user_obj = User.objects.get(email__iexact=email)
+            except User.DoesNotExist:
+                messages.error(request, 'Email tidak terdaftar dalam sistem.')
+                return render(request, 'registration/login.html', {'form': form})
+            except User.MultipleObjectsReturned:
+                user_obj = User.objects.filter(email__iexact=email).order_by('-date_joined').first()
+
+            # Cek profile
+            try:
+                profile = user_obj.profile
+            except Exception:
+                messages.error(request, 'Profil akun tidak ditemukan. Hubungi Super Admin.')
+                return render(request, 'registration/login.html', {'form': form})
+
+            # Cek is_active
+            if not profile.is_active:
+                messages.error(request, 'Akun Anda telah dinonaktifkan. Hubungi Super Admin.')
+                return render(request, 'registration/login.html', {'form': form})
+
+            # Cek role
+            if profile.role not in ('superadmin', 'admin'):
+                messages.error(request, 'Akun Anda tidak memiliki akses ke sistem ini.')
+                return render(request, 'registration/login.html', {'form': form})
+
+            # Autentikasi password via custom backend
+            user = authenticate(request, username=email, password=password)
+            if user is None:
+                messages.error(request, 'Password salah. Silakan coba lagi.')
+                return render(request, 'registration/login.html', {'form': form})
+
+            # Login berhasil
             login(request, user)
-            messages.success(request, f'Selamat datang, {user.first_name or user.username}!')
-            return redirect('dashboard')
+            nama = user.first_name or user.email
+            messages.success(request, f'Selamat datang, {nama}!')
+            next_url = request.GET.get('next', 'dashboard')
+            return redirect(next_url)
         else:
-            messages.error(request, 'Username atau password salah.')
-    
-    return render(request, 'registration/login.html')
+            messages.error(request, 'Data yang dimasukkan tidak valid.')
+
+    return render(request, 'registration/login.html', {'form': form})
 
 
 def logout_view(request):
@@ -98,6 +167,147 @@ def logout_view(request):
     logout(request)
     messages.success(request, 'Anda telah logout.')
     return redirect('login')
+
+
+# ============================================================
+# SUPERADMIN — KELOLA AKUN ADMIN
+# ============================================================
+@superadmin_required
+def admin_list(request):
+    """Daftar semua akun admin (hanya superadmin)"""
+    # Ambil semua user yang punya profile dengan role admin/superadmin
+    profiles = Profile.objects.select_related('user').filter(
+        role__in=['admin', 'superadmin']
+    ).order_by('role', 'user__email')
+
+    context = {
+        'profiles': profiles,
+        'polres_choices': POLRES_CHOICES,
+    }
+    return render(request, 'superadmin/admin_list.html', context)
+
+
+@superadmin_required
+def admin_create(request):
+    """Buat akun admin baru (hanya superadmin)"""
+    if request.method == 'POST':
+        form = AdminCreateForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            nama = user.get_full_name() or user.email
+            messages.success(request, f'Akun admin "{nama}" berhasil dibuat.')
+            return redirect('admin_list')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    label = form.fields[field].label if field in form.fields else field
+                    messages.error(request, f'{label}: {error}')
+    else:
+        form = AdminCreateForm()
+
+    context = {
+        'form': form,
+        'title': 'Tambah Akun Admin',
+        'action': 'create',
+    }
+    return render(request, 'superadmin/admin_form.html', context)
+
+
+@superadmin_required
+def admin_update(request, user_id):
+    """Edit akun admin (hanya superadmin)"""
+    target_user = get_object_or_404(User, pk=user_id)
+
+    # Superadmin tidak bisa edit dirinya sendiri di sini (pakai profil)
+    if target_user == request.user:
+        messages.warning(request, 'Gunakan halaman Profil untuk mengubah akun Anda sendiri.')
+        return redirect('admin_list')
+
+    try:
+        target_profile = target_user.profile
+    except Profile.DoesNotExist:
+        messages.error(request, 'Profil tidak ditemukan untuk user ini.')
+        return redirect('admin_list')
+
+    if request.method == 'POST':
+        form = AdminUpdateForm(request.POST, user_instance=target_user)
+        if form.is_valid():
+            form.save(target_user)
+            nama = target_user.get_full_name() or target_user.email
+            messages.success(request, f'Akun "{nama}" berhasil diperbarui.')
+            return redirect('admin_list')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    label = form.fields[field].label if field in form.fields else field
+                    messages.error(request, f'{label}: {error}')
+    else:
+        # Isi form dengan data user saat ini
+        form = AdminUpdateForm(
+            user_instance=target_user,
+            initial={
+                'email': target_user.email,
+                'first_name': target_user.first_name,
+                'last_name': target_user.last_name,
+                'role': target_profile.role,
+                'polres': target_profile.polres,
+                'is_active': target_profile.is_active,
+            }
+        )
+
+    context = {
+        'form': form,
+        'title': f'Edit Akun: {target_user.get_full_name() or target_user.email}',
+        'target_user': target_user,
+        'target_profile': target_profile,
+        'action': 'update',
+    }
+    return render(request, 'superadmin/admin_form.html', context)
+
+
+@superadmin_required
+def admin_delete(request, user_id):
+    """Hapus akun admin (hanya superadmin)"""
+    target_user = get_object_or_404(User, pk=user_id)
+
+    # Jangan hapus diri sendiri
+    if target_user == request.user:
+        messages.error(request, 'Anda tidak dapat menghapus akun Anda sendiri.')
+        return redirect('admin_list')
+
+    if request.method == 'POST':
+        nama = target_user.get_full_name() or target_user.email
+        target_user.delete()
+        messages.success(request, f'Akun "{nama}" berhasil dihapus.')
+        return redirect('admin_list')
+
+    context = {
+        'target_user': target_user,
+        'target_profile': getattr(target_user, 'profile', None),
+    }
+    return render(request, 'superadmin/admin_confirm_delete.html', context)
+
+
+@superadmin_required
+def admin_toggle_active(request, user_id):
+    """Toggle status aktif/nonaktif akun admin"""
+    target_user = get_object_or_404(User, pk=user_id)
+
+    if target_user == request.user:
+        messages.error(request, 'Anda tidak dapat menonaktifkan akun Anda sendiri.')
+        return redirect('admin_list')
+
+    try:
+        profile = target_user.profile
+        profile.is_active = not profile.is_active
+        profile.save()
+        status_text = 'diaktifkan' if profile.is_active else 'dinonaktifkan'
+        nama = target_user.get_full_name() or target_user.email
+        messages.success(request, f'Akun "{nama}" berhasil {status_text}.')
+    except Exception as e:
+        messages.error(request, f'Gagal mengubah status akun: {e}')
+
+    return redirect('admin_list')
 
 
 # Homepage View
@@ -221,6 +431,8 @@ def dashboard_view(request):
 @login_required(login_url='login')
 def ruas_jalan_list(request):
     """Daftar ruas jalan"""
+    from .models import POLRES_CHOICES
+    
     ruas_jalan = RuasJalan.objects.all()
     
     if request.GET.get('search'):
@@ -230,9 +442,16 @@ def ruas_jalan_list(request):
             Q(wilayah__icontains=search)
         )
     
+    # Filter berdasarkan polres
+    selected_polres = request.GET.get('polres', '')
+    if selected_polres and selected_polres != 'all':
+        ruas_jalan = ruas_jalan.filter(polres=selected_polres)
+    
     context = {
         'ruas_jalan': ruas_jalan,
-        'is_admin': is_admin(request.user)
+        'is_admin': is_admin(request.user),
+        'polres_choices': POLRES_CHOICES,
+        'selected_polres': selected_polres
     }
     return render(request, 'coreapp/ruas_jalan/list.html', context)
 
@@ -244,7 +463,10 @@ def ruas_jalan_create(request):
     if request.method == 'POST':
         form = RuasJalanForm(request.POST)
         if form.is_valid():
-            ruas = form.save()
+            ruas = form.save(commit=False)
+            # Capture polres dari user.profile.polres
+            ruas.polres = request.user.profile.polres
+            ruas.save()
             # Auto-generate segmen jalan
             ruas.generate_segmen()
             messages.success(request, f'Ruas jalan "{ruas.nama_ruas}" berhasil ditambahkan dan segmen otomatis dibuat.')
@@ -2718,7 +2940,8 @@ def upload_kecelakaan_raw(request):
                             'desa': str(row['desa']) if pd.notna(row['desa']) else '',
                             'kecamatan': str(row['kecamatan']) if pd.notna(row['kecamatan']) else '',
                             'kabupaten_kota': str(row['kabupaten_kota']) if pd.notna(row['kabupaten_kota']) else '',
-                            'keterangan': str(row['keterangan']) if pd.notna(row['keterangan']) else ''
+                            'keterangan': str(row['keterangan']) if pd.notna(row['keterangan']) else '',
+                            'polres': request.user.profile.polres
                         }
                         
                         # Tambah nomor_kecelakaan jika ada di file
@@ -2747,6 +2970,8 @@ def upload_kecelakaan_raw(request):
 @login_required(login_url='login')
 def kecelakaan_raw_list(request):
     """Daftar data kecelakaan raw"""
+    from .models import POLRES_CHOICES
+    
     kecelakaan = KecelakaanRaw.objects.all()
     
     if request.GET.get('search'):
@@ -2761,11 +2986,18 @@ def kecelakaan_raw_list(request):
         tahun = request.GET.get('tahun')
         kecelakaan = kecelakaan.filter(tanggal__year=tahun)
     
+    # Filter berdasarkan polres
+    selected_polres = request.GET.get('polres', '')
+    if selected_polres and selected_polres != 'all':
+        kecelakaan = kecelakaan.filter(polres=selected_polres)
+    
     context = {
         'kecelakaan': kecelakaan[:100],
         'is_admin': is_admin(request.user),
         'tahun_options': range(2020, timezone.now().year + 1),
-        'title': 'Data Kecelakaan Raw'
+        'title': 'Data Kecelakaan Raw',
+        'polres_choices': POLRES_CHOICES,
+        'selected_polres': selected_polres
     }
     return render(request, 'coreapp/kecelakaan/list_raw.html', context)
 
@@ -2837,7 +3069,8 @@ def upload_kecelakaan_preprosesing(request):
                             'desa': str(row['desa']) if pd.notna(row['desa']) else '',
                             'kecamatan': str(row['kecamatan']) if pd.notna(row['kecamatan']) else '',
                             'kabupaten_kota': str(row['kabupaten_kota']) if pd.notna(row['kabupaten_kota']) else '',
-                            'keterangan': str(row['keterangan']) if pd.notna(row['keterangan']) else ''
+                            'keterangan': str(row['keterangan']) if pd.notna(row['keterangan']) else '',
+                            'polres': request.user.profile.polres
                         }
                         
                         # Tambah nomor_kecelakaan jika ada di file
@@ -2864,8 +3097,143 @@ def upload_kecelakaan_preprosesing(request):
 
 
 @login_required(login_url='login')
+def download_template_preprosesing(request):
+    """Download template Excel untuk upload kecelakaan preprocessing"""
+    # Buat workbook baru
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Data Kecelakaan'
+    
+    # Definisikan kolom
+    columns = [
+        'nomor_kecelakaan',
+        'tanggal',
+        'waktu',
+        'latitude',
+        'longitude',
+        'korban_meninggal',
+        'korban_luka_berat',
+        'korban_luka_ringan',
+        'kerugian_materi',
+        'desa',
+        'kecamatan',
+        'kabupaten_kota',
+        'keterangan'
+    ]
+    
+    # Styling untuk header
+    header_font = Font(bold=True, color="FFFFFF", size=11)
+    header_fill = PatternFill(start_color="0066CC", end_color="0066CC", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+    
+    # Tulis header
+    for col_num, column_title in enumerate(columns, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = column_title
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+        cell.border = border
+    
+    # Styling untuk data rows (example rows)
+    data_alignment = Alignment(horizontal="left", vertical="center")
+    
+    # Tambahkan contoh baris kosong untuk format
+    example_rows = 5
+    for row_num in range(2, 2 + example_rows):
+        for col_num in range(1, len(columns) + 1):
+            cell = ws.cell(row=row_num, column=col_num)
+            cell.border = border
+            cell.alignment = data_alignment
+    
+    # Set lebar kolom
+    column_widths = {
+        'A': 18,  # nomor_kecelakaan
+        'B': 15,  # tanggal
+        'C': 12,  # waktu
+        'D': 12,  # latitude
+        'E': 12,  # longitude
+        'F': 18,  # korban_meninggal
+        'G': 18,  # korban_luka_berat
+        'H': 18,  # korban_luka_ringan
+        'I': 16,  # kerugian_materi
+        'J': 15,  # desa
+        'K': 15,  # kecamatan
+        'L': 18,  # kabupaten_kota
+        'M': 20   # keterangan
+    }
+    
+    for col, width in column_widths.items():
+        ws.column_dimensions[col].width = width
+    
+    # Set row height untuk header
+    ws.row_dimensions[1].height = 25
+    
+    # Tambahkan sheet instruksi
+    ws_instruction = wb.create_sheet('Instruksi')
+    ws_instruction.column_dimensions['A'].width = 80
+    
+    instructions = [
+        'INSTRUKSI PENGISIAN TEMPLATE DATA KECELAKAAN',
+        '',
+        'Kolom yang Wajib Diisi:',
+        '• nomor_kecelakaan: Nomor urut atau ID kecelakaan (opsional, auto-generate jika kosong)',
+        '• tanggal: Tanggal kejadian (format: YYYY-MM-DD, contoh: 2026-05-22)',
+        '• waktu: Waktu kejadian (format: HH:MM:SS, contoh: 14:30:00)',
+        '• latitude: Garis lintang (format: desimal, contoh: -6.2088)',
+        '• longitude: Garis bujur (format: desimal, contoh: 106.8456)',
+        '• korban_meninggal: Jumlah korban meninggal (angka)',
+        '• korban_luka_berat: Jumlah korban luka berat (angka)',
+        '• korban_luka_ringan: Jumlah korban luka ringan (angka)',
+        '• kerugian_materi: Nilai kerugian materi (angka, dalam Rupiah)',
+        '• desa: Nama desa/kelurahan (teks)',
+        '• kecamatan: Nama kecamatan (teks)',
+        '• kabupaten_kota: Nama kabupaten/kota (teks)',
+        '• keterangan: Deskripsi atau catatan tambahan (teks)',
+        '',
+        'Catatan Penting:',
+        '• Pastikan semua data sudah valid sebelum upload',
+        '• Tanggal dan waktu harus sesuai format yang ditetapkan',
+        '• Koordinat latitude/longitude harus dalam format desimal',
+        '• Data akan otomatis diassign ke segmen jalan terdekat (threshold 5 km)',
+        '• Maksimal 10.000 baris per file upload',
+        '• Data tetap diimport ke sistem meskipun tidak cocok dengan segmen manapun',
+    ]
+    
+    for row_num, instruction in enumerate(instructions, 1):
+        cell = ws_instruction.cell(row=row_num, column=1)
+        cell.value = instruction
+        if row_num == 1:
+            cell.font = Font(bold=True, size=12)
+        elif instruction.startswith('•'):
+            cell.alignment = Alignment(wrap_text=True)
+    
+    # Simpan ke BytesIO
+    buffer = BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    
+    # Return sebagai response
+    response = HttpResponse(
+        buffer.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename="Template_Kecelakaan_Preprosesing.xlsx"'
+    
+    return response
+
+
+@login_required(login_url='login')
 def kecelakaan_preprosesing_list(request):
     """Daftar data kecelakaan preprocessing"""
+    from .models import POLRES_CHOICES
+    
     kecelakaan = KecelakaanPreprosesing.objects.all()
     
     if request.GET.get('search'):
@@ -2880,11 +3248,18 @@ def kecelakaan_preprosesing_list(request):
         tahun = request.GET.get('tahun')
         kecelakaan = kecelakaan.filter(tanggal__year=tahun)
     
+    # Filter berdasarkan polres
+    selected_polres = request.GET.get('polres', '')
+    if selected_polres and selected_polres != 'all':
+        kecelakaan = kecelakaan.filter(polres=selected_polres)
+    
     context = {
         'kecelakaan': kecelakaan[:100],
         'is_admin': is_admin(request.user),
         'tahun_options': range(2020, timezone.now().year + 1),
-        'title': 'Data Kecelakaan Preprosesing'
+        'title': 'Data Kecelakaan Preprosesing',
+        'polres_choices': POLRES_CHOICES,
+        'selected_polres': selected_polres
     }
     return render(request, 'coreapp/kecelakaan/list_preprosesing.html', context)
 
@@ -2910,6 +3285,8 @@ from .models import Profile
 
 @login_required
 def profile(request):
+    from .models import POLRES_CHOICES
+    
     user = request.user
 
     # 🔥 PASTIKAN PROFILE ADA
@@ -2926,6 +3303,7 @@ def profile(request):
         user.save()
 
         profile.alamat = request.POST.get('alamat')
+        profile.polres = request.POST.get('polres', 'madiun')
 
         if request.FILES.get('foto'):
             profile.foto = request.FILES.get('foto')
@@ -2934,4 +3312,7 @@ def profile(request):
 
         return redirect('profile')
 
-    return render(request, 'profile.html')
+    context = {
+        'polres_choices': POLRES_CHOICES
+    }
+    return render(request, 'profile.html', context)

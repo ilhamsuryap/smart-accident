@@ -12,6 +12,12 @@ import decimal
 import traceback
 
 
+# PILIHAN POLRES
+POLRES_CHOICES = (
+    ('madiun', 'Polres Madiun'),
+    ('madiun_kota', 'Polres Madiun Kota'),
+)
+
 
 class RuasJalan(models.Model):
     """Model untuk data ruas jalan"""
@@ -34,6 +40,7 @@ class RuasJalan(models.Model):
     lat_akhir = models.DecimalField(max_digits=25, decimal_places=20, null=True, blank=True, help_text="Latitude titik akhir ruas jalan")
     lon_akhir = models.DecimalField(max_digits=25, decimal_places=20, null=True, blank=True, help_text="Longitude titik akhir ruas jalan")
     geometry = models.TextField(null=True, blank=True, help_text="GeoJSON LineString untuk seluruh ruas jalan")
+    polres = models.CharField(max_length=20, choices=POLRES_CHOICES, default='madiun', help_text="Polres yang menambahkan ruas jalan ini")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -776,6 +783,7 @@ class KecelakaanRaw(models.Model):
     kecamatan = models.CharField(max_length=100)
     kabupaten_kota = models.CharField(max_length=100)
     keterangan = models.TextField(blank=True)
+    polres = models.CharField(max_length=20, choices=POLRES_CHOICES, default='madiun', help_text="Polres yang upload data raw ini")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -808,6 +816,7 @@ class KecelakaanPreprosesing(models.Model):
     kecamatan = models.CharField(max_length=100)
     kabupaten_kota = models.CharField(max_length=100)
     keterangan = models.TextField(blank=True)
+    polres = models.CharField(max_length=20, choices=POLRES_CHOICES, default='madiun', help_text="Polres yang upload data preprocessing ini")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -1017,12 +1026,39 @@ class AIConfig(models.Model):
 
 # ================= PROFILE =================
 class Profile(models.Model):
+    ROLE_CHOICES = (
+        ('superadmin', 'Super Admin'),
+        ('admin', 'Admin'),
+    )
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    role = models.CharField(
+        max_length=20,
+        choices=ROLE_CHOICES,
+        default='admin',
+        help_text="Role pengguna dalam sistem"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Status aktif akun. Jika False, user tidak dapat login."
+    )
+    polres = models.CharField(
+        max_length=20,
+        choices=POLRES_CHOICES,
+        default='madiun',
+        help_text="Polres yang dikelola oleh user ini"
+    )
     alamat = models.TextField(blank=True)
     foto = models.ImageField(upload_to='profile/', blank=True, null=True)
 
     def __str__(self):
-        return self.user.username
+        return f"{self.user.username} ({self.get_role_display()})"
+
+    def is_superadmin(self):
+        return self.role == 'superadmin'
+
+    def is_admin_role(self):
+        return self.role in ('superadmin', 'admin')
 
 
 @receiver(post_save, sender=User)

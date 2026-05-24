@@ -6,7 +6,7 @@
 <div class="w-full">
     <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-            <h1 class="text-3xl font-bold">Daftar Ruas Jalan</h1>
+            <h1 class="text-3xl font-bold">Kelola Ruas Jalan</h1>
         </div>
         {% if is_admin %}
         <div>
@@ -19,9 +19,17 @@
     
     <!-- Search Form -->
     <div class="mb-6">
-        <form method="get" class="flex gap-2">
-            <input type="text" name="search" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200" 
+        <form method="get" class="flex gap-2 flex-wrap">
+            <input type="text" name="search" class="flex-1 min-w-[200px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200" 
                    placeholder="Cari nama ruas atau wilayah..." value="{{ request.GET.search }}">
+            
+            <select name="polres" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600">
+                <option value="">-- Semua Polres --</option>
+                {% for value, label in polres_choices %}
+                    <option value="{{ value }}" {% if value == selected_polres %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            
             <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                 <i class="fas fa-search"></i> Cari
             </button>
