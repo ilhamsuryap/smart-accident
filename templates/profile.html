@@ -8,6 +8,18 @@
 
     <div class="max-w-5xl mx-auto space-y-6">
 
+        <!-- Messages -->
+        {% if messages %}
+        <div class="space-y-3">
+            {% for message in messages %}
+            <div class="px-4 py-3 rounded-xl border {% if message.tags %}border-{{ message.tags }}-300 bg-{{ message.tags }}-50 text-{{ message.tags }}-800{% else %}border-blue-300 bg-blue-50 text-blue-800{% endif %} flex items-start gap-3">
+                <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %} mt-0.5"></i>
+                <span class="text-sm font-medium">{{ message }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         <!-- ================= CARD ATAS ================= -->
         <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 flex items-center justify-between">
 
@@ -64,7 +76,11 @@
                 <div class="bg-gray-50 p-4 rounded-xl">
                     <p class="text-xs text-gray-500 mb-1">Nama Lengkap</p>
                     <p class="font-semibold text-gray-800">
-                        {{ user.first_name }} {{ user.last_name }}
+                        {% if user.first_name or user.last_name %}
+                            {{ user.first_name }} {{ user.last_name }}
+                        {% else %}
+                            -
+                        {% endif %}
                     </p>
                 </div>
 
@@ -73,7 +89,7 @@
                     <p class="font-semibold text-gray-800">
                         {% if user.profile.polres %}
                             {% for value, label in polres_choices %}
-                                {% if value == user.profile.polres %}{{ label }}{% endif %}
+                                {% if value == user.profile.polres.id %}{{ label }}{% endif %}
                             {% endfor %}
                         {% else %}
                             -
@@ -118,7 +134,7 @@
                         class="mt-1 border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none p-3 rounded-xl w-full">
                         <option value="">-- Pilih Polres --</option>
                         {% for value, label in polres_choices %}
-                            <option value="{{ value }}" {% if value == user.profile.polres %}selected{% endif %}>{{ label }}</option>
+                            <option value="{{ value }}" {% if user.profile.polres and user.profile.polres.id == value %}selected{% endif %}>{{ label }}</option>
                         {% endfor %}
                     </select>
                 </div>

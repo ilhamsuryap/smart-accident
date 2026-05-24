@@ -17,6 +17,10 @@ urlpatterns = [
     path('superadmin/admins/<int:user_id>/delete/', views.admin_delete, name='admin_delete'),
     path('superadmin/admins/<int:user_id>/toggle/', views.admin_toggle_active, name='admin_toggle_active'),
 
+    path('superadmin/polres/', views.polres_list, name='polres_list'),
+    path('superadmin/polres/create/', views.polres_create, name='polres_create'),
+    path('superadmin/polres/<int:pk>/edit/', views.polres_update, name='polres_update'),
+    path('superadmin/polres/<int:pk>/delete/', views.polres_delete, name='polres_delete'),
     # Dashboard (Admin)
     path('dashboard/', views.dashboard_view, name='dashboard'),
 

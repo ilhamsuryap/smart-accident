@@ -9,6 +9,23 @@
             <h1 class="text-2xl font-bold text-gray-900">Data Kecelakaan Preprocessing</h1>
             <p class="text-gray-600 text-sm mt-1">Data kecelakaan siap untuk analisis (sudah diassign ke segmen)</p>
         </div>
+            <select name="polres"
+                    class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600">
+                <option value="">-- Semua Polres --</option>
+
+                {% for polres in polres_choices %}
+                    <option value="{{ polres.id }}"
+                        {% if polres.id|stringformat:"s" == selected_polres|stringformat:"s" %}
+                            selected
+                        {% endif %}
+                    >
+                        {{ polres.nama }}
+                    </option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                <i class="fas fa-search"></i> Cari
+            </button>
         {% if is_admin %}
         <a href="{% url 'upload_kecelakaan_preprosesing' %}" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
             <i class="fas fa-upload mr-2"></i>Upload Data Preprocessing

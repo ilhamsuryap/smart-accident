@@ -91,7 +91,7 @@
                   {% if not profile.user.first_name %}{{ profile.user.email|first|upper }}{% endif %}
                 </div>
                 <div>
-                  <div class="font-semibold text-gray-800">{{ profile.user.get_full_name|default:profile.user.username }}</div>
+                  <div class="font-semibold text-gray-800">{{ profile.user.first_name }} {{ profile.user.last_name|default:profile.user.email }}</div>
                   <div class="text-gray-500 text-xs mt-0.5">{{ profile.user.email }}</div>
                 </div>
               </div>
@@ -107,9 +107,13 @@
               </span>
               {% endif %}
             </td>
-            <td class="px-6 py-4 text-sm text-gray-700">
-              {{ profile.get_polres_display }}
-            </td>
+          <td class="px-6 py-4 text-sm text-gray-700">
+    {% if profile.polres %}
+        {{ profile.polres.nama }}
+    {% else %}
+        -
+    {% endif %}
+</td>
             <td class="px-6 py-4">
               {% if profile.is_active %}
               <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-green-50 text-green-700">

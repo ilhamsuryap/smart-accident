@@ -302,6 +302,14 @@
         </a>
         {% endif %}
 
+       {% if request.user.profile.role == 'superadmin' %}
+       <a class="sidebar-link {% if current == 'polres_list' or current == 'polres_create' or current == 'polres_update' or current == 'polres_delete' %}active{% endif %}" 
+           href="{% url 'polres_list' %}">
+            <i class="fas fa-building icon-left"></i>
+            <span>Kelola Polres</span> 
+        </a>
+        {% endif %}
+
         <div class="sidebar-divider"></div>
 
         <!-- ANALISIS -->

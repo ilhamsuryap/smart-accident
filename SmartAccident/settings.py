@@ -42,14 +42,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
     'rest_framework',
     'corsheaders',
-    'coreapp',
+
     'django.contrib.sites',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
+
+    'coreapp',
 ]
 
 MIDDLEWARE = [
@@ -63,9 +66,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # Custom security middleware
-    'coreapp.auth_middleware.SecurityHeadersMiddleware',
-    'coreapp.auth_middleware.AuditLoggingMiddleware',
-    'coreapp.auth_middleware.UserStatusCheckMiddleware',
+    # 'coreapp.auth_middleware.SecurityHeadersMiddleware',
+    # 'coreapp.auth_middleware.AuditLoggingMiddleware',
+    # 'coreapp.auth_middleware.UserStatusCheckMiddleware',
 ]
 
 ROOT_URLCONF = 'SmartAccident.urls'
@@ -156,7 +159,7 @@ TEMPLATES = [
         },
     },
 ]
-
+SOCIALACCOUNT_LOGIN_ON_GET = True
 # GeoDjango settings (removed - using standard MySQL)
 
 # User authentication
@@ -169,13 +172,21 @@ LOGOUT_REDIRECT_URL = 'login'
 SITE_ID = 1
 
 AUTHENTICATION_BACKENDS = [
-   'django.contrib.auth.backends.ModelBackend',  # default Django
-    'allauth.account.auth_backends.AuthenticationBackend',
+#    'django.contrib.auth.backends.ModelBackend', 
+    'coreapp.backends.EmailBackend', # default Django
+    'django.contrib.auth.backends.ModelBackend',
+    # 'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 # Custom account adapter untuk prevent auto-register
-ACCOUNT_ADAPTER = 'coreapp.auth_adapters.CustomAccountAdapter'
-SOCIALACCOUNT_ADAPTER = 'coreapp.auth_adapters.CustomSocialAccountAdapter'
+# ACCOUNT_ADAPTER = 'coreapp.auth_adapters.CustomAccountAdapter'
+# SOCIALACCOUNT_ADAPTER = 'coreapp.auth_adapters.CustomSocialAccountAdapter'
+
+ACCOUNT_ADAPTER = "coreapp.adapters.CustomAccountAdapter"
+SOCIALACCOUNT_ADAPTER = "coreapp.adapters.CustomSocialAccountAdapter"
+
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
 
 # Allauth configuration
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
