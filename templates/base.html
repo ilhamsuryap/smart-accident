@@ -1,38 +1,38 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Smart Accident - Sistem Pemetaan Kerawanan Kecelakaan{% endblock %}</title>
-    
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-    
+
     <!-- Google Fonts - Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100;0,14..32,200;0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900;1,14..32,100;1,14..32,200;1,14..32,300;1,14..32,400;1,14..32,500;1,14..32,600;1,14..32,700;1,14..32,800;1,14..32,900&display=swap" rel="stylesheet">
-    
-<link
-  rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-/>
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100;0,14..32,200;0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900;1,14..32,100;1,14..32,200;1,14..32,300;1,14..32,400;1,14..32,500;1,14..32,600;1,14..32,700;1,14..32,800;1,14..32,900&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/static/css/style.css">
-    
+
     <style>
         * {
             font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
         }
-        
+
         /* ===== STAT CARDS ===== */
         .stat-card {
             text-align: center;
@@ -40,10 +40,18 @@
             border-radius: 0.75rem;
             color: white;
         }
-        .stat-card-danger, .stat-card-warning, .stat-card-info, .stat-card-success {
+
+        .stat-card-danger,
+        .stat-card-warning,
+        .stat-card-info,
+        .stat-card-success {
             background: #1152D4;
         }
-        .bg-blue { background-color: #1152D4; }
+
+        .bg-blue {
+            background-color: #1152D4;
+        }
+
         .stat-card h6 {
             font-size: 0.75rem;
             text-transform: uppercase;
@@ -52,6 +60,7 @@
             opacity: 0.85;
             font-weight: 600;
         }
+
         .stat-card .value {
             font-size: 1.75rem;
             font-weight: 800;
@@ -67,39 +76,41 @@
             background: #ffffff;
             display: flex;
             flex-direction: column;
-           
+
             z-index: 40;
         }
 
         /* Brand area */
         .sidebar-brand {
-             display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.65rem;
-    background: #1152D4;
-    border-bottom: 1px solid rgba(255,255,255,0.15);
-    
-        }
-        .sidebar-brand-icon {
-    width: 38px;
-    height: 38px;
-    background: rgba(255,255,255,0.15);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #ffffff;
-    font-size: 0.9rem;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-}
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.65rem;
+            background: #1152D4;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 
-.sidebar-brand-text {
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: #ffffff;
-    letter-spacing: -0.01em;
         }
+
+        .sidebar-brand-icon {
+            width: 38px;
+            height: 38px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar-brand-text {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: -0.01em;
+        }
+
         .sidebar-brand-sub {
             font-size: 0.65rem;
             color: #64748b;
@@ -143,23 +154,27 @@
             text-align: left;
             background: transparent;
         }
+
         .sidebar-link i.icon-left {
             width: 18px;
             text-align: center;
             font-size: 0.85rem;
             flex-shrink: 0;
         }
+
         .sidebar-link:hover {
-            background: rgba(255,255,255,0.06);
+            background: rgba(255, 255, 255, 0.06);
             color: #000000;
-            border-color: rgba(255,255,255,0.06);
+            border-color: rgba(255, 255, 255, 0.06);
         }
+
         .sidebar-link.active {
             background: #1152D4;
             color: #fbfbfb;
             border-color: rgba(255, 255, 255, 0.2);
             font-weight: 600;
         }
+
         .sidebar-link.active i.icon-left {
             color: #ffffff;
         }
@@ -172,6 +187,7 @@
             transition: transform 0.25s ease;
             flex-shrink: 0;
         }
+
         .sidebar-link.active .sidebar-chevron,
         .sidebar-link.dropdown-open .sidebar-chevron {
             transform: rotate(180deg);
@@ -184,20 +200,25 @@
             max-height: 0;
             transition: max-height 0.3s ease;
         }
+
         .sidebar-dropdown.open {
             max-height: 300px;
         }
+
         .sidebar-dropdown-inner {
             padding: 2px 0 4px 1.6rem;
         }
+
         .sidebar-dropdown-inner .sidebar-link {
             font-size: 0.825rem;
             padding: 0.5rem 0.8rem;
             color: #323334;
         }
+
         .sidebar-dropdown-inner .sidebar-link:hover {
             color: #cbd5e1;
         }
+
         .sidebar-dropdown-inner .sidebar-link.active {
             color: #ffffff;
         }
@@ -205,7 +226,7 @@
         /* Sidebar divider */
         .sidebar-divider {
             height: 1px;
-            background: rgba(255,255,255,0.06);
+            background: rgba(255, 255, 255, 0.06);
             margin: 0.5rem 0.75rem;
         }
 
@@ -213,8 +234,9 @@
         .sidebar-logout {
             padding: 0.75rem;
             border-top: 1px solid rgba(255, 8, 8, 0.06);
-            
+
         }
+
         .sidebar-logout a {
             display: flex;
             align-items: center;
@@ -227,23 +249,25 @@
             text-decoration: none;
             transition: all 0.2s ease;
             background: rgba(252, 0, 0, 0.08);
-            border: 1px solid rgba(239,68,68,0.15);
+            border: 1px solid rgba(239, 68, 68, 0.15);
         }
+
         .sidebar-logout a:hover {
             background: rgba(255, 11, 11, 0.18);
             color: #f82828;
         }
     </style>
-    
+
     {% block extra_css %}{% endblock %}
 </head>
+
 <body class="bg-gray-100">
     <!-- Navbar -->
     <nav class="bg-blue shadow-md sticky top-0 z-50">
         <div class="w-full px-4 py-4">
             <div class="flex items-center justify-between">
                 <a href="{% url 'dashboard' %}" class="font-bold text-xl text-white">
-                 Smart Accident
+                    Smart Accident
                 </a>
                 <button id="navToggle" type="button" class="text-white md:hidden">
                     <i class="fas fa-bars"></i>
@@ -252,272 +276,269 @@
                     <ul class="flex items-center gap-4">
                         {% if user.is_authenticated %}
                         <li>
-                            <a href="{% url 'profile' %}" 
-                            class="flex items-center gap-2 text-white hover:text-gray-200 transition">
+                            <a href="{% url 'profile' %}"
+                                class="flex items-center gap-2 text-white hover:text-gray-200 transition">
 
                                 <!-- Foto -->
-                                <img 
-                                    src="{% if request.user.profile.foto %}{{ request.user.profile.foto.url }}{% else %}/static/img/default-user.png{% endif %}"
-                                    alt="profile"
-                                    class="w-8 h-8 rounded-full object-cover border border-white"
-                                >
+                                <img src="{% if request.user.profile.foto %}{{ request.user.profile.foto.url }}{% else %}/static/img/default-user.png{% endif %}"
+                                    alt="profile" class="w-8 h-8 rounded-full object-cover border border-white">
 
                                 <!-- Nama -->
                                 <span class="font-medium">
-                                     {{ user.display_name }}
+                                    {{ user.display_name }}
                                 </span>
                             </a>
-</li>
+                        </li>
                         {% endif %}
                     </ul>
                 </div>
             </div>
         </div>
     </nav>
-    
-   {% if user.is_authenticated %}
-<div class="flex min-h-screen overflow-hidden">
-{% with current=request.resolver_match.url_name %}
 
-<!-- Sidebar -->
-<div id="sidebar">
+    {% if user.is_authenticated %}
+    <div class="flex min-h-screen overflow-hidden">
+        {% with current=request.resolver_match.url_name %}
 
-    <!-- Navigation -->
-    <nav class="sidebar-nav">
+        <!-- Sidebar -->
+        <div id="sidebar">
 
-        <!-- MENU UTAMA -->
-        <div class="sidebar-section-label">Menu Utama</div>
+            <!-- Navigation -->
+            <nav class="sidebar-nav">
 
-        <!-- Dashboard -->
-        <a class="sidebar-link {% if current == 'dashboard' %}active{% endif %}" 
-           href="{% url 'dashboard' %}">
-            <i class="fas fa-chart-line icon-left"></i>
-            <span>Dashboard</span>
-        </a>
-   {% if request.user.profile.role == 'superadmin' %}
-        <a class="sidebar-link {% if current == 'admin_list' or current == 'admin_create' or current == 'admin_update' or current == 'admin_delete' %}active{% endif %}" 
-           href="{% url 'admin_list' %}">
-            <i class="fas fa-user-shield icon-left"></i>
-            <span>Kelola Akun Admin</span>
-        </a>
-        {% endif %}
+                <!-- MENU UTAMA -->
+                <div class="sidebar-section-label">Menu Utama</div>
 
-       {% if request.user.profile.role == 'superadmin' %}
-       <a class="sidebar-link {% if current == 'polres_list' or current == 'polres_create' or current == 'polres_update' or current == 'polres_delete' %}active{% endif %}" 
-           href="{% url 'polres_list' %}">
-            <i class="fas fa-building icon-left"></i>
-            <span>Kelola Polres</span> 
-        </a>
-        {% endif %}
+                <!-- Dashboard -->
+                <a class="sidebar-link {% if current == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
+                    <i class="fas fa-chart-line icon-left"></i>
+                    <span>Dashboard</span>
+                </a>
+                {% if request.user.profile.role == 'superadmin' %}
+                <a class="sidebar-link {% if current == 'admin_list' or current == 'admin_create' or current == 'admin_update' or current == 'admin_delete' %}active{% endif %}"
+                    href="{% url 'admin_list' %}">
+                    <i class="fas fa-user-shield icon-left"></i>
+                    <span>Kelola Akun Admin</span>
+                </a>
+                {% endif %}
 
-        <div class="sidebar-divider"></div>
+                {% if request.user.profile.role == 'superadmin' %}
+                <a class="sidebar-link {% if current == 'polres_list' or current == 'polres_create' or current == 'polres_update' or current == 'polres_delete' %}active{% endif %}"
+                    href="{% url 'polres_list' %}">
+                    <i class="fas fa-building icon-left"></i>
+                    <span>Kelola Polres</span>
+                </a>
+                {% endif %}
 
-        <!-- ANALISIS -->
-        <div class="sidebar-section-label">Data & Analisis</div>
+                <div class="sidebar-divider"></div>
 
-        <!-- ================= PEMETAAN ================= -->
-        <div>
-            <button type="button" id="btnPemetaan" onclick="toggleSidebar('pemetaanDropdown','btnPemetaan')"
-                class="sidebar-link
+                <!-- ANALISIS -->
+                <div class="sidebar-section-label">Data & Analisis</div>
+
+                <!-- ================= PEMETAAN ================= -->
+                <div>
+                    <button type="button" id="btnPemetaan" onclick="toggleSidebar('pemetaanDropdown','btnPemetaan')"
+                        class="sidebar-link
                 {% if current == 'ruas_jalan_list' or current == 'kecelakaan_list' or current == 'map' or current == 'upload_kecelakaan_raw' or current == 'kecelakaan_raw_list' or current == 'upload_kecelakaan_preprosesing' or current == 'kecelakaan_preprosesing_list' %}
                     active dropdown-open
                 {% endif %}">
-                <i class="fas fa-map-marked-alt icon-left"></i>
-                <span>Pemetaan</span>
-                <i class="fas fa-chevron-down sidebar-chevron"></i>
-            </button>
+                        <i class="fas fa-map-marked-alt icon-left"></i>
+                        <span>Pemetaan</span>
+                        <i class="fas fa-chevron-down sidebar-chevron"></i>
+                    </button>
 
-            <div id="pemetaanDropdown"
-                class="sidebar-dropdown
+                    <div id="pemetaanDropdown" class="sidebar-dropdown
                 {% if current == 'ruas_jalan_list' or current == 'kecelakaan_list' or current == 'map' or current == 'upload_kecelakaan_raw' or current == 'kecelakaan_raw_list' or current == 'upload_kecelakaan_preprosesing' or current == 'kecelakaan_preprosesing_list' %}
                     open
                 {% endif %}">
-                <div class="sidebar-dropdown-inner">
-                    <a class="sidebar-link {% if current == 'ruas_jalan_list' %}active{% endif %}" 
-                       href="{% url 'ruas_jalan_list' %}">
-                        <i class="fas fa-road icon-left"></i>
-                        <span>Kelola Ruas Jalan</span>
-                    </a>
-                    <a class="sidebar-link {% if current == 'upload_kecelakaan_raw' or current == 'kecelakaan_raw_list' %}active{% endif %}" 
-                       href="{% url 'kecelakaan_raw_list' %}">
-                        <i class="fas fa-upload icon-left"></i>
-                        <span>Kelola Data Raw</span>
-                    </a>
-                    <a class="sidebar-link {% if current == 'upload_kecelakaan_preprosesing' or current == 'kecelakaan_preprosesing_list' %}active{% endif %}" 
-                       href="{% url 'kecelakaan_preprosesing_list' %}">
-                        <i class="fas fa-database icon-left"></i>
-                        <span>Kelola Data Preprosesing</span>
-                    </a>
-                    <a class="sidebar-link {% if current == 'map' %}active{% endif %}" 
-                       href="{% url 'map' %}">
-                        <i class="fas fa-map icon-left"></i>
-                        <span>Peta Interaktif</span>
-                    </a>
+                        <div class="sidebar-dropdown-inner">
+                            <a class="sidebar-link {% if current == 'ruas_jalan_list' %}active{% endif %}"
+                                href="{% url 'ruas_jalan_list' %}">
+                                <i class="fas fa-road icon-left"></i>
+                                <span>Kelola Ruas Jalan</span>
+                            </a>
+                            <a class="sidebar-link {% if current == 'upload_kecelakaan_raw' or current == 'kecelakaan_raw_list' %}active{% endif %}"
+                                href="{% url 'kecelakaan_raw_list' %}">
+                                <i class="fas fa-upload icon-left"></i>
+                                <span>Kelola Data Raw</span>
+                            </a>
+                            <a class="sidebar-link {% if current == 'upload_kecelakaan_preprosesing' or current == 'kecelakaan_preprosesing_list' %}active{% endif %}"
+                                href="{% url 'kecelakaan_preprosesing_list' %}">
+                                <i class="fas fa-database icon-left"></i>
+                                <span>Kelola Data Preprosesing</span>
+                            </a>
+                            <a class="sidebar-link {% if current == 'map' %}active{% endif %}" href="{% url 'map' %}">
+                                <i class="fas fa-map icon-left"></i>
+                                <span>Peta Interaktif</span>
+                            </a>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
 
-         <!-- ================= MANAJEMEN DATA ================= -->
-        <div class="sidebar-divider"></div>
-        <div class="sidebar-section-label">Manajemen Data</div>
+                <!-- ================= MANAJEMEN DATA ================= -->
+                <div class="sidebar-divider"></div>
+                <div class="sidebar-section-label">Manajemen Data</div>
 
-        <!-- Dropdown Manajemen Data -->
-        <div>
-            <button type="button" id="btnManajemenData" onclick="toggleSidebar('manajemenDataDropdown','btnManajemenData')"
-                class="sidebar-link
+                <!-- Dropdown Manajemen Data -->
+                <div>
+                    <button type="button" id="btnManajemenData"
+                        onclick="toggleSidebar('manajemenDataDropdown','btnManajemenData')" class="sidebar-link
                 {% if current == 'laka_mentah_list' or current == 'laka_mentah_tambah' or current == 'laka_mentah_edit' or current == 'cluster_data_list' or current == 'cluster_data_tambah' or current == 'cluster_data_edit' %}
                     active dropdown-open
                 {% endif %}">
-                <i class="fas fa-folder-open icon-left"></i>
-                <span>Manajemen Data</span>
-                <i class="fas fa-chevron-down sidebar-chevron"></i>
-            </button>
+                        <i class="fas fa-folder-open icon-left"></i>
+                        <span>Manajemen Data</span>
+                        <i class="fas fa-chevron-down sidebar-chevron"></i>
+                    </button>
 
-            <div id="manajemenDataDropdown"
-                class="sidebar-dropdown
+                    <div id="manajemenDataDropdown" class="sidebar-dropdown
                 {% if current == 'laka_mentah_list' or current == 'laka_mentah_tambah' or current == 'laka_mentah_edit' or current == 'cluster_data_list' or current == 'cluster_data_tambah' or current == 'cluster_data_edit' %}
                     open
                 {% endif %}">
-                <div class="sidebar-dropdown-inner">
-                    <!-- Data Laka Mentah -->
-                    <a class="sidebar-link {% if current == 'laka_mentah_list' or current == 'laka_mentah_tambah' or current == 'laka_mentah_edit' %}active{% endif %}"
-                       href="{% url 'laka_mentah_list' %}">
-                        <i class="fas fa-file-excel icon-left"></i>
-                        <span>Data Laka Mentah</span>
-                    </a>
-                    <!-- Data Cluster -->
-                    <a class="sidebar-link {% if current == 'cluster_data_list' or current == 'cluster_data_tambah' or current == 'cluster_data_edit' %}active{% endif %}"
-                       href="{% url 'cluster_data_list' %}">
-                        <i class="fas fa-database icon-left"></i>
-                        <span>Data Cluster</span>
-                    </a>
+                        <div class="sidebar-dropdown-inner">
+                            <!-- Data Laka Mentah -->
+                            <a class="sidebar-link {% if current == 'laka_mentah_list' or current == 'laka_mentah_tambah' or current == 'laka_mentah_edit' %}active{% endif %}"
+                                href="{% url 'laka_mentah_list' %}">
+                                <i class="fas fa-file-excel icon-left"></i>
+                                <span>Automatly Report</span>
+                            </a>
+                            <!-- Data Cluster -->
+                            <a class="sidebar-link {% if current == 'cluster_data_list' or current == 'cluster_data_tambah' or current == 'cluster_data_edit' %}active{% endif %}"
+                                href="{% url 'cluster_data_list' %}">
+                                <i class="fas fa-database icon-left"></i>
+                                <span>Kelola Data Preprosesing</span>
+                            </a>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-        <!-- ================= KMEANS ================= -->
-        <div>
-            <button type="button" id="btnKmeans" onclick="toggleSidebar('kmeansDropdown','btnKmeans')"
-                class="sidebar-link
+                <!-- ================= KMEANS ================= -->
+                <div>
+                    <button type="button" id="btnKmeans" onclick="toggleSidebar('kmeansDropdown','btnKmeans')"
+                        class="sidebar-link
                 {% if current == 'preprocessing' or current == 'hasil' or current == 'proses_cluster' or current == 'rekomendasi_kebijakan' %} active dropdown-open {% endif %}">
-                <i class="fas fa-project-diagram icon-left"></i>
-                <span>Cluster K-Means</span>
-                <i class="fas fa-chevron-down sidebar-chevron"></i>
-            </button>
+                        <i class="fas fa-project-diagram icon-left"></i>
+                        <span>Cluster K-Means</span>
+                        <i class="fas fa-chevron-down sidebar-chevron"></i>
+                    </button>
 
-            <div id="kmeansDropdown"
-                class="sidebar-dropdown
+                    <div id="kmeansDropdown"
+                        class="sidebar-dropdown
                 {% if current == 'preprocessing' or current == 'hasil' or current == 'proses_cluster' or current == 'rekomendasi_kebijakan' %} open {% endif %}">
-                <div class="sidebar-dropdown-inner">
-                    <a class="sidebar-link {% if current == 'preprocessing' or current == 'proses_cluster' %}active{% endif %}" 
-                       href="{% url 'preprocessing' %}">
-                        <i class="fas fa-cogs icon-left"></i>
-                        <span>Proses</span>
-                    </a>
-                    <a class="sidebar-link {% if current == 'hasil' %}active{% endif %}" 
-                       href="{% url 'hasil' %}">
-                        <i class="fas fa-chart-bar icon-left"></i>
-                        <span>Hasil</span>
-                    </a>
-                    <a class="sidebar-link {% if current == 'rekomendasi_kebijakan' %}active{% endif %}" 
-                       href="{% url 'rekomendasi_kebijakan' %}">
-                        <i class="fas fa-lightbulb icon-left"></i>
-                        <span>Rekomendasi</span>
-                    </a>
+                        <div class="sidebar-dropdown-inner">
+                            <a class="sidebar-link {% if current == 'preprocessing' or current == 'proses_cluster' %}active{% endif %}"
+                                href="{% url 'preprocessing' %}">
+                                <i class="fas fa-cogs icon-left"></i>
+                                <span>Proses</span>
+                            </a>
+                            <a class="sidebar-link {% if current == 'hasil' %}active{% endif %}"
+                                href="{% url 'hasil' %}">
+                                <i class="fas fa-chart-bar icon-left"></i>
+                                <span>Hasil</span>
+                            </a>
+                            <a class="sidebar-link {% if current == 'rekomendasi_kebijakan' %}active{% endif %}"
+                                href="{% url 'rekomendasi_kebijakan' %}">
+                                <i class="fas fa-lightbulb icon-left"></i>
+                                <span>Rekomendasi</span>
+                            </a>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- ================= AHC ================= -->
-        <div>
-            <button type="button" id="btnAhc" onclick="toggleSidebar('ahcDropdown','btnAhc')"
-                class="sidebar-link
+                <!-- ================= AHC ================= -->
+                <div>
+                    <button type="button" id="btnAhc" onclick="toggleSidebar('ahcDropdown','btnAhc')"
+                        class="sidebar-link
                 {% if 'ahc' in current or current == 'preprocessing_data' or current == 'proses_ahc' %} active dropdown-open {% endif %}">
-                <i class="fas fa-sitemap icon-left"></i>
-                <span>Cluster AHC</span>
-                <i class="fas fa-chevron-down sidebar-chevron"></i>
-            </button>
+                        <i class="fas fa-sitemap icon-left"></i>
+                        <span>Cluster AHC</span>
+                        <i class="fas fa-chevron-down sidebar-chevron"></i>
+                    </button>
 
-            <div id="ahcDropdown"
-                class="sidebar-dropdown
+                    <div id="ahcDropdown"
+                        class="sidebar-dropdown
                 {% if 'ahc' in current or current == 'preprocessing_data' or current == 'proses_ahc' %} open {% endif %}">
-                <div class="sidebar-dropdown-inner">
-                    <a class="sidebar-link {% if current == 'ahc_proses' or current == 'preprocessing_data' or current == 'proses_ahc' %}active{% endif %}" 
-                       href="{% url 'ahc_proses' %}">
-                        <i class="fas fa-cogs icon-left"></i>
-                        <span>Proses</span>
-                    </a>
-                    <a class="sidebar-link {% if current == 'ahc_hasil' %}active{% endif %}" 
-                       href="{% url 'ahc_hasil' %}">
-                        <i class="fas fa-chart-bar icon-left"></i>
-                        <span>Hasil</span>
-                    </a>
-                    <a class="sidebar-link {% if current == 'ahc_rekomendasi' %}active{% endif %}" 
-                       href="{% url 'ahc_rekomendasi' %}">
-                        <i class="fas fa-lightbulb icon-left"></i>
-                        <span>Rekomendasi</span>
-                    </a>
+                        <div class="sidebar-dropdown-inner">
+                            <a class="sidebar-link {% if current == 'ahc_proses' or current == 'preprocessing_data' or current == 'proses_ahc' %}active{% endif %}"
+                                href="{% url 'ahc_proses' %}">
+                                <i class="fas fa-cogs icon-left"></i>
+                                <span>Proses</span>
+                            </a>
+                            <a class="sidebar-link {% if current == 'ahc_hasil' %}active{% endif %}"
+                                href="{% url 'ahc_hasil' %}">
+                                <i class="fas fa-chart-bar icon-left"></i>
+                                <span>Hasil</span>
+                            </a>
+                            <a class="sidebar-link {% if current == 'ahc_rekomendasi' %}active{% endif %}"
+                                href="{% url 'ahc_rekomendasi' %}">
+                                <i class="fas fa-lightbulb icon-left"></i>
+                                <span>Rekomendasi</span>
+                            </a>
+                        </div>
+                    </div>
                 </div>
+
+            </nav>
+
+            <!-- Logout -->
+            <div class="sidebar-logout">
+                <a href="{% url 'logout' %}">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Keluar</span>
+                </a>
             </div>
+
         </div>
 
-    </nav>
+        {% endwith %}
 
-    <!-- Logout -->
-    <div class="sidebar-logout">
-        <a href="{% url 'logout' %}">
-            <i class="fas fa-sign-out-alt"></i>
-            <span>Keluar</span>
-        </a>
-    </div>
+        <!-- Script Dropdown Sidebar -->
+        <script>
+            function toggleSidebar(dropdownId, btnId) {
+                const dropdown = document.getElementById(dropdownId);
+                const btn = document.getElementById(btnId);
+                const isOpen = dropdown.classList.contains('open');
+                dropdown.classList.toggle('open', !isOpen);
+                btn.classList.toggle('dropdown-open', !isOpen);
+            }
+        </script>
 
-</div>
-
-{% endwith %}
-
-    <!-- Script Dropdown Sidebar -->
-    <script>
-        function toggleSidebar(dropdownId, btnId) {
-            const dropdown = document.getElementById(dropdownId);
-            const btn = document.getElementById(btnId);
-            const isOpen = dropdown.classList.contains('open');
-            dropdown.classList.toggle('open', !isOpen);
-            btn.classList.toggle('dropdown-open', !isOpen);
-        }
-    </script>
-            
         <!-- Main Content -->
         <div class="flex-1 p-5 md:p-6 bg-gray-100 overflow-x-hidden ml-[256px]">
             {% if messages %}
-                <div class="mb-6 space-y-3">
-                    {% for message in messages %}
-                        <div class="flex items-center gap-3 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}" role="alert">
-                            <i class="fas fa-{% if message.tags == 'success' %}check-circle{% else %}exclamation-circle{% endif %}"></i>
-                            <span class="flex-1">{{ message }}</span>
-                            <button type="button" class="text-lg leading-none" onclick="this.parentElement.remove()">×</button>
-                        </div>
-                    {% endfor %}
+            <div class="mb-6 space-y-3">
+                {% for message in messages %}
+                <div class="flex items-center gap-3 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}"
+                    role="alert">
+                    <i
+                        class="fas fa-{% if message.tags == 'success' %}check-circle{% else %}exclamation-circle{% endif %}"></i>
+                    <span class="flex-1">{{ message }}</span>
+                    <button type="button" class="text-lg leading-none" onclick="this.parentElement.remove()">×</button>
                 </div>
+                {% endfor %}
+            </div>
             {% endif %}
-            
+
             {% block content %}{% endblock %}
         </div>
     </div>
     {% else %}
-        <div class="container mx-auto mt-20 px-4">
-            {% if messages %}
-                <div class="mb-6 space-y-3">
-                    {% for message in messages %}
-                        <div class="flex items-center gap-3 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}" role="alert">
-                            <i class="fas fa-{% if message.tags == 'success' %}check-circle{% else %}exclamation-circle{% endif %}"></i>
-                            <span class="flex-1">{{ message }}</span>
-                            <button type="button" class="text-lg leading-none" onclick="this.parentElement.remove()">×</button>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
+    <div class="container mx-auto mt-20 px-4">
+        {% if messages %}
+        <div class="mb-6 space-y-3">
+            {% for message in messages %}
+            <div class="flex items-center gap-3 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}"
+                role="alert">
+                <i
+                    class="fas fa-{% if message.tags == 'success' %}check-circle{% else %}exclamation-circle{% endif %}"></i>
+                <span class="flex-1">{{ message }}</span>
+                <button type="button" class="text-lg leading-none" onclick="this.parentElement.remove()">×</button>
+            </div>
+            {% endfor %}
         </div>
+        {% endif %}
+    </div>
     {% endif %}
-    
+
     <!-- Footer -->
     <!-- <footer class="bg-blue text-white py-5 text-center mt-10">
         <div class="w-full">
@@ -525,7 +546,7 @@
             <p>Powered by Django & Leaflet.js</p>
         </div>
     </footer> -->
-    
+
     <!-- Leaflet JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
@@ -534,12 +555,13 @@
 
     <!-- Mobile Menu Toggle -->
     <script>
-        document.getElementById('navToggle').addEventListener('click', function() {
+        document.getElementById('navToggle').addEventListener('click', function () {
             const navMenu = document.getElementById('navMenu');
             navMenu.classList.toggle('hidden');
         });
     </script>
 
     {% block extra_js %}{% endblock %}
-    </body>
-    </html>
+</body>
+
+</html>

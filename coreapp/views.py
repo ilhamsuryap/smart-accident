@@ -3289,6 +3289,129 @@ def download_template_preprosesing(request):
 
 
 @login_required(login_url='login')
+def download_template_clustering(request):
+    """Download template Excel untuk upload data clustering (K-Means & AHC)"""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Data Clustering'
+    
+    # Definisikan kolom
+    columns = [
+        'No',
+        'Hari',
+        'Tanggal',
+        'Jam',
+        'Umur',
+        'TKP',
+        'Penyebab',
+        'Jenis Kendaraan',
+        'Tipe Kendaraan',
+        'Kerugian Material'
+    ]
+    
+    # Styling untuk header
+    header_font = Font(bold=True, color="FFFFFF", size=11)
+    header_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+    
+    # Tulis header
+    for col_num, column_title in enumerate(columns, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = column_title
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+        cell.border = border
+        
+    # Tambahkan contoh baris
+    sample_data = [
+        [1, 'Senin', '2026-05-25', '19:30', 25, 'Jl. Pahlawan', 'Mengantuk', 'Motor', 'Sepeda Motor', 1500000],
+        [2, 'Rabu', '2026-05-20', '08:15', 42, 'Jl. Yos Sudarso', 'Rem Blong', 'Mobil', 'Minibus', 5000000],
+        [3, 'Sabtu', '2026-05-23', '23:45', 19, 'Jl. Ahmad Yani', 'Kurang Konsentrasi', 'Motor', 'Sepeda Motor', 500000]
+    ]
+    
+    data_alignment = Alignment(horizontal="left", vertical="center")
+    
+    for row_num, row_data in enumerate(sample_data, 2):
+        for col_num, value in enumerate(row_data, 1):
+            cell = ws.cell(row=row_num, column=col_num)
+            cell.value = value
+            cell.border = border
+            cell.alignment = data_alignment
+            
+    # Set lebar kolom
+    column_widths = {
+        'A': 8,   # No
+        'B': 12,  # Hari
+        'C': 15,  # Tanggal
+        'D': 12,  # Jam
+        'E': 10,  # Umur
+        'F': 25,  # TKP
+        'G': 25,  # Penyebab
+        'H': 18,  # Jenis Kendaraan
+        'I': 18,  # Tipe Kendaraan
+        'J': 20   # Kerugian Material
+    }
+    
+    for col, width in column_widths.items():
+        ws.column_dimensions[col].width = width
+        
+    # Set row height untuk header
+    ws.row_dimensions[1].height = 25
+    
+    # Tambahkan sheet instruksi
+    ws_instruction = wb.create_sheet('Instruksi')
+    ws_instruction.column_dimensions['A'].width = 80
+    
+    instructions = [
+        'INSTRUKSI PENGISIAN TEMPLATE DATA CLUSTERING (K-MEANS & AHC)',
+        '',
+        'Kolom yang Wajib Diisi:',
+        '• No: Nomor urut data (angka)',
+        '• Hari: Hari kejadian kecelakaan (contoh: Senin, Selasa, dst.)',
+        '• Tanggal: Tanggal kejadian (format: YYYY-MM-DD, contoh: 2026-05-25)',
+        '• Jam: Waktu kejadian (format: HH:MM atau HH.MM, contoh: 19:30 atau 19.30)',
+        '• Umur: Umur korban kecelakaan (angka)',
+        '• TKP: Tempat Kejadian Perkara / Lokasi (teks)',
+        '• Penyebab: Faktor penyebab kecelakaan (contoh: Mengantuk, Rem Blong, Jalan Licin, Hujan, dll.)',
+        '• Jenis Kendaraan: Jenis kendaraan (contoh: Motor, Mobil, Truk, Bus)',
+        '• Tipe Kendaraan: Detail tipe kendaraan (contoh: Sepeda Motor, Minibus, Microbus, dll.)',
+        '• Kerugian Material: Estimasi kerugian (angka desimal / bulat, contoh: 1500000)',
+        '',
+        'Catatan Penting:',
+        '• Pastikan format Tanggal mengikuti YYYY-MM-DD agar proses pembacaan tanggal valid.',
+        '• Kolom Penyebab akan otomatis dikategorikan oleh sistem ke dalam 4 faktor utama (Pengemudi, Jalan, Kendaraan, Lingkungan).',
+        '• Kolom Jenis Kendaraan akan otomatis dikelompokkan ke dalam kategori (Motor, Mobil, Truk/Bus, Lainnya) untuk proses clustering.',
+    ]
+    
+    for r_num, instruction in enumerate(instructions, 1):
+        cell = ws_instruction.cell(row=r_num, column=1)
+        cell.value = instruction
+        if r_num == 1:
+            cell.font = Font(bold=True, size=12)
+        elif instruction.startswith('•'):
+            cell.alignment = Alignment(wrap_text=True)
+            
+    # Simpan ke BytesIO
+    buffer = BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    
+    response = HttpResponse(
+        buffer.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename="Template_Data_Clustering.xlsx"'
+    return response
+
+
+@login_required(login_url='login')
 def kecelakaan_preprosesing_list(request):
     """Daftar data kecelakaan preprocessing"""
     from .models import Polres
@@ -3403,11 +3526,21 @@ def laka_mentah_list(request):
             Q(tkp__icontains=search) |
             Q(uraian_kejadian__icontains=search)
         )
+        
+    # Filter Tahun
+    selected_tahun = request.GET.get('tahun')
+    if selected_tahun:
+        all_data = all_data.filter(tahun=selected_tahun)
+        
+    # Filter Polres
+    selected_polres = request.GET.get('polres')
+    if selected_polres and selected_polres.isdigit():
+        all_data = all_data.filter(polres_id=int(selected_polres))
     
     total_count = all_data.count()
     
     # Hitung duplikasi berdasarkan Nomor Laporan Polisi (LAP. POL) yang tidak kosong
-    duplicate_groups = LakaMentah.objects.exclude(lap_pol='').exclude(lap_pol__isnull=True).values(
+    duplicate_groups = all_data.exclude(lap_pol='').exclude(lap_pol__isnull=True).values(
         'lap_pol'
     ).annotate(count=Count('id')).filter(count__gt=1)
     
@@ -3416,7 +3549,7 @@ def laka_mentah_list(request):
     # Ambil rincian data duplikat untuk modal
     duplicate_data_details = []
     for group in duplicate_groups:
-        example = LakaMentah.objects.filter(lap_pol=group['lap_pol']).first()
+        example = all_data.filter(lap_pol=group['lap_pol']).first()
         if example:
             duplicate_data_details.append({
                 'example': example,
@@ -3430,12 +3563,26 @@ def laka_mentah_list(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
+    # Generate list tahun 2027 down to 1945
+    years_list = list(range(2027, 1944, -1))
+    
+    # Get distinct years from database
+    filter_years = list(LakaMentah.objects.exclude(tahun__isnull=True).values_list('tahun', flat=True).distinct().order_by('-tahun'))
+    
+    selected_tahun_int = int(selected_tahun) if selected_tahun and selected_tahun.isdigit() else None
+    selected_polres_int = int(selected_polres) if selected_polres and selected_polres.isdigit() else None
+    
     context = {
         'data_list': page_obj,
         'total_data': total_count,
         'jumlah_duplikat': jumlah_duplikat,
         'duplicate_data_details': duplicate_data_details,
         'search_query': search or '',
+        'years_list': years_list,
+        'filter_years': filter_years,
+        'selected_tahun': selected_tahun_int,
+        'selected_polres': selected_polres_int,
+        'polres_list': Polres.objects.all(),
     }
     return render(request, 'coreapp/laka_mentah/list.html', context)
 
@@ -3443,6 +3590,13 @@ def laka_mentah_list(request):
 @login_required(login_url='login')
 def laka_mentah_tambah(request):
     if request.method == "POST":
+        tahun_val = request.POST.get('tahun')
+        tahun = int(tahun_val) if tahun_val and tahun_val.isdigit() else None
+        polres_id = request.POST.get('polres')
+        polres_instance = None
+        if polres_id and polres_id.isdigit():
+            polres_instance = get_object_or_404(Polres, id=int(polres_id))
+
         LakaMentah.objects.create(
             tanggal=request.POST.get('tanggal', '').strip(),
             lap_pol=request.POST.get('lap_pol', '').strip(),
@@ -3451,12 +3605,16 @@ def laka_mentah_tambah(request):
             terlapor=request.POST.get('terlapor', '').strip(),
             korban=request.POST.get('korban', '').strip(),
             bb=request.POST.get('bb', '').strip(),
-            ket=request.POST.get('ket', '').strip()
+            ket=request.POST.get('ket', '').strip(),
+            tahun=tahun,
+            polres=polres_instance
         )
         messages.success(request, "Data Laka Mentah berhasil ditambahkan secara manual.")
         return redirect('laka_mentah_list')
 
-    return render(request, 'coreapp/laka_mentah/tambah.html')
+    years_list = list(range(2027, 1944, -1))
+    polres_list = Polres.objects.all()
+    return render(request, 'coreapp/laka_mentah/tambah.html', {'years_list': years_list, 'polres_list': polres_list})
 
 
 @login_required(login_url='login')
@@ -3464,6 +3622,14 @@ def laka_mentah_edit(request, pk):
     data = get_object_or_404(LakaMentah, pk=pk)
     
     if request.method == "POST":
+        tahun_val = request.POST.get('tahun')
+        data.tahun = int(tahun_val) if tahun_val and tahun_val.isdigit() else None
+        polres_id = request.POST.get('polres')
+        if polres_id and polres_id.isdigit():
+            data.polres = get_object_or_404(Polres, id=int(polres_id))
+        else:
+            data.polres = None
+
         data.tanggal = request.POST.get('tanggal', '').strip()
         data.lap_pol = request.POST.get('lap_pol', '').strip()
         data.uraian_kejadian = request.POST.get('uraian_kejadian', '').strip()
@@ -3477,13 +3643,22 @@ def laka_mentah_edit(request, pk):
         messages.success(request, "Data Laka Mentah berhasil diperbarui.")
         return redirect('laka_mentah_list')
 
-    return render(request, 'coreapp/laka_mentah/edit.html', {'data': data})
+    years_list = list(range(2027, 1944, -1))
+    polres_list = Polres.objects.all()
+    return render(request, 'coreapp/laka_mentah/edit.html', {'data': data, 'years_list': years_list, 'polres_list': polres_list})
 
 
 @login_required(login_url='login')
 def laka_mentah_import(request):
     if request.method == "POST":
         file = request.FILES.get('file')
+        tahun_val = request.POST.get('tahun')
+        tahun = int(tahun_val) if tahun_val and tahun_val.isdigit() else None
+        polres_id = request.POST.get('polres')
+        polres_instance = None
+        if polres_id and polres_id.isdigit():
+            polres_instance = get_object_or_404(Polres, id=int(polres_id))
+
         if not file:
             messages.error(request, "Silakan pilih file Excel terlebih dahulu.")
             return redirect('laka_mentah_list')
@@ -3572,7 +3747,9 @@ def laka_mentah_import(request):
                     terlapor=clean_val(get_row_value('terlapor')),
                     korban=clean_val(get_row_value('korban')),
                     bb=clean_val(get_row_value('bb')),
-                    ket=clean_val(get_row_value('ket'))
+                    ket=clean_val(get_row_value('ket')),
+                    tahun=tahun,
+                    polres=polres_instance
                 )
                 count += 1
             
@@ -3596,9 +3773,38 @@ def laka_mentah_hapus(request, pk):
 
 @login_required(login_url='login')
 def laka_mentah_hapus_semua(request):
-    LakaMentah.objects.all().delete()
-    messages.success(request, "Seluruh data Laka Mentah berhasil dibersihkan.")
-    return redirect('laka_mentah_list')
+    from django.urls import reverse
+    
+    queryset = LakaMentah.objects.all()
+    
+    # Filter Tahun
+    tahun = request.GET.get('tahun')
+    if tahun:
+        queryset = queryset.filter(tahun=tahun)
+        
+    # Filter Polres
+    polres_id = request.GET.get('polres')
+    if polres_id and polres_id.isdigit():
+        queryset = queryset.filter(polres_id=int(polres_id))
+        
+    count = queryset.count()
+    queryset.delete()
+    
+    if tahun or polres_id:
+        messages.success(request, f"Sebanyak {count} data Laka Mentah berdasarkan filter yang dipilih berhasil dibersihkan.")
+    else:
+        messages.success(request, "Seluruh data Laka Mentah berhasil dibersihkan.")
+        
+    url = reverse('laka_mentah_list')
+    query_params = []
+    if tahun:
+        query_params.append(f"tahun={tahun}")
+    if polres_id:
+        query_params.append(f"polres={polres_id}")
+    if query_params:
+        url += "?" + "&".join(query_params)
+        
+    return redirect(url)
 
 
 @login_required(login_url='login')

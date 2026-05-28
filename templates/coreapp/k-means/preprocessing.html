@@ -3,14 +3,21 @@
 
 <div class="max-w-6xl mx-auto pt-6 pb-10">
 
-    <!-- TITLE -->
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-800">
-            Proses Clustering K-Means
-        </h1>
-        <p class="text-gray-500 mt-1">
-            Unggah file Excel untuk melakukan preprocessing dan clustering
-        </p>
+    <!-- TITLE & DOWNLOAD TEMPLATE -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">
+                Proses Clustering K-Means
+            </h1>
+            <p class="text-gray-500 mt-1">
+                Unggah file Excel untuk melakukan preprocessing dan clustering
+            </p>
+        </div>
+        <a href="{% url 'download_template_clustering' %}" 
+           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg text-sm font-bold shadow transition flex items-center gap-2">
+            <i class="fas fa-file-excel text-base"></i>
+            Download Template Excel
+        </a>
     </div>
 
     <!-- FILE AKTIF -->
