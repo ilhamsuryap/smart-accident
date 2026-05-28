@@ -53,6 +53,7 @@ urlpatterns = [
     # Upload Kecelakaan Preprosesing
     path('kecelakaan-preprosesing/upload/', views.upload_kecelakaan_preprosesing, name='upload_kecelakaan_preprosesing'),
     path('kecelakaan-preprosesing/download-template/', views.download_template_preprosesing, name='download_template_preprosesing'),
+    path('k-means/download-template/', views.download_template_clustering, name='download_template_clustering'),
     path('kecelakaan-preprosesing/', views.kecelakaan_preprosesing_list, name='kecelakaan_preprosesing_list'),
     path('kecelakaan-preprosesing/<int:pk>/', views.kecelakaan_preprosesing_detail, name='kecelakaan_preprosesing_detail'),
     path('kecelakaan-preprosesing/<int:pk>/delete/', views.kecelakaan_preprosesing_delete, name='kecelakaan_preprosesing_delete'),

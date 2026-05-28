@@ -4,217 +4,181 @@
 
 {% block content %}
 <div class="w-full">
-    <div class="mb-6">
-        <div class="col-12">
-            <h1 class="text-3xl font-bold mb-2">
-                <i class="fas fa-chart-line"></i> Dashboard
-            </h1>
-            <p class="text-gray-500">Selamat datang di platform analisis kecelakaan lalu lintas berbasis data.</p>
+    <!-- Tab Navigation Toggle Card -->
+    <div class="mb-8 flex justify-start">
+        <div class="inline-flex p-1.5 bg-gray-100 rounded-2xl border border-gray-200 shadow-inner">
+            <button id="tabKabupatenBtn" onclick="switchDashboardTab('kabupaten')" 
+                    class="px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 flex items-center gap-2 outline-none select-none bg-blue-600 text-white shadow-sm transform active:scale-95">
+                <i class="fas fa-map-marked-alt"></i> Data Kabupaten
+            </button>
+            <button id="tabKotaBtn" onclick="switchDashboardTab('kota')" 
+                    class="px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 flex items-center gap-2 outline-none select-none text-gray-700 hover:text-blue-600 bg-transparent hover:bg-white/60 transform active:scale-95">
+                <i class="fas fa-city"></i> Data Kota
+            </button>
         </div>
     </div>
-    
-    <!-- Statistik Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div class="stat-card stat-card-danger">
-            <h6><i class="fas fa-exclamation-triangle"></i> Total Kecelakaan</h6>
-            <div class="value">{{ total_kecelakaan }}</div>
-            <small>Sepanjang waktu</small>
+
+    <!-- DATA KABUPATEN CONTENT -->
+    <div id="kabupatenContent" class="transition-all duration-300">
+        <div class="mb-6">
+            <div class="col-12">
+                <h1 class="text-3xl font-bold mb-2">
+                    <i class="fas fa-chart-line"></i> Dashboard
+                </h1>
+                <p class="text-gray-500">Selamat datang di platform analisis kecelakaan lalu lintas berbasis data.</p>
+            </div>
         </div>
         
-        <div class="stat-card stat-card-warning">
-            <h6><i class="fas fa-users"></i> Total Korban</h6>
-            <div class="value">{{ total_korban }}</div>
-            <small>Keseluruhan</small>
+        <!-- Statistik Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="stat-card stat-card-danger">
+                <h6><i class="fas fa-exclamation-triangle"></i> Total Kecelakaan</h6>
+                <div class="value">{{ total_kecelakaan }}</div>
+                <small>Sepanjang waktu</small>
+            </div>
+            
+            <div class="stat-card stat-card-warning">
+                <h6><i class="fas fa-users"></i> Total Korban</h6>
+                <div class="value">{{ total_korban }}</div>
+                <small>Keseluruhan</small>
+            </div>
+            
+            <div class="stat-card stat-card-info">
+                <h6><i class="fas fa-road"></i> Total Ruas Jalan</h6>
+                <div class="value">{{ total_ruas }}</div>
+                <small>Terdata</small>
+            </div>
+            
+            <div class="stat-card stat-card-success">
+                <h6><i class="fas fa-map-marked"></i> Total Segmen</h6>
+                <div class="value">{{ total_segmen }}</div>
+                <small>Teridentifikasi</small>
+            </div>
         </div>
         
-        <div class="stat-card stat-card-info">
-            <h6><i class="fas fa-road"></i> Total Ruas Jalan</h6>
-            <div class="value">{{ total_ruas }}</div>
-            <small>Terdata</small>
-        </div>
-        
-        <div class="stat-card stat-card-success">
-            <h6><i class="fas fa-map-marked"></i> Total Segmen</h6>
-            <div class="value">{{ total_segmen }}</div>
-            <small>Teridentifikasi</small>
-        </div>
-    </div>
-    
-    <!-- Kecelakaan Tahun Ini -->
-    <div class="mb-6">
-        <div class="w-full">
-            <div class="bg-white rounded-lg shadow-md overflow-hidden">
-                <div class="bg-white border-b border-gray-300 p-5">
-                    <h5 class="mb-0 text-lg font-semibold">
-                        <i class="fas fa-chart-area"></i> Kecelakaan Tahun Ini
-                    </h5>
-                </div>
-                <div class="p-5">
-                    <div class="p-4 rounded-lg bg-blue-100 text-blue-800" role="alert">
-                        <strong><i class="fas fa-info-circle"></i> Total Kecelakaan Tahun Ini:</strong>
-                        <span class="text-2xl font-bold block mt-2">{{ kecelakaan_tahun_ini }}</span>
+        <!-- Kecelakaan Tahun Ini -->
+        <div class="mb-6">
+            <div class="w-full">
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="bg-white border-b border-gray-300 p-5">
+                        <h5 class="mb-0 text-lg font-semibold">
+                            <i class="fas fa-chart-area"></i> Kecelakaan Tahun Ini
+                        </h5>
+                    </div>
+                    <div class="p-5">
+                        <div class="p-4 rounded-lg bg-blue-100 text-blue-800" role="alert">
+                            <strong><i class="fas fa-info-circle"></i> Total Kecelakaan Tahun Ini:</strong>
+                            <span class="text-2xl font-bold block mt-2">{{ kecelakaan_tahun_ini }}</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </div> <!-- end of kabupatenContent -->
     
-    <!-- Top Ruas/Segmen dengan Kecelakaan Terbanyak -->
-   <!-- ? <div>
-        <div class="w-full">
-            <div class="bg-white rounded-lg shadow-md overflow-hidden">
-                <div class="bg-white border-b border-gray-300 p-5">
-                    <h5 class="mb-0 text-lg font-semibold">
-                        <i class="fas fa-triangle-exclamation"></i> 5 Segmen dengan Kecelakaan Terbanyak
-                    </h5>
+    <!-- DATA KOTA CONTENT -->
+    <div id="kotaContent" class="hidden transition-all duration-300">
+        <!-- SEKSI BARU: Statistik Data Cluster (Raw Data) -->
+        <div class="mb-8 mt-2">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2 text-gray-800">
+                <i class="fas fa-database text-blue-600"></i> Statistik Data Kecelakaan (Cluster Data)
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                <!-- Total Data Cluster -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-blue-600 hover:shadow-md transition-shadow">
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Data</p>
+                    <div class="flex items-end justify-between mt-1">
+                        <p class="text-3xl font-black text-blue-600">{{ total_cluster_data }}</p>
+                        <i class="fas fa-folder-open text-blue-100 text-2xl"></i>
+                    </div>
                 </div>
-                <div class="p-5">
-                    {% if top_segmen %}
-                        <div class="overflow-x-auto">
-                            <table class="w-full">
-                                <thead class="bg-gray-100">
-                                    <tr>
-                                        <th class="px-4 py-2 text-left font-semibold">Ruas Jalan</th>
-                                        <th class="px-4 py-2 text-left font-semibold">Segmen (km)</th>
-                                        <th class="px-4 py-2 text-center font-semibold">Jumlah Kecelakaan</th>
-                                        <th class="px-4 py-2 text-center font-semibold">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for segmen in top_segmen %}
-                                    <tr class="border-b hover:bg-gray-50">
-                                        <td class="px-4 py-3">
-                                            <a href="{% url 'ruas_jalan_detail' segmen.ruas_jalan.id %}" class="text-blue-600 hover:text-blue-800">
-                                                {{ segmen.ruas_jalan.nama_ruas }}
-                                            </a>
-                                        </td>
-                                        <td class="px-4 py-3">
-                                            {{ segmen.km_awal }} - {{ segmen.km_akhir }} km
-                                        </td>
-                                        <td class="px-4 py-3 text-center">
-                                            <span class="bg-red-600 text-white px-3 py-1 rounded text-sm font-semibold">{{ segmen.jumlah_kecelakaan }}</span>
-                                        </td>
-                                        <td class="px-4 py-3 text-center">
-                                            <a href="{% url 'segmen_kecelakaan_detail' segmen.id %}" 
-                                               class="px-4 py-2 border border-blue-600 text-blue-600 rounded text-sm hover:bg-blue-50">
-                                                <i class="fas fa-eye"></i> Lihat Detail
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="p-4 rounded-lg bg-blue-100 text-blue-800">
-                            <i class="fas fa-info-circle"></i> Belum ada data kecelakaan
-                        </div>
-                    {% endif %}
+                <!-- Top Day -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-orange-500 hover:shadow-md transition-shadow">
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Hari Terpadat</p>
+                    <div class="mt-1">
+                        <p class="text-sm font-bold text-gray-800">{{ day_dist.0.hari|default:"-" }}</p>
+                        <p class="text-xs text-orange-500 font-bold">{{ day_dist.0.count|default:0 }} Kejadian</p>
+                    </div>
                 </div>
-            </div>
-        </div>
-    </div> -->
-    
-    <!-- SEKSI BARU: Statistik Data Cluster (Raw Data) -->
-    <div class="mb-8 mt-10">
-        <h2 class="text-2xl font-bold mb-6 flex items-center gap-2 text-gray-800">
-            <i class="fas fa-database text-blue-600"></i> Statistik Data Kecelakaan (Cluster Data)
-        </h2>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-            <!-- Total Data Cluster -->
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-blue-600 hover:shadow-md transition-shadow">
-                <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Data</p>
-                <div class="flex items-end justify-between mt-1">
-                    <p class="text-3xl font-black text-blue-600">{{ total_cluster_data }}</p>
-                    <i class="fas fa-folder-open text-blue-100 text-2xl"></i>
+                <!-- Top Vehicle -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-purple-500 hover:shadow-md transition-shadow">
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Kendaraan Terbanyak</p>
+                    <div class="mt-1">
+                        <p class="text-sm font-bold text-gray-800 truncate">{{ top_vehicles.0.jenis_kendaraan|default:"-" }}</p>
+                        <p class="text-xs text-purple-500 font-bold">{{ top_vehicles.0.count|default:0 }} Kejadian</p>
+                    </div>
                 </div>
-            </div>
-            <!-- Top Day -->
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-orange-500 hover:shadow-md transition-shadow">
-                <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Hari Terpadat</p>
-                <div class="mt-1">
-                    <p class="text-sm font-bold text-gray-800">{{ day_dist.0.hari|default:"-" }}</p>
-                    <p class="text-xs text-orange-500 font-bold">{{ day_dist.0.count|default:0 }} Kejadian</p>
+                <!-- Top TKP -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-green-500 hover:shadow-md transition-shadow">
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">TKP Terbanyak</p>
+                    <div class="mt-1">
+                        <p class="text-sm font-bold text-gray-800 truncate" title="{{ top_tkp.0.tkp }}">{{ top_tkp.0.tkp|default:"-" }}</p>
+                        <p class="text-xs text-green-500 font-bold">{{ top_tkp.0.count|default:0 }} Kejadian</p>
+                    </div>
                 </div>
-            </div>
-            <!-- Top Vehicle -->
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-purple-500 hover:shadow-md transition-shadow">
-                <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Kendaraan Terbanyak</p>
-                <div class="mt-1">
-                    <p class="text-sm font-bold text-gray-800 truncate">{{ top_vehicles.0.jenis_kendaraan|default:"-" }}</p>
-                    <p class="text-xs text-purple-500 font-bold">{{ top_vehicles.0.count|default:0 }} Kejadian</p>
+                <!-- Top Cause -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-red-500 hover:shadow-md transition-shadow">
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Penyebab Dominan</p>
+                    <div class="mt-1">
+                        <p class="text-sm font-bold text-gray-800 truncate" title="{{ dominant_cause }}">{{ dominant_cause|title|default:"-" }}</p>
+                        <p class="text-xs text-red-500 font-bold">{{ dominant_cause_count|default:0 }} Kejadian</p>
+                    </div>
                 </div>
-            </div>
-            <!-- Top TKP -->
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-green-500 hover:shadow-md transition-shadow">
-                <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">TKP Terbanyak</p>
-                <div class="mt-1">
-                    <p class="text-sm font-bold text-gray-800 truncate" title="{{ top_tkp.0.tkp }}">{{ top_tkp.0.tkp|default:"-" }}</p>
-                    <p class="text-xs text-green-500 font-bold">{{ top_tkp.0.count|default:0 }} Kejadian</p>
+                <!-- Top Age Range -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-yellow-500 hover:shadow-md transition-shadow">
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Usia Terbanyak</p>
+                    <div class="mt-1">
+                        <p class="text-sm font-bold text-gray-800">{{ top_age_range|default:"-" }}</p>
+                        <p class="text-xs text-yellow-500 font-bold">{{ top_age_range_count|default:0 }} Kejadian</p>
+                    </div>
                 </div>
-            </div>
-            <!-- Top Cause -->
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-red-500 hover:shadow-md transition-shadow">
-                <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Penyebab Dominan</p>
-                <div class="mt-1">
-                    <p class="text-sm font-bold text-gray-800 truncate" title="{{ dominant_cause }}">{{ dominant_cause|title|default:"-" }}</p>
-                    <p class="text-xs text-red-500 font-bold">{{ dominant_cause_count|default:0 }} Kejadian</p>
-                </div>
-            </div>
-            <!-- Top Age Range -->
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-yellow-500 hover:shadow-md transition-shadow">
-                <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Usia Terbanyak</p>
-                <div class="mt-1">
-                    <p class="text-sm font-bold text-gray-800">{{ top_age_range|default:"-" }}</p>
-                    <p class="text-xs text-yellow-500 font-bold">{{ top_age_range_count|default:0 }} Kejadian</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Diagram Statistik Data Cluster -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
-        <!-- Vehicle Chart -->
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <h5 class="text-lg font-bold mb-6 flex items-center gap-2">
-                <i class="fas fa-motorcycle text-purple-500"></i> Distribusi Jenis Kendaraan
-            </h5>
-            <div class="h-80 relative">
-                <canvas id="vehicleChart"></canvas>
             </div>
         </div>
 
-        <!-- Day Chart -->
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <h5 class="text-lg font-bold mb-6 flex items-center gap-2">
-                <i class="fas fa-calendar-day text-orange-500"></i> Distribusi Hari Kejadian
-            </h5>
-            <div class="h-80 relative">
-                <canvas id="dayChart"></canvas>
+        <!-- Diagram Statistik Data Cluster -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+            <!-- Vehicle Chart -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                <h5 class="text-lg font-bold mb-6 flex items-center gap-2">
+                    <i class="fas fa-motorcycle text-purple-500"></i> Distribusi Jenis Kendaraan
+                </h5>
+                <div class="h-80 relative">
+                    <canvas id="vehicleChart"></canvas>
+                </div>
             </div>
-        </div>
 
-        <!-- Age Chart -->
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <h5 class="text-lg font-bold mb-6 flex items-center gap-2">
-                <i class="fas fa-user-clock text-yellow-500"></i> Distribusi Umur
-            </h5>
-            <div class="h-80 relative">
-                <canvas id="ageChart"></canvas>
+            <!-- Day Chart -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                <h5 class="text-lg font-bold mb-6 flex items-center gap-2">
+                    <i class="fas fa-calendar-day text-orange-500"></i> Distribusi Hari Kejadian
+                </h5>
+                <div class="h-80 relative">
+                    <canvas id="dayChart"></canvas>
+                </div>
             </div>
-        </div>
 
-        <!-- Cause Chart -->
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow lg:col-span-3">
-            <h5 class="text-lg font-bold mb-6 flex items-center gap-2">
-                <i class="fas fa-exclamation-circle text-red-500"></i> Distribusi Penyebab Kejadian
-            </h5>
-            <div class="h-96 relative">
-                <canvas id="causeChart"></canvas>
+            <!-- Age Chart -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                <h5 class="text-lg font-bold mb-6 flex items-center gap-2">
+                    <i class="fas fa-user-clock text-yellow-500"></i> Distribusi Umur
+                </h5>
+                <div class="h-80 relative">
+                    <canvas id="ageChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Cause Chart -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow lg:col-span-3">
+                <h5 class="text-lg font-bold mb-6 flex items-center gap-2">
+                    <i class="fas fa-exclamation-circle text-red-500"></i> Distribusi Penyebab Kejadian
+                </h5>
+                <div class="h-96 relative">
+                    <canvas id="causeChart"></canvas>
+                </div>
             </div>
         </div>
-    </div>
+    </div> <!-- end of kotaContent -->
 </div>
 
 {% endblock %}
@@ -227,6 +191,34 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // Tab switching logic
+    function switchDashboardTab(tab) {
+        const tabKabupatenBtn = document.getElementById('tabKabupatenBtn');
+        const tabKotaBtn = document.getElementById('tabKotaBtn');
+        const kabupatenContent = document.getElementById('kabupatenContent');
+        const kotaContent = document.getElementById('kotaContent');
+        
+        if (tab === 'kabupaten') {
+            tabKabupatenBtn.className = "px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 flex items-center gap-2 outline-none select-none bg-blue-600 text-white shadow-sm transform active:scale-95";
+            tabKotaBtn.className = "px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 flex items-center gap-2 outline-none select-none text-gray-700 hover:text-blue-600 bg-transparent hover:bg-white/60 transform active:scale-95";
+            
+            kabupatenContent.classList.remove('hidden');
+            kotaContent.classList.add('hidden');
+        } else {
+            tabKabupatenBtn.className = "px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 flex items-center gap-2 outline-none select-none text-gray-700 hover:text-blue-600 bg-transparent hover:bg-white/60 transform active:scale-95";
+            tabKotaBtn.className = "px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 flex items-center gap-2 outline-none select-none bg-blue-600 text-white shadow-sm transform active:scale-95";
+            
+            kabupatenContent.classList.add('hidden');
+            kotaContent.classList.remove('hidden');
+            
+            // Force redraw charts if hidden containers were opened
+            if (window.myVehicleChart) window.myVehicleChart.update();
+            if (window.myDayChart) window.myDayChart.update();
+            if (window.myCauseChart) window.myCauseChart.update();
+            if (window.myAgeChart) window.myAgeChart.update();
+        }
+    }
+
     // Data Preparation from JSON scripts
     const vehiclesRaw = JSON.parse(document.getElementById('vehicles-data').textContent);
     const daysRaw = JSON.parse(document.getElementById('days-data').textContent);
@@ -247,7 +239,7 @@
 
     // Vehicle Chart
     const ctxV = document.getElementById('vehicleChart').getContext('2d');
-    new Chart(ctxV, {
+    window.myVehicleChart = new Chart(ctxV, {
         type: 'doughnut',
         data: {
             labels: vehicleLabels,
@@ -276,7 +268,7 @@
 
     // Day Chart
     const ctxD = document.getElementById('dayChart').getContext('2d');
-    new Chart(ctxD, {
+    window.myDayChart = new Chart(ctxD, {
         type: 'bar',
         data: {
             labels: dayLabels,
@@ -303,7 +295,7 @@
 
     // Cause Chart (Vertical Bar)
     const ctxC = document.getElementById('causeChart').getContext('2d');
-    new Chart(ctxC, {
+    window.myCauseChart = new Chart(ctxC, {
         type: 'bar',
         data: {
             labels: causeLabels,
@@ -334,7 +326,7 @@
 
     // Age Chart (Pie Chart)
     const ctxA = document.getElementById('ageChart').getContext('2d');
-    new Chart(ctxA, {
+    window.myAgeChart = new Chart(ctxA, {
         type: 'pie',
         data: {
             labels: ageLabels,

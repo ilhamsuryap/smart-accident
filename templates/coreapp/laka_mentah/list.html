@@ -7,7 +7,7 @@
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
             <h1 class="text-3xl font-bold text-gray-800">
-                Data Laka Mentah (Raw Data)
+                Automatly Report
             </h1>
             <p class="text-gray-500 mt-1">
                 Kelola data mentah kecelakaan lalu lintas literal dari Laporan Kepolisian
@@ -16,11 +16,17 @@
         <div class="flex gap-2 w-full md:w-auto">
             <!-- Search bar -->
             <form method="GET" action="{% url 'laka_mentah_list' %}" class="flex-1 md:flex-initial flex gap-2">
+                {% if selected_polres %}
+                    <input type="hidden" name="polres" value="{{ selected_polres }}">
+                {% endif %}
+                {% if selected_tahun %}
+                    <input type="hidden" name="tahun" value="{{ selected_tahun }}">
+                {% endif %}
                 <input type="text" name="search" value="{{ search_query }}" placeholder="Cari laporan, tanggal, TKP..." class="px-4 py-2 border rounded-lg text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <button type="submit" class="bg-gray-800 hover:bg-black text-white px-4 py-2 rounded-lg text-sm font-medium transition">
                     <i class="fas fa-search"></i>
                 </button>
-                {% if search_query %}
+                {% if search_query or selected_polres or selected_tahun %}
                 <a href="{% url 'laka_mentah_list' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center">Reset</a>
                 {% endif %}
             </form>
@@ -34,12 +40,44 @@
     </div>
 
     <!-- STATS -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+        <!-- FILTER TAHUN & POLRES CARD -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between md:col-span-2">
+            <div>
+                <form method="GET" action="{% url 'laka_mentah_list' %}" id="filterForm" class="w-full">
+                    {% if search_query %}
+                        <input type="hidden" name="search" value="{{ search_query }}">
+                    {% endif %}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm text-gray-500 font-semibold mb-2">Pilih Polres</p>
+                            <select name="polres" onchange="this.form.submit()" class="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Semua Polres</option>
+                                {% for pl in polres_list %}
+                                    <option value="{{ pl.id }}" {% if selected_polres == pl.id %}selected{% endif %}>{{ pl.nama }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 font-semibold mb-2">Pilih Tahun</p>
+                            <select name="tahun" onchange="this.form.submit()" class="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Semua Tahun</option>
+                                {% for yr in filter_years %}
+                                    <option value="{{ yr }}" {% if selected_tahun == yr %}selected{% endif %}>{{ yr }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <p class="text-[10px] text-gray-400 mt-2">Filter data & stats di atas</p>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 md:col-span-1">
             <p class="text-sm text-gray-500 font-medium">Total Data</p>
             <p class="text-3xl font-bold text-blue-600">{{ total_data }}</p>
         </div>
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer" onclick="openDuplicateModal()">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer md:col-span-1" onclick="openDuplicateModal()">
             <p class="text-sm text-gray-500 font-medium">Duplikasi Laporan</p>
             <div class="flex items-end justify-between">
                 <p class="text-3xl font-bold text-orange-500">{{ jumlah_duplikat }}</p>
@@ -48,16 +86,20 @@
                 {% endif %}
             </div>
         </div>
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between md:col-span-1">
             <div>
-                <p class="text-sm text-gray-500 font-medium">Kosongkan Data</p>
-                <p class="text-xs text-red-400">Tindakan ini permanen</p>
+                <p class="text-sm text-gray-500 font-medium">
+                    {% if selected_tahun or selected_polres %}Kosongkan Terfilter{% else %}Kosongkan Semua{% endif %}
+                </p>
+                <p class="text-[10px] text-red-400">
+                    {% if selected_tahun or selected_polres %}Hapus sesuai filter{% else %}Tindakan ini permanen{% endif %}
+                </p>
             </div>
-            <button data-confirm-title="Hapus Semua Data Mentah"
-                    data-confirm-message="PERINGATAN! Anda akan menghapus SELURUH data laka mentah di database. Tindakan ini permanen dan tidak dapat dibatalkan."
-                    data-confirm-url="{% url 'laka_mentah_hapus_semua' %}"
+            <button data-confirm-title="{% if selected_tahun or selected_polres %}Kosongkan Data Terfilter{% else %}Kosongkan Semua Data{% endif %}"
+                    data-confirm-message="{% if selected_tahun or selected_polres %}PERINGATAN! Anda akan menghapus data laka mentah berdasarkan filter yang dipilih secara permanen. Tindakan ini tidak dapat dibatalkan.{% else %}PERINGATAN! Anda akan menghapus SELURUH data laka mentah di database secara permanen. Tindakan ini tidak dapat dibatalkan.{% endif %}"
+                    data-confirm-url="{% url 'laka_mentah_hapus_semua' %}{% if selected_tahun or selected_polres %}?{% endif %}{% if selected_tahun %}tahun={{ selected_tahun }}{% endif %}{% if selected_tahun and selected_polres %}&{% endif %}{% if selected_polres %}polres={{ selected_polres }}{% endif %}"
                     onclick="showConfirmModalFromBtn(this)"
-                    class="text-red-600 hover:bg-red-50 p-2 rounded-lg transition" title="Hapus Semua Data">
+                    class="text-red-600 hover:bg-red-50 p-2 rounded-lg transition" title="{% if selected_tahun or selected_polres %}Kosongkan Data Terfilter{% else %}Kosongkan Semua Data{% endif %}">
                 <i class="fas fa-trash-alt text-xl"></i>
             </button>
         </div>
@@ -71,6 +113,8 @@
                     <tr>
                         <th class="px-6 py-4 font-bold text-center">NO</th>
                         <th class="px-6 py-4 font-bold">LAP. POL</th>
+                        <th class="px-6 py-4 font-bold">POLRES</th>
+                        <th class="px-6 py-4 font-bold">TAHUN</th>
                         <th class="px-6 py-4 font-bold">TANGGAL</th>
                         <th class="px-6 py-4 font-bold">URAIAN KEJADIAN</th>
                         <th class="px-6 py-4 font-bold">TKP</th>
@@ -89,6 +133,12 @@
                             <div class="w-[180px] break-all whitespace-normal" title="{{ data.lap_pol }}">
                                 {{ data.lap_pol|default:"-" }}
                             </div>
+                        </td>
+                        <td class="px-6 py-4 text-gray-800 font-semibold">
+                            {{ data.polres.nama|default:"-" }}
+                        </td>
+                        <td class="px-6 py-4 text-gray-600 font-medium">
+                            {{ data.tahun|default:"-" }}
                         </td>
                         <td class="px-6 py-4 text-gray-600 max-w-xs" title="{{ data.tanggal }}">
                             {{ data.tanggal|default:"-"|truncatechars:73 }}
@@ -122,6 +172,8 @@
                                         data-terlapor="{{ data.terlapor|default:'' }}"
                                         data-korban="{{ data.korban|default:'' }}"
                                         data-bb="{{ data.bb|default:'' }}"
+                                        data-tahun="{{ data.tahun|default:'' }}"
+                                        data-polres="{{ data.polres.nama|default:'-' }}"
                                         onclick="showDetailModalFromBtn(this)"
                                         class="text-green-500 hover:text-green-700 transition" title="Lihat Detail Kejadian">
                                     <i class="fas fa-eye"></i>
@@ -143,7 +195,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="10" class="px-6 py-12 text-center text-gray-500">
+                        <td colspan="11" class="px-6 py-12 text-center text-gray-500">
                             <div class="flex flex-col items-center">
                                 <i class="fas fa-file-excel text-5xl mb-4 text-gray-300"></i>
                                 <p class="font-medium text-gray-600">Belum ada data mentah tersedia.</p>
@@ -163,7 +215,7 @@
     <div class="mt-6 flex justify-center">
         <nav class="flex items-center gap-1">
             {% if data_list.has_previous %}
-                <a href="?page={{ data_list.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
+                <a href="?page={{ data_list.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_polres %}&polres={{ selected_polres }}{% endif %}{% if selected_tahun %}&tahun={{ selected_tahun }}{% endif %}" class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
                     <i class="fas fa-chevron-left"></i>
                 </a>
             {% endif %}
@@ -172,12 +224,12 @@
                 {% if data_list.number == i %}
                     <span class="px-4 py-2 bg-blue-600 border border-blue-600 rounded-lg text-sm text-white font-bold">{{ i }}</span>
                 {% elif i > data_list.number|add:'-3' and i < data_list.number|add:'3' %}
-                    <a href="?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">{{ i }}</a>
+                    <a href="?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_polres %}&polres={{ selected_polres }}{% endif %}{% if selected_tahun %}&tahun={{ selected_tahun }}{% endif %}" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">{{ i }}</a>
                 {% endif %}
             {% endfor %}
 
             {% if data_list.has_next %}
-                <a href="?page={{ data_list.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
+                <a href="?page={{ data_list.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_polres %}&polres={{ selected_polres }}{% endif %}{% if selected_tahun %}&tahun={{ selected_tahun }}{% endif %}" class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
                     <i class="fas fa-chevron-right"></i>
                 </a>
             {% endif %}
@@ -194,7 +246,7 @@
 <div id="importModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
         <div class="flex justify-between items-center mb-6">
-            <h3 class="text-xl font-bold text-gray-800">Import Data Laka Mentah</h3>
+            <h3 class="text-xl font-bold text-gray-800">Import Automatly Report</h3>
             <button onclick="document.getElementById('importModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
                 <i class="fas fa-times"></i>
             </button>
@@ -202,18 +254,56 @@
         
         <form action="{% url 'laka_mentah_import' %}" method="POST" enctype="multipart/form-data">
             {% csrf_token %}
+            
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Pilih Polres <span class="text-red-500">*</span></label>
+                <select name="polres" id="importPolresSelect" onchange="validateImportForm()" required {% if not polres_list %}disabled{% endif %} class="w-full px-3 py-2 border rounded-lg text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 {% if not polres_list %}bg-gray-100 cursor-not-allowed border-red-300{% endif %}">
+                    <option value="">-- Pilih Polres --</option>
+                    {% for pl in polres_list %}
+                        <option value="{{ pl.id }}">{{ pl.nama }}</option>
+                    {% endfor %}
+                </select>
+                {% if not polres_list %}
+                    <div class="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-xs font-semibold flex items-start gap-2">
+                        <i class="fas fa-exclamation-triangle mt-0.5 text-red-500"></i>
+                        <div>
+                            <span class="font-bold">Data Polres Masih Kosong!</span><br>
+                            Anda harus menambahkan data Polres terlebih dahulu sebelum mengimpor data.
+                            Silakan tambahkan di halaman <a href="/superadmin/polres/" class="underline text-blue-600 hover:text-blue-800 font-bold">Kelola Polres</a>.
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Pilih Tahun Data <span class="text-red-500">*</span></label>
+                <div class="relative" id="customImportTahunDropdown">
+                    <button type="button" onclick="toggleCustomImportDropdown()" id="customImportDropdownBtn" class="w-full px-3 py-2 border rounded-lg text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-left flex justify-between items-center">
+                        <span id="customImportDropdownSelected">-- Pilih Tahun --</span>
+                        <i class="fas fa-chevron-down text-gray-400"></i>
+                    </button>
+                    <div id="customImportDropdownMenu" class="hidden absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto z-[60] divide-y divide-gray-100">
+                        <div onclick="selectImportYear('')" class="px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 cursor-pointer">-- Pilih Tahun --</div>
+                        {% for yr in years_list %}
+                            <div onclick="selectImportYear('{{ yr }}')" class="px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 cursor-pointer">{{ yr }}</div>
+                        {% endfor %}
+                    </div>
+                    <input type="text" name="tahun" id="hiddenImportTahunInput" required class="absolute opacity-0 pointer-events-none w-0 h-0">
+                </div>
+            </div>
+
             <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Pilih File Excel Laka Mentah</label>
                 <div class="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center hover:border-blue-400 transition cursor-pointer" onclick="document.getElementById('fileInput').click()">
                     <i class="fas fa-file-excel text-4xl text-green-500 mb-3"></i>
                     <p class="text-sm font-semibold text-gray-600" id="fileNameLabel">Klik untuk memilih file</p>
                     <p class="text-[10px] text-gray-400 mt-1">Mendukung format file .xlsx, .xls</p>
-                    <input type="file" name="file" id="fileInput" class="hidden" accept=".xlsx, .xls" onchange="document.getElementById('fileNameLabel').innerText = this.files[0].name">
+                    <input type="file" name="file" id="fileInput" class="hidden" accept=".xlsx, .xls" onchange="document.getElementById('fileNameLabel').innerText = this.files[0] ? this.files[0].name : 'Klik untuk memilih file'; validateImportForm();" required>
                 </div>
             </div>
             <div class="flex justify-end gap-3">
                 <button type="button" onclick="document.getElementById('importModal').classList.add('hidden')" class="px-4 py-2 text-gray-600 font-medium">Batal</button>
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition">Mulai Import</button>
+                <button type="submit" id="submitImportBtn" class="bg-gray-300 text-white px-6 py-2 rounded-lg font-medium transition cursor-not-allowed" disabled>Mulai Import</button>
             </div>
         </form>
     </div>
@@ -290,7 +380,7 @@
     <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full p-6 max-h-[90vh] flex flex-col">
         <div class="flex justify-between items-center mb-4 border-b pb-4">
             <div>
-                <span class="text-xs text-blue-600 font-bold tracking-wider uppercase" id="detailSubTitle">Detail Data Laka Mentah</span>
+                <span class="text-xs text-blue-600 font-bold tracking-wider uppercase" id="detailSubTitle">Detail Automatly Report</span>
                 <h3 class="text-xl font-bold text-gray-800 mt-1" id="detailTitle">Laporan Polisi</h3>
             </div>
             <button onclick="closeDetailModal()" class="text-gray-400 hover:text-gray-600">
@@ -299,10 +389,20 @@
         </div>
         
         <div class="overflow-y-auto flex-1 space-y-5 pr-2">
-            <!-- KET only - full width (no more Excel row number) -->
-            <div class="bg-gray-50 p-3 rounded-lg">
-                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Keterangan Korban (KET)</p>
-                <p class="text-sm font-bold text-blue-700 mt-1" id="detailKet">-</p>
+            <!-- KET, POLRES, and TAHUN grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-gray-50 p-3 rounded-lg">
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Keterangan Korban (KET)</p>
+                    <p class="text-sm font-bold text-blue-700 mt-1" id="detailKet">-</p>
+                </div>
+                <div class="bg-gray-50 p-3 rounded-lg">
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Polres</p>
+                    <p class="text-sm font-bold text-gray-700 mt-1" id="detailPolres">-</p>
+                </div>
+                <div class="bg-gray-50 p-3 rounded-lg">
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Tahun Kejadian</p>
+                    <p class="text-sm font-bold text-gray-700 mt-1" id="detailTahun">-</p>
+                </div>
             </div>
 
             <!-- TANGGAL MENTAH -->
@@ -381,7 +481,7 @@ function lockScroll()   { document.body.style.overflow = 'hidden'; }
 function unlockScroll() { document.body.style.overflow = ''; }
 
 // ─── Detail Modal ──────────────────────────────────────────────────────────
-function showDetailModal(lap_pol, tanggal, tkp, ket, uraian, terlapor, korban, bb) {
+function showDetailModal(lap_pol, tanggal, tkp, ket, uraian, terlapor, korban, bb, tahun, polres) {
     document.getElementById('detailTitle').innerText = lap_pol || "Laporan Tanpa Nomor";
     document.getElementById('detailTanggal').innerText = tanggal || "-";
     document.getElementById('detailTKP').innerText = tkp || "-";
@@ -390,6 +490,8 @@ function showDetailModal(lap_pol, tanggal, tkp, ket, uraian, terlapor, korban, b
     document.getElementById('detailTerlapor').innerText = terlapor || "-";
     document.getElementById('detailKorban').innerText = korban || "-";
     document.getElementById('detailBB').innerText = bb || "-";
+    document.getElementById('detailTahun').innerText = tahun || "-";
+    document.getElementById('detailPolres').innerText = polres || "-";
     document.getElementById('detailModal').classList.remove('hidden');
     lockScroll();
 }
@@ -408,7 +510,9 @@ function showDetailModalFromBtn(btn) {
         btn.getAttribute('data-uraian'),
         btn.getAttribute('data-terlapor'),
         btn.getAttribute('data-korban'),
-        btn.getAttribute('data-bb')
+        btn.getAttribute('data-bb'),
+        btn.getAttribute('data-tahun'),
+        btn.getAttribute('data-polres')
     );
 }
 
@@ -460,6 +564,16 @@ function openImportModal() {
 }
 function closeImportModal() {
     document.getElementById('importModal').classList.add('hidden');
+    const menu = document.getElementById('customImportDropdownMenu');
+    if (menu) menu.classList.add('hidden');
+    
+    // Reset form inputs & validation
+    document.getElementById('hiddenImportTahunInput').value = '';
+    document.getElementById('customImportDropdownSelected').innerText = '-- Pilih Tahun --';
+    document.getElementById('fileInput').value = '';
+    document.getElementById('fileNameLabel').innerText = 'Klik untuk memilih file';
+    validateImportForm();
+    
     unlockScroll();
 }
 
@@ -482,6 +596,48 @@ function showDuplicateConfirm() {
     );
 }
 
+// ─── Custom Import Dropdown ────────────────────────────────────────────────
+function toggleCustomImportDropdown() {
+    const menu = document.getElementById('customImportDropdownMenu');
+    menu.classList.toggle('hidden');
+}
+
+function selectImportYear(val) {
+    document.getElementById('hiddenImportTahunInput').value = val;
+    document.getElementById('customImportDropdownSelected').innerText = val || '-- Pilih Tahun --';
+    document.getElementById('customImportDropdownMenu').classList.add('hidden');
+    validateImportForm();
+}
+
+function validateImportForm() {
+    const yearVal = document.getElementById('hiddenImportTahunInput').value;
+    const polresSelect = document.getElementById('importPolresSelect');
+    const polresVal = polresSelect ? polresSelect.value : '';
+    const fileInput = document.getElementById('fileInput');
+    const submitBtn = document.getElementById('submitImportBtn');
+    
+    const hasPolres = polresSelect && !polresSelect.disabled && polresVal;
+    
+    if (yearVal && hasPolres && fileInput.files.length > 0) {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('bg-gray-300', 'cursor-not-allowed');
+        submitBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+    } else {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('bg-gray-300', 'cursor-not-allowed');
+        submitBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+    }
+}
+
+// Close custom dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const container = document.getElementById('customImportTahunDropdown');
+    const menu = document.getElementById('customImportDropdownMenu');
+    if (container && menu && !container.contains(event.target)) {
+        menu.classList.add('hidden');
+    }
+});
+
 // ─── ESC key closes any open modal ────────────────────────────────────────
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
@@ -489,6 +645,8 @@ document.addEventListener('keydown', function(e) {
         closeImportModal();
         closeDuplicateModal();
         closeConfirmModal();
+        const menu = document.getElementById('customImportDropdownMenu');
+        if (menu) menu.classList.add('hidden');
     }
 });
 </script>

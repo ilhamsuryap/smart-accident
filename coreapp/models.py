@@ -1370,6 +1370,14 @@ class LakaMentah(models.Model):
     korban = models.TextField(null=True, blank=True)
     bb = models.TextField(null=True, blank=True)
     ket = models.TextField(null=True, blank=True)
+    tahun = models.IntegerField(null=True, blank=True, verbose_name="Tahun")
+    polres = models.ForeignKey(
+        'Polres',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Polres'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

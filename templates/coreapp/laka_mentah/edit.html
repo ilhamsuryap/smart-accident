@@ -16,7 +16,39 @@
         <form action="{% url 'laka_mentah_edit' data.pk %}" method="POST" class="p-8">
             {% csrf_token %}
             
-            <div class="grid grid-cols-1 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- POLRES -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Polres <span class="text-red-500">*</span></label>
+                    <select name="polres" required {% if not polres_list %}disabled{% endif %} class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-white text-gray-700 {% if not polres_list %}bg-gray-100 cursor-not-allowed border-red-300{% endif %}">
+                        <option value="">-- Pilih Polres --</option>
+                        {% for pl in polres_list %}
+                            <option value="{{ pl.id }}" {% if data.polres.id == pl.id %}selected{% endif %}>{{ pl.nama }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if not polres_list %}
+                        <div class="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-xs font-semibold flex items-start gap-2">
+                            <i class="fas fa-exclamation-triangle mt-0.5 text-red-500"></i>
+                            <div>
+                                <span class="font-bold">Data Polres Masih Kosong!</span><br>
+                                Anda harus menambahkan data Polres terlebih dahulu sebelum menginput data kecelakaan.
+                                Silakan tambahkan di halaman <a href="/superadmin/polres/" class="underline text-blue-600 hover:text-blue-800 font-bold">Kelola Polres</a>.
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- TAHUN -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Tahun <span class="text-red-500">*</span></label>
+                    <select name="tahun" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-white text-gray-700">
+                        <option value="">-- Pilih Tahun --</option>
+                        {% for yr in years_list %}
+                            <option value="{{ yr }}" {% if data.tahun == yr %}selected{% endif %}>{{ yr }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
                 <!-- KET -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Keterangan Korban / KET <span class="text-red-500">*</span></label>
@@ -24,7 +56,7 @@
                 </div>
 
                 <!-- NO LAPORAN POLISI -->
-                <div class="col-span-1 md:col-span-2">
+                <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">No. Laporan Polisi (LAP. POL)</label>
                     <input type="text" name="lap_pol" value="{{ data.lap_pol|default:'' }}" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Contoh: LP-A/01/I/TUK.7.2.3/2021/LANTAS/SPKT POLRES MADIUN KOTA">
                 </div>
@@ -68,7 +100,7 @@
 
             <div class="mt-10 flex justify-end gap-3 border-t pt-6">
                 <a href="{% url 'laka_mentah_list' %}" class="px-6 py-2 text-gray-600 font-medium hover:bg-gray-50 rounded-lg transition">Batal</a>
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-bold shadow-lg transform hover:scale-105 transition duration-200">
+                <button type="submit" {% if not polres_list %}disabled class="bg-gray-300 text-white px-8 py-2 rounded-lg font-bold cursor-not-allowed transition duration-200" title="Mohon tambahkan data Polres terlebih dahulu" {% else %}class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-bold shadow-lg transform hover:scale-105 transition duration-200"{% endif %}>
                     <i class="fas fa-save mr-2"></i> Perbarui Data Mentah
                 </button>
             </div>
