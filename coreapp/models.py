@@ -1336,6 +1336,14 @@ class ClusterData(models.Model):
     jenis_kendaraan = models.CharField(max_length=100)
     tipe_kendaraan = models.CharField(max_length=100)
     kerugian_material = models.DecimalField(max_digits=15, decimal_places=2)
+    tahun = models.IntegerField(null=True, blank=True, verbose_name="Tahun")
+    polres = models.ForeignKey(
+        'Polres',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Polres'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
