@@ -5,7 +5,7 @@
     <!-- TITLE -->
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-800">
-            Tambah Data Laka Mentah
+            Tambah Data Automatly Report
         </h1>
         <p class="text-gray-500 mt-1">
             Input data laporan kepolisian mentah secara manual
@@ -101,7 +101,7 @@
             <div class="mt-10 flex justify-end gap-3 border-t pt-6">
                 <a href="{% url 'laka_mentah_list' %}" class="px-6 py-2 text-gray-600 font-medium hover:bg-gray-50 rounded-lg transition">Batal</a>
                 <button type="submit" {% if not polres_list %}disabled class="bg-gray-300 text-white px-8 py-2 rounded-lg font-bold cursor-not-allowed transition duration-200" title="Mohon tambahkan data Polres terlebih dahulu" {% else %}class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-bold shadow-lg transform hover:scale-105 transition duration-200"{% endif %}>
-                    <i class="fas fa-save mr-2"></i> Simpan Data Mentah
+                    <i class="fas fa-save mr-2"></i> Simpan Data Automatly Report
                 </button>
             </div>
         </form>

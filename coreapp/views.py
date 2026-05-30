@@ -380,28 +380,43 @@ def homepage_view(request):
 @login_required(login_url='login')
 def dashboard_view(request):
     """Dashboard utama - untuk admin/user yang login"""
+    selected_polres = request.GET.get('polres')
+    polres_instance = None
+    if selected_polres and selected_polres.isdigit():
+        polres_instance = get_object_or_404(Polres, id=int(selected_polres))
+        
+    ruas_qs = RuasJalan.objects.all()
+    segmen_qs = SegmenJalan.objects.all()
+    kecelakaan_qs = KecelakaanPreprosesing.objects.all()
+    cluster_data = ClusterData.objects.all()
+    
+    if polres_instance:
+        ruas_qs = ruas_qs.filter(polres=polres_instance)
+        segmen_qs = segmen_qs.filter(ruas_jalan__polres=polres_instance)
+        kecelakaan_qs = kecelakaan_qs.filter(polres=polres_instance)
+        cluster_data = cluster_data.filter(polres=polres_instance)
+        
     context = {
-        'total_ruas': RuasJalan.objects.count(),
-        'total_segmen': SegmenJalan.objects.count(),
-        'total_kecelakaan': KecelakaanPreprosesing.objects.count(),
-        'total_korban': KecelakaanPreprosesing.objects.aggregate(
+        'total_ruas': ruas_qs.count(),
+        'total_segmen': segmen_qs.count(),
+        'total_kecelakaan': kecelakaan_qs.count(),
+        'total_korban': kecelakaan_qs.aggregate(
             total=Sum('korban_meninggal') + Sum('korban_luka_berat') + Sum('korban_luka_ringan')
         )['total'] or 0,
     }
     
     # Statistik tahun ini
     tahun_ini = timezone.now().year
-    context['kecelakaan_tahun_ini'] = KecelakaanPreprosesing.objects.filter(
+    context['kecelakaan_tahun_ini'] = kecelakaan_qs.filter(
         tanggal__year=tahun_ini
     ).count()
     
     # Segmen dengan kecelakaan terbanyak
-    context['top_segmen'] = SegmenJalan.objects.annotate(
+    context['top_segmen'] = segmen_qs.annotate(
         jumlah_kecelakaan=Count('kecelakaan_preprosesing')
     ).order_by('-jumlah_kecelakaan')[:5]
 
     # --- Statistik Data Cluster (Non-AHC Parameters) ---
-    cluster_data = ClusterData.objects.all()
     context['total_cluster_data'] = cluster_data.count()
     
     # 1. Distribusi Jenis Kendaraan (Semua data)
@@ -475,6 +490,10 @@ def dashboard_view(request):
     top_age_range = max(age_groups, key=age_groups.get) if age_groups else 'N/A'
     context['top_age_range'] = top_age_range
     context['top_age_range_count'] = age_groups.get(top_age_range, 0)
+
+    # Sediakan daftar polres untuk dropdown filter
+    context['polres_list'] = Polres.objects.all()
+    context['selected_polres'] = int(selected_polres) if selected_polres and selected_polres.isdigit() else None
 
     return render(request, 'coreapp/dashboard.html', context)
 
@@ -2553,12 +2572,23 @@ def normalize_jam(jam_str):
 @login_required(login_url='login')
 def cluster_data_list(request):
     all_data = ClusterData.objects.all()
+    
+    # Filter Tahun
+    selected_tahun = request.GET.get('tahun')
+    if selected_tahun:
+        all_data = all_data.filter(tahun=selected_tahun)
+        
+    # Filter Polres
+    selected_polres = request.GET.get('polres')
+    if selected_polres and selected_polres.isdigit():
+        all_data = all_data.filter(polres_id=int(selected_polres))
+        
     total_count = all_data.count()
     
     # Hitung duplikasi (data yang isinya persis sama di semua kolom utama)
-    duplicate_groups = ClusterData.objects.values(
+    duplicate_groups = all_data.values(
         'no_referensi', 'umur', 'tkp', 'penyebab', 'hari', 'tanggal', 'jam', 
-        'jenis_kendaraan', 'tipe_kendaraan', 'kerugian_material'
+        'jenis_kendaraan', 'tipe_kendaraan', 'kerugian_material', 'tahun', 'polres'
     ).annotate(count=Count('id')).filter(count__gt=1)
     
     jumlah_duplikat = sum(group['count'] - 1 for group in duplicate_groups)
@@ -2567,7 +2597,7 @@ def cluster_data_list(request):
     duplicate_data_details = []
     for group in duplicate_groups:
         # Ambil satu contoh data untuk setiap grup duplikat
-        example = ClusterData.objects.filter(
+        example = all_data.filter(
             no_referensi=group['no_referensi'],
             umur=group['umur'], tkp=group['tkp'], penyebab=group['penyebab'],
             hari=group['hari'], tanggal=group['tanggal'], jam=group['jam'],
@@ -2591,6 +2621,13 @@ def cluster_data_list(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
+    # Generate list tahun
+    years_list = list(range(2027, 1944, -1))
+    filter_years = list(ClusterData.objects.exclude(tahun__isnull=True).values_list('tahun', flat=True).distinct().order_by('-tahun'))
+    
+    selected_tahun_int = int(selected_tahun) if selected_tahun and selected_tahun.isdigit() else None
+    selected_polres_int = int(selected_polres) if selected_polres and selected_polres.isdigit() else None
+    
     context = {
         'data_list': page_obj,
         'total_data': total_count,
@@ -2598,6 +2635,11 @@ def cluster_data_list(request):
         'duplicate_data_details': duplicate_data_details,
         'ai_config': AIConfig.objects.filter(tipe='kmeans').first(),
         'ai_config_ahc': AIConfig.objects.filter(tipe='ahc').first(),
+        'years_list': years_list,
+        'filter_years': filter_years,
+        'selected_tahun': selected_tahun_int,
+        'selected_polres': selected_polres_int,
+        'polres_list': Polres.objects.all(),
     }
     return render(request, 'coreapp/data_cluster/list.html', context)
 
@@ -2612,6 +2654,13 @@ def cluster_data_tambah(request):
         jenis_kendaraan = request.POST.get('jenis_kendaraan')
         tipe_kendaraan = request.POST.get('tipe_kendaraan')
         kerugian_material = request.POST.get('kerugian_material')
+        
+        tahun_val = request.POST.get('tahun')
+        tahun = int(tahun_val) if tahun_val and tahun_val.isdigit() else None
+        polres_id = request.POST.get('polres')
+        polres_instance = None
+        if polres_id and polres_id.isdigit():
+            polres_instance = get_object_or_404(Polres, id=int(polres_id))
 
         if kerugian_material:
             kerugian_material = kerugian_material.upper().replace('RP', '').replace('.', '').replace(',', '').replace(' ', '').strip()
@@ -2633,7 +2682,9 @@ def cluster_data_tambah(request):
             jam=normalize_jam(jam),
             jenis_kendaraan=str(jenis_kendaraan).strip(),
             tipe_kendaraan=str(tipe_kendaraan).strip(),
-            kerugian_material=kerugian_material
+            kerugian_material=kerugian_material,
+            tahun=tahun,
+            polres=polres_instance
         )
         messages.success(request, "Data berhasil ditambahkan.")
         return redirect('cluster_data_list')
@@ -2651,11 +2702,16 @@ def cluster_data_tambah(request):
         
         return sorted(list(cleaned))
 
+    years_list = list(range(2027, 1944, -1))
+    polres_list = Polres.objects.all()
+
     context = {
         'tkp_choices': get_unique_choices('tkp'),
         'penyebab_choices': get_unique_choices('penyebab'),
         'jenis_choices': get_unique_choices('jenis_kendaraan'),
         'tipe_choices': get_unique_choices('tipe_kendaraan'),
+        'years_list': years_list,
+        'polres_list': polres_list,
     }
     return render(request, 'coreapp/data_cluster/tambah.html', context)
 
@@ -2673,6 +2729,14 @@ def cluster_data_edit(request, pk):
         jenis_kendaraan = request.POST.get('jenis_kendaraan')
         tipe_kendaraan = request.POST.get('tipe_kendaraan')
         kerugian_material = request.POST.get('kerugian_material')
+        
+        tahun_val = request.POST.get('tahun')
+        data.tahun = int(tahun_val) if tahun_val and tahun_val.isdigit() else None
+        polres_id = request.POST.get('polres')
+        if polres_id and polres_id.isdigit():
+            data.polres = get_object_or_404(Polres, id=int(polres_id))
+        else:
+            data.polres = None
 
         if kerugian_material:
             kerugian_material = kerugian_material.upper().replace('RP', '').replace('.', '').replace(',', '').replace(' ', '').strip()
@@ -2708,12 +2772,17 @@ def cluster_data_edit(request, pk):
                 cleaned.add(str(c).strip())
         return sorted(list(cleaned))
 
+    years_list = list(range(2027, 1944, -1))
+    polres_list = Polres.objects.all()
+
     context = {
         'data': data,
         'tkp_choices': get_unique_choices('tkp'),
         'penyebab_choices': get_unique_choices('penyebab'),
         'jenis_choices': get_unique_choices('jenis_kendaraan'),
         'tipe_choices': get_unique_choices('tipe_kendaraan'),
+        'years_list': years_list,
+        'polres_list': polres_list,
     }
     return render(request, 'coreapp/data_cluster/edit.html', context)
 
@@ -2755,6 +2824,13 @@ def _parse_indo_date(date_str):
 def cluster_data_import(request):
     if request.method == "POST":
         file = request.FILES.get('file')
+        tahun_val = request.POST.get('tahun')
+        tahun = int(tahun_val) if tahun_val and tahun_val.isdigit() else None
+        polres_id = request.POST.get('polres')
+        polres_instance = None
+        if polres_id and polres_id.isdigit():
+            polres_instance = get_object_or_404(Polres, id=int(polres_id))
+
         if not file:
             messages.error(request, "Silakan pilih file excel.")
             return redirect('cluster_data_list')
@@ -2817,7 +2893,9 @@ def cluster_data_import(request):
                         jam=normalize_jam(row.get('jam', '')),
                         jenis_kendaraan=str(row.get('jenis_kendaraan', '')).strip(),
                         tipe_kendaraan=str(row.get('tipe_kendaraan', '')).strip(),
-                        kerugian_material=kerugian
+                        kerugian_material=kerugian,
+                        tahun=tahun,
+                        polres=polres_instance
                     )
                     count += 1
                 except Exception as e:
@@ -2841,9 +2919,38 @@ def cluster_data_hapus(request, pk):
 
 @login_required(login_url='login')
 def cluster_data_hapus_semua(request):
-    ClusterData.objects.all().delete()
-    messages.success(request, "Semua data berhasil dihapus.")
-    return redirect('cluster_data_list')
+    from django.urls import reverse
+    
+    queryset = ClusterData.objects.all()
+    
+    # Filter Tahun
+    tahun = request.GET.get('tahun')
+    if tahun:
+        queryset = queryset.filter(tahun=tahun)
+        
+    # Filter Polres
+    polres_id = request.GET.get('polres')
+    if polres_id and polres_id.isdigit():
+        queryset = queryset.filter(polres_id=int(polres_id))
+        
+    count = queryset.count()
+    queryset.delete()
+    
+    if tahun or polres_id:
+        messages.success(request, f"Sebanyak {count} data Preprosesing berdasarkan filter yang dipilih berhasil dibersihkan.")
+    else:
+        messages.success(request, "Seluruh data Preprosesing berhasil dibersihkan.")
+        
+    url = reverse('cluster_data_list')
+    query_params = []
+    if tahun:
+        query_params.append(f"tahun={tahun}")
+    if polres_id:
+        query_params.append(f"polres={polres_id}")
+    if query_params:
+        url += "?" + "&".join(query_params)
+        
+    return redirect(url)
 
 @login_required(login_url='login')
 def cluster_data_hapus_duplikat(request):
@@ -3609,7 +3716,7 @@ def laka_mentah_tambah(request):
             tahun=tahun,
             polres=polres_instance
         )
-        messages.success(request, "Data Laka Mentah berhasil ditambahkan secara manual.")
+        messages.success(request, "Data Automatly Report berhasil ditambahkan secara manual.")
         return redirect('laka_mentah_list')
 
     years_list = list(range(2027, 1944, -1))
@@ -3640,7 +3747,7 @@ def laka_mentah_edit(request, pk):
         data.ket = request.POST.get('ket', '').strip()
         data.save()
         
-        messages.success(request, "Data Laka Mentah berhasil diperbarui.")
+        messages.success(request, "Data Automatly Report berhasil diperbarui.")
         return redirect('laka_mentah_list')
 
     years_list = list(range(2027, 1944, -1))
@@ -3753,7 +3860,7 @@ def laka_mentah_import(request):
                 )
                 count += 1
             
-            messages.success(request, f"Berhasil mengimpor {count} data Laka Mentah secara literal.")
+            messages.success(request, f"Berhasil mengimpor {count} data Automatly Report secara literal.")
         except Exception as e:
             messages.error(request, f"Gagal mengimpor data: {str(e)}")
             import traceback
@@ -3767,7 +3874,7 @@ def laka_mentah_import(request):
 @login_required(login_url='login')
 def laka_mentah_hapus(request, pk):
     LakaMentah.objects.filter(pk=pk).delete()
-    messages.success(request, "Data Laka Mentah berhasil dihapus.")
+    messages.success(request, "Data Automatly Report berhasil dihapus.")
     return redirect('laka_mentah_list')
 
 
@@ -3791,9 +3898,9 @@ def laka_mentah_hapus_semua(request):
     queryset.delete()
     
     if tahun or polres_id:
-        messages.success(request, f"Sebanyak {count} data Laka Mentah berdasarkan filter yang dipilih berhasil dibersihkan.")
+        messages.success(request, f"Sebanyak {count} data Automatly Report berdasarkan filter yang dipilih berhasil dibersihkan.")
     else:
-        messages.success(request, "Seluruh data Laka Mentah berhasil dibersihkan.")
+        messages.success(request, "Seluruh data Automatly Report berhasil dibersihkan.")
         
     url = reverse('laka_mentah_list')
     query_params = []
