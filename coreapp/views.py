@@ -156,11 +156,11 @@ def login_view(request):
     # Tangani pesan error dari Google OAuth redirect
     google_error = request.GET.get('error', '')
     google_error_messages = {
-        'google_no_email': 'Akun Google tidak memiliki email yang dapat digunakan.',
-        'google_not_registered': 'Email Google Anda tidak terdaftar dalam sistem. Hubungi Super Admin.',
-        'google_inactive': 'Akun Anda telah dinonaktifkan. Hubungi Super Admin.',
-        'google_role_denied': 'Akun Anda tidak memiliki akses ke sistem ini.',
-        'google_no_profile': 'Profil akun tidak ditemukan. Hubungi Super Admin.',
+        'google_no_email': 'Akun Google tidak memiliki email yang dapat digunakan',
+        'google_not_registered': 'Email Google Anda tidak terdaftar',
+        'google_inactive': 'Akun Anda telah dinonaktifkan',
+        'google_role_denied': 'Akun Anda tidak memiliki akses ke sistem ini',
+        'google_no_profile': 'Profil akun tidak ditemukan',
     }
     if google_error and google_error in google_error_messages:
         messages.error(request, google_error_messages[google_error])
@@ -207,8 +207,8 @@ def login_view(request):
             messages.success(request, f'Selamat datang, {nama}!')
             next_url = request.GET.get('next', 'dashboard')
             return redirect(next_url)
-        else:
-            messages.error(request, 'Data yang dimasukkan tidak valid.')
+        # else:
+        #     messages.error(request, 'Data yang dimasukkan tidak valid.')
 
     return render(request, 'registration/login.html', {'form': form})
 
@@ -721,40 +721,49 @@ def kecelakaan_delete(request, pk):
 # Map Views
 @login_required(login_url='login')
 def map_view(request):
-    """Tampilkan peta interaktif untuk admin (dengan sidebar)"""
+    """Tampilkan peta interaktif dengan filter tahun & ruas"""
+
     tahun_param = request.GET.get('tahun')
-    tahun = timezone.now().year
-    
+
+    # 👉 Jika kosong = SEMUA TAHUN
     if tahun_param:
         try:
             tahun = int(tahun_param)
         except (ValueError, TypeError):
-            tahun = timezone.now().year
-    
-    # Hitung Z-Score jika belum ada
+            tahun = 0
+    else:
+        tahun = 0  # Semua tahun
+
+    # Hitung Z-Score
     try:
-        if not AnalisisZScore.objects.filter(tahun=tahun).exists():
-            AnalisisZScore.calculate_zscore(tahun)
+        if tahun == 0:
+            # 🔥 Hitung Z-Score dari SEMUA DATA
+            AnalisisZScore.calculate_zscore_all_years()
+        else:
+            if not AnalisisZScore.objects.filter(tahun=tahun).exists():
+                AnalisisZScore.calculate_zscore(tahun)
     except Exception as e:
-        print(f"Warning: Could not calculate Z-Score for {tahun}: {e}")
-    
+        print(f"Warning: Z-Score calculation failed: {e}")
+
     context = {
         'tahun': tahun,
-        'tahun_options': range(2020, timezone.now().year + 1)
+        'tahun_options': range(2020, timezone.now().year + 1),
     }
+
     return render(request, 'coreapp/map/map.html', context)
 
 
 def peta_user_view(request):
     """Tampilkan peta interaktif untuk user biasa (tanpa sidebar, standalone)"""
     tahun_param = request.GET.get('tahun')
-    tahun = timezone.now().year
     
     if tahun_param:
         try:
             tahun = int(tahun_param)
         except (ValueError, TypeError):
-            tahun = timezone.now().year
+            tahun = 0
+    else:
+        tahun = 0  # Semua tahun
     
     # Hitung Z-Score jika belum ada
     try:
@@ -775,13 +784,13 @@ def peta_user_view(request):
 def api_segmen_geojson(request):
     """API untuk mendapatkan GeoJSON segmen jalan dengan Z-Score atau default blue untuk no accidents"""
     tahun_raw = request.GET.get('tahun')
-    if not tahun_raw or tahun_raw == 'None':
-        tahun = timezone.now().year
+    if not tahun_raw or tahun_raw == 'None' or tahun_raw == '0':
+        tahun = 0
     else:
         try:
             tahun = int(tahun_raw)
         except (ValueError, TypeError):
-            tahun = timezone.now().year
+            tahun = 0
     
     print(f"\n{'='*80}")
     print(f"📍 API: api_segmen_geojson called for tahun={tahun}")
@@ -804,10 +813,15 @@ def api_segmen_geojson(request):
     
     for segmen in segmen_list:
         # Hitung jumlah kecelakaan di segmen ini untuk tahun tertentu
-        accident_count = KecelakaanPreprosesing.objects.filter(
-            segmen_jalan=segmen,
-            tanggal__year=tahun
-        ).count()
+        if tahun == 0:
+            accident_count = KecelakaanPreprosesing.objects.filter(
+                segmen_jalan=segmen
+            ).count()
+        else:
+            accident_count = KecelakaanPreprosesing.objects.filter(
+                segmen_jalan=segmen,
+                tanggal__year=tahun
+            ).count()
         
         # PENTING: Jika tidak ada kecelakaan, selalu set AMAN (ignore Z-Score jika ada)
         if accident_count == 0:
@@ -1061,13 +1075,13 @@ def api_threshold_data(request):
     from django.db.models import Avg, StdDev
     
     tahun_raw = request.GET.get('tahun')
-    if not tahun_raw or tahun_raw == 'None':
-        tahun = timezone.now().year
+    if not tahun_raw or tahun_raw == 'None' or tahun_raw == '0':
+        tahun = 0
     else:
         try:
             tahun = int(tahun_raw)
         except (ValueError, TypeError):
-            tahun = timezone.now().year
+            tahun = 0
     
     # Ensure Z-Score calculation exists
     if not AnalisisZScore.objects.filter(tahun=tahun).exists():
@@ -1116,6 +1130,7 @@ def api_threshold_data(request):
             
             threshold_data[ruas_jalan.id] = {
                 'nama': ruas_jalan.nama_ruas,
+                'has_data': True,
                 'z_max': round(z_max, 3),
                 'z_min': round(z_min, 3),
                 'interval': round(interval, 3),
@@ -1124,6 +1139,26 @@ def api_threshold_data(request):
                 't2': round(t2, 3),  # sedang threshold
                 't1': round(t1, 3),  # rendah threshold
                 'kategori_counts': kategori_counts,
+                'total_segments': segments_in_ruas.count(),
+            }
+        else:
+            threshold_data[ruas_jalan.id] = {
+                'nama': ruas_jalan.nama_ruas,
+                'has_data': False,
+                'z_max': 0.0,
+                'z_min': 0.0,
+                'interval': 0.0,
+                't4': 0.0,
+                't3': 0.0,
+                't2': 0.0,
+                't1': 0.0,
+                'kategori_counts': {
+                    'sangat_tinggi': 0,
+                    'tinggi': 0,
+                    'sedang': 0,
+                    'rendah': 0,
+                    'sangat_rendah': 0,
+                },
                 'total_segments': segments_in_ruas.count(),
             }
     
@@ -1287,22 +1322,28 @@ def api_data_update_check(request):
     from django.db.models import Max
     
     tahun = request.GET.get('tahun')
-    if not tahun:
-        tahun = timezone.now().year
+    if not tahun or tahun == 'None' or tahun == '0':
+        tahun = 0
     else:
         try:
             tahun = int(tahun)
         except (ValueError, TypeError):
-            tahun = timezone.now().year
+            tahun = 0
     
     try:
         # Get latest updated_at from KecelakaanPreprosesing for this year
-        latest_kecelakaan = KecelakaanPreprosesing.objects.filter(
-            tanggal__year=tahun
-        ).aggregate(
-            latest_update=Max('updated_at'),
-            latest_create=Max('created_at')
-        )
+        if tahun == 0:
+            latest_kecelakaan = KecelakaanPreprosesing.objects.aggregate(
+                latest_update=Max('updated_at'),
+                latest_create=Max('created_at')
+            )
+        else:
+            latest_kecelakaan = KecelakaanPreprosesing.objects.filter(
+                tanggal__year=tahun
+            ).aggregate(
+                latest_update=Max('updated_at'),
+                latest_create=Max('created_at')
+            )
         
         # Get latest update timestamp
         latest_update = latest_kecelakaan['latest_update'] or latest_kecelakaan['latest_create']
@@ -1327,10 +1368,23 @@ def api_data_update_check(request):
 @login_required(login_url='login')
 def api_analisis_statistik(request):
     """API untuk mendapatkan statistik analisis"""
-    tahun = request.GET.get('tahun', timezone.now().year)
-    
-    analisis = AnalisisZScore.objects.filter(tahun=tahun)
-    
+
+    tahun_param = request.GET.get('tahun')
+    analisis = AnalisisZScore.objects.all()
+
+    if tahun_param and tahun_param != 'None' and tahun_param != '0':
+        try:
+            tahun = int(tahun_param)
+            analisis = analisis.filter(tahun=tahun)
+        except ValueError:
+            return Response(
+                {'error': 'Parameter tahun harus berupa angka'},
+                status=400
+            )
+    else:
+        tahun = 0
+        analisis = analisis.filter(tahun=0)
+
     statistik = {
         'sangat_tinggi': analisis.filter(kategori='sangat_tinggi').count(),
         'tinggi': analisis.filter(kategori='tinggi').count(),
@@ -1338,14 +1392,12 @@ def api_analisis_statistik(request):
         'rendah': analisis.filter(kategori='rendah').count(),
         'sangat_rendah': analisis.filter(kategori='sangat_rendah').count(),
     }
-    
+
     return Response({
         'tahun': tahun,
         'total_segmen': analisis.count(),
         'kategori': statistik
     })
-
-
 # Analisis Views
 @login_required(login_url='login')
 def analisis_view(request):
@@ -1385,12 +1437,28 @@ def analisis_view(request):
 def segmen_kecelakaan_detail(request, segmen_id):
     """Detail kecelakaan per segmen"""
     segmen = get_object_or_404(SegmenJalan, pk=segmen_id)
-    tahun = request.GET.get('tahun', timezone.now().year)
     
-    kecelakaan = KecelakaanPreprosesing.objects.filter(
-        segmen_jalan=segmen,
-        tanggal__year=tahun
-    )
+    tahun_raw = request.GET.get('tahun')
+    if tahun_raw is None:
+        # Default ketika awal redirect -> semua tahun (0)
+        tahun = 0
+    elif tahun_raw == '' or tahun_raw == '0' or tahun_raw == 'all':
+        tahun = 0
+    else:
+        try:
+            tahun = int(tahun_raw)
+        except (ValueError, TypeError):
+            tahun = 0
+            
+    if tahun == 0:
+        kecelakaan = KecelakaanPreprosesing.objects.filter(
+            segmen_jalan=segmen
+        )
+    else:
+        kecelakaan = KecelakaanPreprosesing.objects.filter(
+            segmen_jalan=segmen,
+            tanggal__year=tahun
+        )
     
     # Calculate totals for the summary section
     rekap = kecelakaan.aggregate(
@@ -3528,9 +3596,7 @@ def kecelakaan_preprosesing_list(request):
     if request.GET.get('search'):
         search = request.GET.get('search')
         kecelakaan = kecelakaan.filter(
-            Q(desa__icontains=search) |
-            Q(kecamatan__icontains=search) |
-            Q(kabupaten_kota__icontains=search)
+            Q(nomor_kecelakaan__exact=search)
         )
     
     if request.GET.get('tahun'):

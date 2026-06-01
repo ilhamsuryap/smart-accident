@@ -157,10 +157,10 @@
                         id="tahunSelect"
                         class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
                         onchange="handleTahunChange()">
-                        <option value="">-- Pilih Tahun --</option>
+                        <option value="">-- Semua Tahun --</option>
                         {% for tahun_opt in tahun_options %}
                         <option value="{{ tahun_opt }}"
-                            {% if request.GET.tahun == tahun_opt|stringformat:"s" %}
+                            {% if tahun == tahun_opt %}
                             selected
                             {% endif %}
                             >
@@ -226,10 +226,10 @@
             document.getElementById('mobileMenu').classList.toggle('hidden');
         });
 
-        // Pastikan tahun selalu ada dengan nilai yang valid
-        let tahun = "{{ tahun }}";
-        if (!tahun || tahun === "None" || tahun === "") {
-            tahun = new Date().getFullYear();
+        // Pastikan tahun selalu ada dengan nilai yang valid (0 = semua tahun)
+        let tahun = "{{ tahun|default_if_none:'0' }}";
+        if (tahun === "None" || tahun === "" || tahun === "None") {
+            tahun = 0;
         }
         
         let selectedRuas = null;  
@@ -304,6 +304,17 @@
             }
             
             const data = thresholdData[ruasId];
+            
+            if (data.has_data === false) {
+                legendDiv.innerHTML = `
+                    <div class="dynamic-legend">
+                        <strong>${data.nama}</strong><br>
+                        <span class="text-gray-500 text-xs">Tidak ada data analisis Z-Score untuk ruas ini pada tahun ${tahun}</span>
+                    </div>
+                `;
+                return;
+            }
+            
             const t1 = data.t1;
             const t2 = data.t2;
             const t3 = data.t3;
@@ -370,13 +381,11 @@
         // Handle tahun change
         function handleTahunChange() {
             const tahunSelect = document.getElementById('tahunSelect');
-            tahun = tahunSelect.value;
+            tahun = tahunSelect.value || 0;
             
-            if (tahun) {
-                loadThresholdData();
-                loadSegmenData();
-                loadStatistik();
-            }
+            loadThresholdData();
+            loadSegmenData();
+            loadStatistik();
         }
 
         // Load Segmen GeoJSON

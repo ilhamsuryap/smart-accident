@@ -130,7 +130,7 @@
                         {{ form.lon_awal }}
                         {{ form.lat_akhir }}
                         {{ form.lon_akhir }}
-                        <input type="hidden" id="id_geometry" name="geometry">
+                        {{ form.geometry }}
 
                         <!-- Tombol Submit -->
                         <div class="flex gap-2 mt-4">
@@ -683,8 +683,6 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log('✓ Submit OK');
     });
 
-    updateUI();
-    
     // ─── Load Geometry untuk Edit Mode ─────────────────────────────────
     const existingGeometry = geometryInput.value;
     if (existingGeometry) {
@@ -727,60 +725,51 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Hitung total panjang
                 totalDist = splits.length > 0 ? splits[splits.length - 1].km : 0;
                 
-                // Restore markers di peta
-                if (fullCoordinates.length > 0) {
-                    fullCoordinates.forEach(function(coord, idx) {
-                        const lat = coord[1];
-                        const lon = coord[0];
+                // Restore markers di peta langsung dari array splits agar presisi
+                if (splits.length > 0) {
+                    splits.forEach(function(s, idx) {
+                        const isFirst = idx === 0;
+                        const isLast = idx === splits.length - 1;
+                        const markerColor = isFirst ? 'red' : (isLast ? 'blue' : 'green');
                         
-                        // Hanya buat marker di split points (awal ruas)
-                        let isSplitPoint = false;
-                        splits.forEach(function(s) {
-                            if (Math.abs(s.lat - lat) < 0.00001 && Math.abs(s.lon - lon) < 0.00001) {
-                                isSplitPoint = true;
-                            }
-                        });
-                        
-                        if (isSplitPoint && markers.length < splits.length) {
-                            const isFirst = markers.length === 0;
-                            const marker = L.marker([lat, lon], { 
-                                icon: makeIcon(isFirst ? 'red' : (idx === fullCoordinates.length - 1 ? 'blue' : 'green'))
-                            })
-                            .bindPopup(`<strong>Titik ${markers.length + 1}</strong><br>${lat.toFixed(5)}, ${lon.toFixed(5)}`)
-                            .addTo(map);
-                            markers.push(marker);
-                        }
+                        const marker = L.marker([s.lat, s.lon], { 
+                            icon: makeIcon(markerColor)
+                        })
+                        .bindPopup(`<strong>Titik ${idx + 1}</strong><br>${s.lat.toFixed(5)}, ${s.lon.toFixed(5)}`)
+                        .addTo(map);
+                        markers.push(marker);
                     });
-                    
-                    // Restore route layers
-                    segments.forEach(function(seg) {
-                        if (seg.geometry) {
-                            const routeLayer = L.geoJSON(seg.geometry, {
-                                style: { color: '#2563eb', weight: 5, opacity: 0.75 }
-                            }).addTo(map);
-                            routeLayers.push(routeLayer);
-                        }
-                    });
-                    
-                    // Zoom to bounds
-                    if (fullCoordinates.length > 0) {
-                        const lats = fullCoordinates.map(c => c[1]);
-                        const lons = fullCoordinates.map(c => c[0]);
-                        const bounds = L.latLngBounds(
-                            [Math.min(...lats), Math.min(...lons)],
-                            [Math.max(...lats), Math.max(...lons)]
-                        );
-                        map.fitBounds(bounds, { padding: [50, 50] });
-                    }
                 }
                 
-                updateUI();
+                // Restore route layers
+                segments.forEach(function(seg) {
+                    if (seg.geometry) {
+                        const routeLayer = L.geoJSON(seg.geometry, {
+                            style: { color: '#2563eb', weight: 5, opacity: 0.75 }
+                        }).addTo(map);
+                        routeLayers.push(routeLayer);
+                    }
+                });
+                
+                // Zoom to bounds
+                if (fullCoordinates.length > 0) {
+                    const lats = fullCoordinates.map(c => c[1]);
+                    const lons = fullCoordinates.map(c => c[0]);
+                    const bounds = L.latLngBounds(
+                        [Math.min(...lats), Math.min(...lons)],
+                        [Math.max(...lats), Math.max(...lons)]
+                    );
+                    map.fitBounds(bounds, { padding: [50, 50] });
+                }
+                
                 console.log('Loaded existing geometry:', {splits: splits.length, segments: segments.length, coords: fullCoordinates.length});
             }
         } catch (err) {
             console.error('Error loading existing geometry:', err);
         }
     }
+
+    updateUI();
     
     // ─── Modal Handlers ──────────────────────────────────────────────────
     window.openSegmentModal = function(idx) {

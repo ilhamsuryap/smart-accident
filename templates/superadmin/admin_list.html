@@ -71,11 +71,11 @@
       <table class="w-full text-left border-collapse" id="adminTable">
         <thead class="bg-gray-50 border-b border-gray-100">
           <tr>
-            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider w-16">#</th>
-            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Nama / Email</th>
-            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Role</th>
-            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Polres</th>
-            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider w-16">No</th>
+            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-left">Nama / Email</th>
+            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-left">Role</th>
+            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-left">Polres</th>
+            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-left">Status</th>
             <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Aksi</th>
           </tr>
         </thead>
@@ -91,8 +91,8 @@
                   {% if not profile.user.first_name %}{{ profile.user.email|first|upper }}{% endif %}
                 </div>
                 <div>
-                  <div class="font-semibold text-gray-800">{{ profile.user.first_name }} {{ profile.user.last_name|default:profile.user.email }}</div>
-                  <div class="text-gray-500 text-xs mt-0.5">{{ profile.user.email }}</div>
+                  <div class="font-semibold text-gray-800 ">{{ profile.user.first_name }} {{ profile.user.last_name|default:profile.user.email }}</div>
+                  <div class="text-gray-500 text-xs mt-0.5 ">{{ profile.user.email }}</div>
                 </div>
               </div>
             </td>
