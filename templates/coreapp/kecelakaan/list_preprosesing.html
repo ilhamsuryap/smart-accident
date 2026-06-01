@@ -9,23 +9,7 @@
             <h1 class="text-2xl font-bold text-gray-900">Data Kecelakaan Preprocessing</h1>
             <p class="text-gray-600 text-sm mt-1">Data kecelakaan siap untuk analisis (sudah diassign ke segmen)</p>
         </div>
-            <select name="polres"
-                    class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600">
-                <option value="">-- Semua Polres --</option>
-
-                {% for polres in polres_choices %}
-                    <option value="{{ polres.id }}"
-                        {% if polres.id|stringformat:"s" == selected_polres|stringformat:"s" %}
-                            selected
-                        {% endif %}
-                    >
-                        {{ polres.nama }}
-                    </option>
-                {% endfor %}
-            </select>
-            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                <i class="fas fa-search"></i> Cari
-            </button>
+           
         {% if is_admin %}
         <a href="{% url 'upload_kecelakaan_preprosesing' %}" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
             <i class="fas fa-upload mr-2"></i>Upload Data Preprocessing
@@ -56,18 +40,24 @@
     <!-- Filter -->
     <div class="mb-6 flex flex-col md:flex-row gap-3">
         <form method="get" class="flex gap-2 flex-1">
-            <input type="text" name="search" placeholder="Cari desa, kecamatan, atau kota..." 
+            <input type="text" name="search" placeholder="Cari nomor kecelakaan" 
                    value="{{ request.GET.search }}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+            <select name="polres" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                <option value="">Semua Polres</option>
+                {% for pl in polres_choices %}
+                    <option value="{{ pl.id }}" {% if selected_polres|stringformat:"s" == pl.id|stringformat:"s" %}selected{% endif %}>{{ pl.nama }}</option>
+                {% endfor %}
+            </select>
+            <select name="tahun" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                <option value="">Semua Tahun</option>
+                {% for year in tahun_options %}
+                <option value="{{ year }}" {% if request.GET.tahun|stringformat:"s" == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+                {% endfor %}
+            </select>
             <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                 <i class="fas fa-search"></i>
             </button>
         </form>
-        <select name="tahun" onchange="window.location.href='?tahun=' + this.value" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
-            <option value="">-- Semua Tahun --</option>
-            {% for year in tahun_options %}
-            <option value="{{ year }}" {% if request.GET.tahun|stringformat:"s" == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
-            {% endfor %}
-        </select>
     </div>
 
     <!-- Table -->

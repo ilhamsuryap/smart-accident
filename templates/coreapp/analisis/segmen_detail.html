@@ -13,14 +13,11 @@
         </div>
         <div class="flex gap-3">
             <select name="tahun" onchange="window.location.href='?tahun=' + this.value" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
-                <option value="">-- Semua Tahun --</option>
+                <option value="0" {% if tahun == 0 or tahun == '0' or not tahun %}selected{% endif %}>-- Semua Tahun --</option>
                 {% for year in tahun_options %}
                 <option value="{{ year }}" {% if tahun|stringformat:"s" == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
                 {% endfor %}
             </select>
-            <a href="{% url 'analisis' %}?tahun={{ tahun }}" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
-                <i class="fas fa-arrow-left"></i> Kembali
-            </a>
         </div>
     </div>
     
@@ -57,7 +54,7 @@
             <div class="bg-white rounded-lg shadow-md overflow-hidden">
                 {% if analisis %}
                     <div class="text-white px-6 py-4" style="background-color: {{ analisis.get_kategori_display_color|default:'#888' }};">
-                        <h5 class="font-semibold">📊 Tingkat Kerawanan (Z-Score) {{ tahun }}</h5>
+                        <h5 class="font-semibold">📊 Tingkat Kerawanan (Z-Score) {% if tahun == 0 or tahun == '0' %}Semua Tahun{% else %}(Tahun {{ tahun }}){% endif %}</h5>
                     </div>
                     <div class="p-6 text-center">
                         <div class="text-4xl font-bold mb-3" style="color: {{ analisis.get_kategori_display_color|default:'#888' }};">
@@ -82,7 +79,7 @@
                     </div>
                 {% else %}
                     <div class="text-white px-6 py-4" style="background-color: #1976d2;">
-                        <h5 class="font-semibold">✅ Status Kerawanan (Tahun {{ tahun }})</h5>
+                        <h5 class="font-semibold">✅ Status Kerawanan ({% if tahun == 0 or tahun == '0' %}Semua Tahun{% else %}Tahun {{ tahun }}{% endif %})</h5>
                     </div>
                     <div class="p-6 text-center">
                         <div class="text-4xl font-bold mb-3" style="color: #1976d2;">
@@ -92,7 +89,7 @@
                             Tidak Ada Data Kecelakaan
                         </p>
                         <p class="text-sm text-gray-600 mt-2">
-                            Segmen ini tidak memiliki data kecelakaan pada tahun {{ tahun }}. Status keselamatan dianggap AMAN saat ini.
+                            Segmen ini tidak memiliki data kecelakaan pada {% if tahun == 0 or tahun == '0' %}semua tahun{% else %}tahun {{ tahun }}{% endif %}. Status keselamatan dianggap AMAN saat ini.
                         </p>
                     </div>
                 {% endif %}
@@ -104,7 +101,7 @@
             <div class="bg-white rounded-lg shadow-md overflow-hidden">
                 <div class="bg-gray-100 px-6 py-4 border-b border-gray-200">
                     <h5 class="font-semibold">
-                        <i class="fas fa-exclamation-triangle"></i> Kecelakaan di Segmen Ini ({{ tahun }})
+                        <i class="fas fa-exclamation-triangle"></i> Kecelakaan di Segmen Ini ({% if tahun == 0 or tahun == '0' %}Semua Tahun{% else %}Tahun {{ tahun }}{% endif %})
                     </h5>
                 </div>
                 <div class="p-6">
@@ -193,7 +190,7 @@
                         </div>
                     {% else %}
                         <div class="p-4 bg-blue-50 text-blue-800 rounded-lg">
-                            <i class="fas fa-info-circle"></i> Tidak ada data kecelakaan di segmen ini pada tahun {{ tahun }}
+                            <i class="fas fa-info-circle"></i> Tidak ada data kecelakaan di segmen ini pada {% if tahun == 0 or tahun == '0' %}semua tahun{% else %}tahun {{ tahun }}{% endif %}
                         </div>
                     {% endif %}
                 </div>

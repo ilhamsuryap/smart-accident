@@ -1,0 +1,12 @@
+<h2>Daftar Polres</h2>
+<a href="/superadmin/polres/create/">Tambah</a>
+
+<ul>
+{% for p in polres_list %}
+  <li>
+    {{ p.nama }}
+    <a href="/superadmin/polres/{{ p.id }}/edit/">Edit</a>
+    <a href="/superadmin/polres/{{ p.id }}/delete/">Hapus</a>
+  </li>
+{% endfor %}
+</ul>

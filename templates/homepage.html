@@ -123,6 +123,9 @@
 
                     <li><a href="/" class="text-white hover:text-gray-200">Beranda</a></li>
                     <li><a href="#features" class="text-white hover:text-gray-200">Fitur</a></li>
+                    <li><a href="#statistics" class="text-white hover:text-gray-200">Tentang</a></li>
+                    
+                    {% if user.is_authenticated %}
                     <li><a href="/" class="text-white hover:text-gray-200">Data Kecelakaan</a></li>
                     <li><a href="/peta-user/" class="text-white hover:text-gray-200">Peta</a></li>
                     <li class="relative group">
@@ -155,6 +158,7 @@
 
                         </div>
                     </li>
+                    {% endif %}
 
                    {% if user.is_authenticated %}
 <li class="relative group">
@@ -164,9 +168,9 @@
 
     <div class="absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded-lg shadow-lg hidden group-hover:block z-50">
         {% if user.is_staff %}
-            <a href="/dashboard/" class="block px-4 py-2 hover:bg-gray-100">
+            <!-- <a href="/dashboard/" class="block px-4 py-2 hover:bg-gray-100">
                 Dashboard Admin
-            </a>
+            </a> -->
             <hr>
         {% endif %}
         <a href="{% url 'logout' %}" class="block px-4 py-2 hover:bg-gray-100">
@@ -175,6 +179,7 @@
     </div>
 </li>
 {% else %}
+{% if user.is_authenticated %}
 <li>
     <a href="{% url 'login' %}" 
        class="flex items-center gap-2 bg-white text-blue px-4 py-2 rounded font-semibold hover:bg-gray-100 transition">
@@ -182,6 +187,7 @@
         Masuk
     </a>
 </li>
+{% endif %}
 {% endif %}
                 </ul>
                 </div>
@@ -196,9 +202,11 @@
             <p class="hero-subtitle"> Platform Analisis Kecelakaan Lalu Lintas Berbasis Data</p>
             <p class="mb-8 text-lg opacity-90">Menggabungkan analisis tingkat kerawanan, faktor penyebab, serta pola waktu kejadian kecelakaan dengan memanfaatkan <br> Metode Z-Score, Agglomerative Hierarchical Clustering, dan K-Means untuk menghasilkan insight yang komprehensif <br> dan mendukung pengambilan keputusan berbasis data.</p>
             <div>
+                {% if user.is_authenticated %}
                 <a href="/peta-user/" class="btn-primary">
                     <i class="fas fa-map mr-2"></i>Lihat Peta Interaktif
                 </a>
+                {% endif %}
                 <a href="#features" class="btn-secondary">
                     <i class="fas fa-arrow-down mr-2"></i>Pelajari Lebih Lanjut
                 </a>
@@ -403,7 +411,7 @@ function toggleDetail(id) {
 
 
     <!-- Statistics Section -->
-    <section class="bg-gray-100 py-16 px-4">
+    <section class="bg-gray-100 py-16 px-4" id="statistics">
         <div class="max-w-7xl mx-auto">
             <div class="text-center mb-12">
                 <h2 class="text-3xl font-bold text-gray-900 mb-4">Statistik Sistem</h2>
@@ -441,13 +449,19 @@ function toggleDetail(id) {
             </p>
 
             <div class="flex flex-col sm:flex-row justify-center gap-4">
-                <a href="/peta-user/" class="inline-block bg-white text-blue px-8 py-3 rounded font-bold hover:bg-gray-100 transition">
-                    <i class="fas fa-map mr-2"></i>Lihat Peta
-                </a>
+                {% if user.is_authenticated %}
+                    <a href="/peta-user/" class="inline-block bg-white text-blue px-8 py-3 rounded font-bold hover:bg-gray-100 transition">
+                        <i class="fas fa-map mr-2"></i>Lihat Peta
+                    </a>
 
-                <a href="#features" class="inline-block border-2 border-white px-8 py-3 rounded font-bold hover:bg-white hover:text-blue transition">
-                    <i class="fas fa-chart-line mr-2"></i>Lihat Analisis
-                </a>
+                    <a href="#features" class="inline-block border-2 border-white px-8 py-3 rounded font-bold hover:bg-white hover:text-blue transition">
+                        <i class="fas fa-chart-line mr-2"></i>Lihat Analisis
+                    </a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="inline-block bg-white text-blue px-8 py-3 rounded font-bold hover:bg-gray-100 transition">
+                        <i class="fas fa-right-to-bracket mr-2"></i>Masuk untuk Melanjutkan
+                    </a>
+                {% endif %}
             </div>
         </div>
     </section>
