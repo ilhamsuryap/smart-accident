@@ -375,6 +375,21 @@ def homepage_view(request):
     }
     return render(request, 'homepage.html', context)
 
+# =====================================
+# HALAMAN LANDING PAGE
+# =====================================
+
+def tentang_view(request):
+    return render(request, 'tentang.html')
+
+def keselamatan_view(request):
+    return render(request, 'informasikeselamatan.html')
+
+def fitur_view(request):
+    return render(request, 'fitur.html')
+
+def faq_view(request):
+    return render(request, 'faq.html')
 
 # Dashboard Views
 @login_required(login_url='login')

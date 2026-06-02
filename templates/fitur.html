@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html class="light" lang="id">
+
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Fitur Platform - Smart Accident</title>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#00288e",
+                        "secondary": "#bb0112",
+                        "background": "#f8f9ff",
+                        "surface": "#f8f9ff",
+                        "on-background": "#0d1c2e",
+                        "on-surface": "#0d1c2e",
+                        "on-surface-variant": "#444653",
+                        "outline-variant": "#c4c5d5",
+                        "primary-fixed": "#dde1ff",
+                        "on-primary-fixed": "#001453",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#eff4ff",
+                        "surface-container": "#e6eeff",
+                        "surface-container-highest": "#d5e3fc",
+                        "primary-container": "#1e40af",
+                    },
+                    spacing: {
+                        "gutter": "24px",
+                        "section-gap": "80px",
+                        "margin-desktop": "40px",
+                        "container-max": "1280px",
+                    },
+                    fontFamily: {
+                        "headline-md": ["Montserrat"],
+                        "label-md": ["Montserrat"],
+                        "body-md": ["Montserrat"],
+                        "headline-xl": ["Montserrat"],
+                        "body-lg": ["Montserrat"],
+                        "headline-lg": ["Montserrat"],
+                    },
+                    fontSize: {
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-xl": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                    }
+                },
+            },
+        }
+    </script>
+
+    <style>
+        * {
+            font-family: 'Montserrat', system-ui, sans-serif;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .text-gradient {
+            background: linear-gradient(135deg, #00288e 0%, #bb0112 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .user-menu {
+            position: relative;
+        }
+
+        .user-dropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: calc(100% + 8px);
+            min-width: 180px;
+            background: white;
+            border: 1px solid #c4c5d5;
+            border-radius: 12px;
+            padding: 6px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            z-index: 100;
+        }
+
+        .user-menu:hover .user-dropdown {
+            display: block;
+        }
+
+        .user-dropdown a {
+            display: block;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #0d1c2e;
+            text-decoration: none;
+        }
+
+        .user-dropdown a:hover {
+            background: #e6eeff;
+        }
+
+        .user-dropdown hr {
+            margin: 4px 0;
+            border-color: #c4c5d5;
+        }
+    </style>
+</head>
+
+<body class="bg-background text-on-background font-body-md overflow-x-hidden">
+
+    <!-- ==================== NAVBAR ==================== -->
+    <nav class="bg-surface border-b border-outline-variant top-0 z-50 sticky">
+        <div class="flex justify-between items-center w-full px-margin-desktop py-4 max-w-container-max mx-auto">
+
+            <div class="flex items-center gap-2">
+                <i class="fas fa-map-location-dot text-primary text-xl"></i>
+                <span class="font-headline-md text-headline-md font-bold text-primary">
+                    Smart Accident
+                </span>
+            </div>
+
+            <div class="hidden md:flex items-center gap-8">
+                <a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-all" href="/">
+                    Beranda
+                </a>
+
+                <a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-all"
+                    href="/tentang/">
+                    Tentang Platform
+                </a>
+
+                <a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-all"
+                    href="/keselamatan/">
+                    Informasi Keselamatan
+                </a>
+
+                <a class="font-body-md text-body-md text-primary border-b-2 border-primary pb-1 font-bold"
+                    href="/fitur/">
+                    Fitur
+                </a>
+
+                <a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-all"
+                    href="/faq/">
+                    FAQ
+                </a>
+            </div>
+
+            {% if user.is_authenticated %}
+            <div class="user-menu">
+                <button
+                    class="flex items-center gap-2 text-primary font-label-md text-label-md hover:opacity-80 transition">
+                    <i class="fas fa-user text-sm"></i>
+                    {{ user.display_name }}
+                    <span class="material-symbols-outlined text-sm">expand_more</span>
+                </button>
+
+                <div class="user-dropdown">
+                    {% if user.is_staff %}
+                    <a href="/dashboard/">
+                        <i class="fas fa-gauge text-xs mr-2"></i>Dashboard Admin
+                    </a>
+                    <hr>
+                    {% endif %}
+
+                    <a href="{% url 'logout' %}">
+                        <i class="fas fa-right-from-bracket text-xs mr-2"></i>Logout
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <a href="{% url 'login' %}"
+                class="bg-primary font-label-md text-label-md px-6 py-3 rounded-full hover:bg-primary-container transition-all duration-300 active:scale-95 flex items-center gap-2"
+                style="color: white;">
+                <i class="fas fa-right-to-bracket text-sm"></i>
+                Masuk
+            </a>
+            {% endif %}
+
+        </div>
+    </nav>
+
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <main class="max-w-container-max mx-auto px-margin-desktop py-12 md:py-14">
+
+        <!-- Hero Section -->
+        <section class="flex flex-col lg:flex-row items-center gap-gutter mb-12">
+            <div class="w-full lg:w-1/2 space-y-6">
+                <span class="bg-primary-fixed text-on-primary-fixed px-4 py-1 rounded-full font-label-md text-label-md uppercase tracking-wider">
+                    Fitur Sistem
+                </span>
+
+                <h1 class="font-headline-xl text-headline-xl text-on-background leading-tight">
+                    Fitur Analisis pada
+                    <span class="text-gradient">Smart Accident</span>
+                </h1>
+
+                <p class="font-body-lg text-body-lg text-on-surface-variant">
+                    Smart Accident menyediakan fitur pengelolaan data kecelakaan, analisis lokasi rawan,
+                    pengelompokan faktor penyebab, serta analisis pola waktu kecelakaan untuk membantu
+                    penyajian informasi yang lebih terstruktur.
+                </p>
+
+                <div class="flex items-center gap-2 text-secondary font-label-md">
+                    <span class="material-symbols-outlined">lock</span>
+                    <span>Fitur analisis hanya dapat diakses oleh admin yang telah login.</span>
+                </div>
+            </div>
+
+            <div class="w-full lg:w-1/2 relative">
+                <div class="absolute -inset-4 bg-primary/10 blur-3xl rounded-full"></div>
+
+                <div class="relative bg-white border border-outline-variant rounded-2xl p-8 shadow-xl">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-surface-container-low p-5 rounded-xl">
+                            <span class="material-symbols-outlined text-primary text-4xl">database</span>
+                            <p class="font-bold mt-3">Kelola Data</p>
+                        </div>
+
+                        <div class="bg-surface-container-low p-5 rounded-xl">
+                            <span class="material-symbols-outlined text-primary text-4xl">map</span>
+                            <p class="font-bold mt-3">Lokasi Rawan</p>
+                        </div>
+
+                        <div class="bg-surface-container-low p-5 rounded-xl">
+                            <span class="material-symbols-outlined text-primary text-4xl">account_tree</span>
+                            <p class="font-bold mt-3">AHC</p>
+                        </div>
+
+                        <div class="bg-surface-container-low p-5 rounded-xl">
+                            <span class="material-symbols-outlined text-primary text-4xl">schedule</span>
+                            <p class="font-bold mt-3">Pola Waktu</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Grid -->
+        <section class="mb-12">
+            <div class="text-center mb-10">
+                <h2 class="font-headline-lg text-headline-lg text-on-background mb-4">
+                    Fitur Utama Sistem
+                </h2>
+
+                <p class="max-w-2xl mx-auto text-on-surface-variant">
+                    Setiap fitur dirancang untuk membantu admin mengolah data kecelakaan menjadi informasi
+                    yang mudah dianalisis dan digunakan sebagai dasar rekomendasi penanganan.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <div class="bg-white p-8 rounded-xl border border-outline-variant">
+                    <div class="w-12 h-12 bg-primary flex items-center justify-center rounded-lg text-white mb-4">
+                        <span class="material-symbols-outlined">database</span>
+                    </div>
+
+                    <h3 class="font-headline-md text-headline-md mb-3">
+                        Pengelolaan Data Kecelakaan
+                    </h3>
+
+                    <p class="text-on-surface-variant">
+                        Fitur ini digunakan untuk menyimpan, mengubah, menghapus, dan mengelola data kecelakaan
+                        agar data tersusun rapi sebelum dilakukan proses analisis.
+                    </p>
+                </div>
+
+                <div class="bg-white p-8 rounded-xl border border-outline-variant">
+                    <div class="w-12 h-12 bg-primary flex items-center justify-center rounded-lg text-white mb-4">
+                        <span class="material-symbols-outlined">monitoring</span>
+                    </div>
+
+                    <h3 class="font-headline-md text-headline-md mb-3">
+                        Analisis Z-Score
+                    </h3>
+
+                    <p class="text-on-surface-variant">
+                        Digunakan untuk membantu mengetahui tingkat kerawanan kecelakaan berdasarkan nilai
+                        standar sehingga lokasi dengan risiko tinggi dapat diidentifikasi.
+                    </p>
+                </div>
+
+                <div class="bg-white p-8 rounded-xl border border-outline-variant">
+                    <div class="w-12 h-12 bg-secondary flex items-center justify-center rounded-lg text-white mb-4">
+                        <span class="material-symbols-outlined">account_tree</span>
+                    </div>
+
+                    <h3 class="font-headline-md text-headline-md mb-3">
+                        Analisis Faktor Penyebab dengan AHC
+                    </h3>
+
+                    <p class="text-on-surface-variant">
+                        Agglomerative Hierarchical Clustering digunakan untuk mengelompokkan data kecelakaan
+                        berdasarkan karakteristik yang serupa sehingga faktor penyebab dapat dianalisis lebih jelas.
+                    </p>
+                </div>
+
+                <div class="bg-white p-8 rounded-xl border border-outline-variant">
+                    <div class="w-12 h-12 bg-primary-container flex items-center justify-center rounded-lg text-white mb-4">
+                        <span class="material-symbols-outlined">schedule</span>
+                    </div>
+
+                    <h3 class="font-headline-md text-headline-md mb-3">
+                        Analisis Pola Waktu dengan K-Means
+                    </h3>
+
+                    <p class="text-on-surface-variant">
+                        K-Means Clustering digunakan untuk mengelompokkan data kecelakaan berdasarkan pola waktu
+                        kejadian sehingga periode rawan kecelakaan dapat diketahui.
+                    </p>
+                </div>
+
+                <div class="bg-white p-8 rounded-xl border border-outline-variant">
+                    <div class="w-12 h-12 bg-primary flex items-center justify-center rounded-lg text-white mb-4">
+                        <span class="material-symbols-outlined">bar_chart</span>
+                    </div>
+
+                    <h3 class="font-headline-md text-headline-md mb-3">
+                        Visualisasi Hasil Analisis
+                    </h3>
+
+                    <p class="text-on-surface-variant">
+                        Hasil analisis disajikan dalam bentuk tabel, grafik, dan visualisasi agar informasi lebih
+                        mudah dibaca dan dipahami oleh admin.
+                    </p>
+                </div>
+
+                <div class="bg-white p-8 rounded-xl border border-outline-variant">
+                    <div class="w-12 h-12 bg-secondary flex items-center justify-center rounded-lg text-white mb-4">
+                        <span class="material-symbols-outlined">lightbulb</span>
+                    </div>
+
+                    <h3 class="font-headline-md text-headline-md mb-3">
+                        Rekomendasi Penanganan
+                    </h3>
+
+                    <p class="text-on-surface-variant">
+                        Sistem membantu menyajikan rekomendasi penanganan berdasarkan hasil analisis untuk mendukung
+                        upaya pencegahan kecelakaan lalu lintas.
+                    </p>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Access Info -->
+        <section class="bg-surface-container-highest rounded-2xl p-margin-desktop text-center border border-outline-variant">
+            <h2 class="font-headline-lg text-headline-lg text-on-background mb-4">
+                Fitur Analisis Dikelola oleh Admin
+            </h2>
+
+            <p class="max-w-2xl mx-auto text-on-surface-variant mb-8">
+                Untuk menjaga keamanan dan validitas data, fitur pengelolaan data dan analisis hanya dapat
+                digunakan oleh admin yang memiliki hak akses pada sistem.
+            </p>
+
+            <a href="{% url 'login' %}"
+                class="inline-flex items-center gap-2 bg-primary text-white px-8 py-3 rounded-lg font-label-md hover:bg-primary-container transition-colors">
+                Masuk ke Sistem
+                <span class="material-symbols-outlined">login</span>
+            </a>
+        </section>
+
+    </main>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="border-t border-outline-variant py-6">
+        <div class="max-w-[1280px] mx-auto px-4 md:px-10 flex flex-col md:flex-row justify-between items-center gap-4">
+
+            <div class="flex items-center gap-2">
+                <i class="fas fa-map-location-dot text-primary"></i>
+                <span class="font-semibold text-primary">
+                    Smart Accident
+                </span>
+            </div>
+
+            <p class="text-sm text-on-surface-variant">
+                © 2025 Smart Accident. All Rights Reserved.
+            </p>
+
+        </div>
+    </footer>
+
+</body>
+
+</html>

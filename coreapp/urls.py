@@ -4,6 +4,11 @@ from . import views
 urlpatterns = [
     # Homepage
     path('', views.homepage_view, name='homepage'),
+
+    path('tentang/', views.tentang_view, name='tentang'),
+    path('keselamatan/', views.keselamatan_view, name='informasikeselamatan'),
+    path('fitur/', views.fitur_view, name='fitur'),
+    path('faq/', views.faq_view, name='faq'),
     
     # Authentication
     path('register/', views.register_view, name='register'),
