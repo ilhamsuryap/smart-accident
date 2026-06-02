@@ -307,7 +307,7 @@
             <nav class="sidebar-nav">
 
                 <!-- MENU UTAMA -->
-                <div class="sidebar-section-label">Menu Utama</div>
+                <div class="sidebar-section-label">Menu</div>
 
                 <!-- Dashboard -->
                 <a class="sidebar-link {% if current == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
@@ -333,7 +333,7 @@
                 <div class="sidebar-divider"></div>
 
                 <!-- ANALISIS -->
-                <div class="sidebar-section-label">Data & Analisis</div>
+                <div class="sidebar-section-label">Data Pemetaan</div>
 
                 <!-- ================= PEMETAAN ================= -->
                 <div>
@@ -357,19 +357,19 @@
                                 <i class="fas fa-road icon-left"></i>
                                 <span>Kelola Ruas Jalan</span>
                             </a>
-                            <a class="sidebar-link {% if current == 'upload_kecelakaan_raw' or current == 'kecelakaan_raw_list' %}active{% endif %}"
+                            <!-- <a class="sidebar-link {% if current == 'upload_kecelakaan_raw' or current == 'kecelakaan_raw_list' %}active{% endif %}"
                                 href="{% url 'kecelakaan_raw_list' %}">
                                 <i class="fas fa-upload icon-left"></i>
                                 <span>Kelola Data Raw</span>
-                            </a>
+                            </a> -->
                             <a class="sidebar-link {% if current == 'upload_kecelakaan_preprosesing' or current == 'kecelakaan_preprosesing_list' %}active{% endif %}"
                                 href="{% url 'kecelakaan_preprosesing_list' %}">
                                 <i class="fas fa-database icon-left"></i>
-                                <span>Kelola Data Preprosesing</span>
+                                <span>Kelola Data Pemetaan</span>
                             </a>
                             <a class="sidebar-link {% if current == 'map' %}active{% endif %}" href="{% url 'map' %}">
                                 <i class="fas fa-map icon-left"></i>
-                                <span>Peta Interaktif</span>
+                                <span>Peta</span>
                             </a>
                         </div>
                     </div>

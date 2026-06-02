@@ -86,80 +86,114 @@
     </div>
 
     {# ── Info + Peta (2 kolom) ─────────────────────────────────────────── #}
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
 
-        {# Kolom kiri: info detail #}
-        <div class="space-y-4">
-            {# Informasi Umum #}
-            <div class="bg-white rounded-lg shadow-md overflow-hidden">
-                <div class="bg-gray-50 px-5 py-3 border-b border-gray-200">
-                    <h5 class="font-semibold text-sm"><i class="fas fa-info-circle text-blue-500 mr-1"></i> Informasi Umum</h5>
-                </div>
-                <div class="p-5 space-y-3 text-sm">
-                    <div class="flex justify-between">
-                        <span class="text-gray-500">Nama Ruas</span>
-                        <span class="font-medium text-right max-w-[60%]">{{ ruas.nama_ruas }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-500">Jenis Jalan</span>
-                        <span class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
-                            {{ ruas.get_jenis_jalan_display }}
-                        </span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-500">Wilayah</span>
-                        <span class="font-medium">{{ ruas.wilayah }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-500">Panjang Total</span>
-                        <span class="font-semibold text-blue-700">{{ ruas.panjang_km }} km</span>
-                    </div>
-                    {% if ruas.lat_awal %}
-                    <div class="flex justify-between">
-                        <span class="text-gray-500">Koordinat Awal</span>
-                        <span class="font-mono text-xs">{{ ruas.lat_awal|floatformat:5 }}, {{ ruas.lon_awal|floatformat:5 }}</span>
-                    </div>
-                    {% endif %}
-                    {% if ruas.lat_akhir %}
-                    <div class="flex justify-between">
-                        <span class="text-gray-500">Koordinat Akhir</span>
-                        <span class="font-mono text-xs">{{ ruas.lat_akhir|floatformat:5 }}, {{ ruas.lon_akhir|floatformat:5 }}</span>
-                    </div>
-                    {% endif %}
-                    <div class="flex justify-between">
-                        <span class="text-gray-500">Geometry</span>
-                        {% if ruas.geometry %}
-                        <span class="px-2 py-0.5 badge-has-geom rounded-full text-xs font-medium">✓ Tersedia</span>
-                        {% else %}
-                        <span class="px-2 py-0.5 badge-no-geom rounded-full text-xs font-medium">✗ Tidak ada</span>
-                        {% endif %}
-                    </div>
-                </div>
+    <!-- ================= KIRI: Informasi Umum ================= -->
+    <div>
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="bg-gray-50 px-5 py-3 border-b border-gray-200">
+                <h5 class="font-semibold text-sm">
+                    <i class="fas fa-info-circle text-blue-500 mr-1"></i>
+                    Informasi Umum
+                </h5>
             </div>
-
-            {# Statistik Waktu #}
-            <div class="bg-white rounded-lg shadow-md overflow-hidden">
-                <div class="bg-gray-50 px-5 py-3 border-b border-gray-200">
-                    <h5 class="font-semibold text-sm"><i class="fas fa-clock text-gray-500 mr-1"></i> Riwayat</h5>
+            <div class="p-5 space-y-3 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-gray-500">Nama Ruas</span>
+                    <span class="font-medium text-right max-w-[60%]">
+                        {{ ruas.nama_ruas }}
+                    </span>
                 </div>
-                <div class="p-5 space-y-3 text-sm">
-                    <div class="flex justify-between">
-                        <span class="text-gray-500">Dibuat</span>
-                        <span class="font-medium">{{ ruas.created_at|date:"d/m/Y H:i" }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-500">Diperbarui</span>
-                        <span class="font-medium">{{ ruas.updated_at|date:"d/m/Y H:i" }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-500">Total Segmen</span>
-                        <span class="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-semibold">{{ segmen.count }}</span>
-                    </div>
+
+                <div class="flex justify-between">
+                    <span class="text-gray-500">Jenis Jalan</span>
+                    <span class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                        {{ ruas.get_jenis_jalan_display }}
+                    </span>
+                </div>
+
+                <div class="flex justify-between">
+                    <span class="text-gray-500">Wilayah</span>
+                    <span class="font-medium">{{ ruas.wilayah }}</span>
+                </div>
+
+                <div class="flex justify-between">
+                    <span class="text-gray-500">Panjang Total</span>
+                    <span class="font-semibold text-blue-700">
+                        {{ ruas.panjang_km }} km
+                    </span>
+                </div>
+
+                {% if ruas.lat_awal %}
+                <div class="flex justify-between">
+                    <span class="text-gray-500">Koordinat Awal</span>
+                    <span class="font-mono text-xs">
+                        {{ ruas.lat_awal|floatformat:5 }}, {{ ruas.lon_awal|floatformat:5 }}
+                    </span>
+                </div>
+                {% endif %}
+
+                {% if ruas.lat_akhir %}
+                <div class="flex justify-between">
+                    <span class="text-gray-500">Koordinat Akhir</span>
+                    <span class="font-mono text-xs">
+                        {{ ruas.lat_akhir|floatformat:5 }}, {{ ruas.lon_akhir|floatformat:5 }}
+                    </span>
+                </div>
+                {% endif %}
+
+                <div class="flex justify-between">
+                    <span class="text-gray-500">Geometry</span>
+                    {% if ruas.geometry %}
+                        <span class="px-2 py-0.5 badge-has-geom rounded-full text-xs font-medium">
+                            ✓ Tersedia
+                        </span>
+                    {% else %}
+                        <span class="px-2 py-0.5 badge-no-geom rounded-full text-xs font-medium">
+                            ✗ Tidak ada
+                        </span>
+                    {% endif %}
                 </div>
             </div>
         </div>
+    </div>
 
-        {# Kolom kanan (2/3): Peta #}
+    <!-- ================= KANAN: Riwayat ================= -->
+    <div>
+        <div class="bg-white rounded-lg shadow-md overflow-hidden h-full">
+            <div class="bg-gray-50 px-5 py-3 border-b border-gray-200">
+                <h5 class="font-semibold text-sm">
+                    <i class="fas fa-clock text-gray-500 mr-1"></i>
+                    Riwayat
+                </h5>
+            </div>
+            <div class="p-5 space-y-3 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-gray-500">Dibuat</span>
+                    <span class="font-medium">
+                        {{ ruas.created_at|date:"d/m/Y H:i" }}
+                    </span>
+                </div>
+
+                <div class="flex justify-between">
+                    <span class="text-gray-500">Diperbarui</span>
+                    <span class="font-medium">
+                        {{ ruas.updated_at|date:"d/m/Y H:i" }}
+                    </span>
+                </div>
+
+                <div class="flex justify-between">
+                    <span class="text-gray-500">Total Segmen</span>
+                    <span class="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
+                        {{ segmen.count }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+        <!-- {# Kolom kanan (2/3): Peta #}
         <div class="lg:col-span-2">
             <div class="bg-white rounded-lg shadow-md overflow-hidden h-full">
                 <div class="bg-gray-50 px-5 py-3 border-b border-gray-200 flex justify-between items-center">
@@ -183,8 +217,8 @@
                 </div>
                 <div id="mapDetail" style="height:430px; border-radius:0; position: relative; z-index: 1;"></div>
             </div>
-        </div>
-    </div>
+        </div> -->
+  
 
     {# ── Daftar Segmen ─────────────────────────────────────────────────── #}
     <div class="bg-white rounded-lg shadow-md overflow-hidden">

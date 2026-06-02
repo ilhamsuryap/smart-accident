@@ -47,11 +47,6 @@
         }
 
         .user-dropdown a:hover { background: #e6eeff; }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-8px); }
-        }
     </style>
 
     <script id="tailwind-config">
@@ -83,10 +78,8 @@
 
 <body class="bg-surface text-on-surface">
 
-<!-- ==================== NAVBAR ==================== -->
 <nav class="bg-surface border-b border-outline-variant top-0 z-50 sticky">
     <div class="flex justify-between items-center w-full px-4 md:px-10 py-4 max-w-[1280px] mx-auto">
-
         <div class="flex items-center gap-2">
             <i class="fas fa-map-location-dot text-primary text-xl"></i>
             <span class="text-xl font-bold text-primary">Smart Accident</span>
@@ -110,10 +103,10 @@
 
             <div class="user-dropdown">
                 {% if user.is_staff %}
-                    <a href="/dashboard/">
-                        <i class="fas fa-gauge text-xs mr-2"></i>Dashboard Admin
-                    </a>
-                    <hr>
+                <a href="/dashboard/">
+                    <i class="fas fa-gauge text-xs mr-2"></i>Dashboard Admin
+                </a>
+                <hr>
                 {% endif %}
                 <a href="{% url 'logout' %}">
                     <i class="fas fa-right-from-bracket text-xs mr-2"></i>Logout
@@ -128,20 +121,14 @@
             Masuk
         </a>
         {% endif %}
-
     </div>
 </nav>
 
-<!-- ==================== HERO ==================== -->
 <header class="relative overflow-hidden px-4 md:px-10 py-12 md:py-16 max-w-[1280px] mx-auto">
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-
-        <!-- Left Content -->
         <div>
             <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-semibold text-sm mb-6">
-                <span class="material-symbols-outlined text-sm mr-2">
-                    verified_user
-                </span>
+                <span class="material-symbols-outlined text-sm mr-2">verified_user</span>
                 Sistem Informasi Keselamatan Lalu Lintas
             </span>
 
@@ -160,9 +147,7 @@
                 <a href="{% url 'login' %}"
                    class="bg-primary text-white font-semibold px-8 py-4 rounded-full flex items-center justify-center gap-2 hover:shadow-lg transition-all active:scale-95">
                     Masuk ke Sistem
-                    <span class="material-symbols-outlined">
-                        login
-                    </span>
+                    <span class="material-symbols-outlined">login</span>
                 </a>
 
                 <a href="{% url 'tentang' %}"
@@ -172,42 +157,18 @@
             </div>
         </div>
 
-        <!-- Right Image -->
         <div class="relative flex justify-center items-center">
             <div class="absolute -top-10 -right-10 w-64 h-64 bg-primary-fixed opacity-30 rounded-full blur-3xl"></div>
 
-        <img
-            src="{% static 'img/hero_section.png' %}"
-            alt="Ilustrasi Keselamatan Lalu Lintas"
-            class="relative z-10 w-full max-w-2xl h-auto object-contain drop-shadow-2xl"
-        >
-
-            <!-- Floating Card
-            <div class="absolute bottom-4 left-4 md:-bottom-5 md:-left-5 z-20 bg-white p-4 md:p-5 rounded-2xl shadow-xl border border-outline-variant">
-                <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 bg-primary-fixed text-primary rounded-xl flex items-center justify-center">
-                        <span class="material-symbols-outlined">
-                            shield
-                        </span>
-                    </div>
-
-                    <div>
-                        <p class="text-xs text-on-surface-variant">
-                            Keselamatan
-                        </p>
-
-                        <p class="font-bold text-primary text-sm md:text-base">
-                            Data untuk Jalan Aman
-                        </p>
-                    </div>
-                </div>
-            </div> -->
+            <img
+                src="{% static 'img/hero_section.png' %}"
+                alt="Ilustrasi Keselamatan Lalu Lintas"
+                class="relative z-10 w-full max-w-2xl h-auto object-contain drop-shadow-2xl"
+            >
         </div>
-
     </div>
 </header>
 
-<!-- ==================== PENGENALAN SISTEM ==================== -->
 <section class="py-10 md:py-12 px-4 md:px-10 max-w-[1280px] mx-auto">
     <div class="text-center mb-8">
         <h2 class="text-2xl md:text-4xl font-bold mb-4 text-primary">
@@ -222,7 +183,6 @@
 
     <div class="bg-white border border-outline-variant p-6 md:p-8 rounded-2xl shadow-sm">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-
             <div class="lg:col-span-2 bg-surface-container-low rounded-xl p-6 md:p-8">
                 <h3 class="text-2xl font-bold text-primary mb-4">
                     Apa itu Smart Accident?
@@ -243,12 +203,10 @@
                     lalu lintas dapat digunakan secara lebih efektif.
                 </p>
             </div>
-
         </div>
     </div>
 </section>
 
-<!-- ==================== CARA KERJA SISTEM ==================== -->
 <section class="py-10 md:py-12 px-4 md:px-10 max-w-[1280px] mx-auto">
     <div class="text-center mb-8">
         <h2 class="text-2xl md:text-4xl font-bold mb-4">
@@ -263,9 +221,7 @@
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div class="flex flex-col items-center text-center p-6">
-            <div class="w-16 h-16 bg-primary-fixed text-on-primary-fixed rounded-full flex items-center justify-center mb-6 font-bold text-2xl">
-                1
-            </div>
+            <div class="w-16 h-16 bg-primary-fixed text-on-primary-fixed rounded-full flex items-center justify-center mb-6 font-bold text-2xl">1</div>
             <h4 class="text-xl font-bold mb-3 text-primary">Pengelolaan Data</h4>
             <p class="text-on-surface-variant">
                 Data kecelakaan dimasukkan, disimpan, dan dikelola agar lebih rapi serta mudah digunakan kembali.
@@ -273,9 +229,7 @@
         </div>
 
         <div class="flex flex-col items-center text-center p-6">
-            <div class="w-16 h-16 bg-red-100 text-secondary rounded-full flex items-center justify-center mb-6 font-bold text-2xl">
-                2
-            </div>
+            <div class="w-16 h-16 bg-red-100 text-secondary rounded-full flex items-center justify-center mb-6 font-bold text-2xl">2</div>
             <h4 class="text-xl font-bold mb-3 text-secondary">Analisis Data</h4>
             <p class="text-on-surface-variant">
                 Sistem mengolah data untuk mengetahui pola kecelakaan berdasarkan lokasi, waktu, dan faktor penyebab.
@@ -283,9 +237,7 @@
         </div>
 
         <div class="flex flex-col items-center text-center p-6">
-            <div class="w-16 h-16 bg-surface-container-highest text-on-surface rounded-full flex items-center justify-center mb-6 font-bold text-2xl">
-                3
-            </div>
+            <div class="w-16 h-16 bg-surface-container-highest text-on-surface rounded-full flex items-center justify-center mb-6 font-bold text-2xl">3</div>
             <h4 class="text-xl font-bold mb-3">Penyajian Informasi</h4>
             <p class="text-on-surface-variant">
                 Hasil analisis ditampilkan dalam bentuk statistik, peta, dan informasi yang mudah dipahami.
@@ -294,15 +246,9 @@
     </div>
 </section>
 
-<!-- ==================== MANFAAT SISTEM ==================== -->
-<!-- ==================== MANFAAT SISTEM ==================== -->
 <section class="bg-surface-container-low py-10 md:py-12">
-
     <div class="max-w-[1280px] mx-auto px-8 md:px-12">
-
-        <!-- Heading -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6">
-
             <div class="max-w-2xl">
                 <h2 class="text-2xl md:text-4xl font-bold mb-4">
                     Manfaat Sistem Smart Accident
@@ -313,82 +259,46 @@
                     serta mendukung proses pengambilan keputusan terkait keselamatan lalu lintas.
                 </p>
             </div>
-
         </div>
 
-        <!-- Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-
-            <!-- Card 1 -->
             <div class="bg-white rounded-2xl p-6 border border-outline-variant hover:shadow-lg transition-all duration-300">
-                <span class="material-symbols-outlined text-primary text-4xl mb-4">
-                    map
-                </span>
-
-                <h4 class="text-xl font-bold mb-3">
-                    Memahami Titik Rawan
-                </h4>
-
+                <span class="material-symbols-outlined text-primary text-4xl mb-4">map</span>
+                <h4 class="text-xl font-bold mb-3">Memahami Titik Rawan</h4>
                 <p class="text-on-surface-variant text-sm leading-relaxed">
                     Sistem membantu menampilkan lokasi yang memiliki tingkat kecelakaan tinggi agar dapat menjadi perhatian.
                 </p>
             </div>
 
-            <!-- Card 2 -->
             <div class="bg-white rounded-2xl p-6 border border-outline-variant hover:shadow-lg transition-all duration-300">
-                <span class="material-symbols-outlined text-primary text-4xl mb-4">
-                    analytics
-                </span>
-
-                <h4 class="text-xl font-bold mb-3">
-                    Mengetahui Faktor Penyebab
-                </h4>
-
+                <span class="material-symbols-outlined text-primary text-4xl mb-4">analytics</span>
+                <h4 class="text-xl font-bold mb-3">Mengetahui Faktor Penyebab</h4>
                 <p class="text-on-surface-variant text-sm leading-relaxed">
                     Data kecelakaan dianalisis untuk mengetahui faktor yang sering menyebabkan kecelakaan.
                 </p>
             </div>
 
-            <!-- Card 3 -->
             <div class="bg-white rounded-2xl p-6 border border-outline-variant hover:shadow-lg transition-all duration-300">
-                <span class="material-symbols-outlined text-primary text-4xl mb-4">
-                    schedule
-                </span>
-
-                <h4 class="text-xl font-bold mb-3">
-                    Mengetahui Pola Waktu
-                </h4>
-
+                <span class="material-symbols-outlined text-primary text-4xl mb-4">schedule</span>
+                <h4 class="text-xl font-bold mb-3">Mengetahui Pola Waktu</h4>
                 <p class="text-on-surface-variant text-sm leading-relaxed">
                     Sistem membantu mengetahui waktu yang paling sering terjadi kecelakaan untuk meningkatkan kewaspadaan.
                 </p>
             </div>
 
-            <!-- Card 4 -->
             <div class="bg-white rounded-2xl p-6 border border-outline-variant hover:shadow-lg transition-all duration-300">
-                <span class="material-symbols-outlined text-primary text-4xl mb-4">
-                    shield
-                </span>
-
-                <h4 class="text-xl font-bold mb-3">
-                    Mendukung Pencegahan
-                </h4>
-
+                <span class="material-symbols-outlined text-primary text-4xl mb-4">shield</span>
+                <h4 class="text-xl font-bold mb-3">Mendukung Pencegahan</h4>
                 <p class="text-on-surface-variant text-sm leading-relaxed">
                     Informasi hasil analisis dapat digunakan sebagai dasar rekomendasi pencegahan kecelakaan.
                 </p>
             </div>
-
         </div>
-
     </div>
-
 </section>
 
-<!-- ==================== FAQ ==================== -->
 <section class="py-10 md:py-12 px-4 md:px-10 max-w-[1280px] mx-auto" id="faq">
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
         <div class="lg:col-span-4">
             <h2 class="text-2xl md:text-4xl font-bold mb-6">
                 Pertanyaan Umum
@@ -399,10 +309,7 @@
             </p>
 
             <div class="bg-primary-container p-8 rounded-2xl text-white">
-                <h3 class="text-xl font-semibold mb-4">
-                    Butuh Bantuan?
-                </h3>
-
+                <h3 class="text-xl font-semibold mb-4">Butuh Bantuan?</h3>
                 <p class="text-sm opacity-90 mb-6">
                     Pelajari lebih lanjut mengenai sistem informasi analisis kecelakaan lalu lintas.
                 </p>
@@ -416,15 +323,11 @@
         </div>
 
         <div class="lg:col-span-8 flex flex-col gap-4">
-
             <details class="group bg-white border border-outline-variant rounded-xl overflow-hidden">
                 <summary class="flex justify-between items-center p-6 cursor-pointer list-none">
                     <h4 class="font-semibold text-lg">Apa itu Smart Accident?</h4>
-                    <span class="material-symbols-outlined transition-transform duration-300 group-open:rotate-180">
-                        expand_more
-                    </span>
+                    <span class="material-symbols-outlined transition-transform duration-300 group-open:rotate-180">expand_more</span>
                 </summary>
-
                 <div class="px-6 pb-6 text-on-surface-variant text-sm leading-relaxed">
                     Smart Accident merupakan sistem informasi berbasis web yang digunakan untuk mengelola,
                     memetakan, dan menganalisis data kecelakaan lalu lintas sehingga informasi dapat
@@ -435,11 +338,8 @@
             <details class="group bg-white border border-outline-variant rounded-xl overflow-hidden">
                 <summary class="flex justify-between items-center p-6 cursor-pointer list-none">
                     <h4 class="font-semibold text-lg">Apa tujuan sistem ini?</h4>
-                    <span class="material-symbols-outlined transition-transform duration-300 group-open:rotate-180">
-                        expand_more
-                    </span>
+                    <span class="material-symbols-outlined transition-transform duration-300 group-open:rotate-180">expand_more</span>
                 </summary>
-
                 <div class="px-6 pb-6 text-on-surface-variant text-sm leading-relaxed">
                     Sistem ini bertujuan membantu penyajian informasi kecelakaan lalu lintas secara
                     terstruktur sehingga pola kejadian, faktor penyebab, dan lokasi rawan dapat
@@ -450,37 +350,29 @@
             <details class="group bg-white border border-outline-variant rounded-xl overflow-hidden">
                 <summary class="flex justify-between items-center p-6 cursor-pointer list-none">
                     <h4 class="font-semibold text-lg">Siapa yang dapat menggunakan sistem ini?</h4>
-                    <span class="material-symbols-outlined transition-transform duration-300 group-open:rotate-180">
-                        expand_more
-                    </span>
+                    <span class="material-symbols-outlined transition-transform duration-300 group-open:rotate-180">expand_more</span>
                 </summary>
-
                 <div class="px-6 pb-6 text-on-surface-variant text-sm leading-relaxed">
                     Sistem dapat digunakan oleh admin untuk mengelola data kecelakaan, sedangkan
-                    pengunjung dapat mengakses informasi umum dan hasil analisis yang tersedia.
+                    pengunjung dapat mengakses informasi umum.
                 </div>
             </details>
 
             <details class="group bg-white border border-outline-variant rounded-xl overflow-hidden">
                 <summary class="flex justify-between items-center p-6 cursor-pointer list-none">
                     <h4 class="font-semibold text-lg">Apa manfaat analisis data kecelakaan?</h4>
-                    <span class="material-symbols-outlined transition-transform duration-300 group-open:rotate-180">
-                        expand_more
-                    </span>
+                    <span class="material-symbols-outlined transition-transform duration-300 group-open:rotate-180">expand_more</span>
                 </summary>
-
                 <div class="px-6 pb-6 text-on-surface-variant text-sm leading-relaxed">
                     Analisis data membantu mengidentifikasi lokasi rawan kecelakaan, faktor penyebab
                     dominan, serta pola kejadian sehingga dapat mendukung upaya pencegahan dan
                     peningkatan keselamatan lalu lintas.
                 </div>
             </details>
-
         </div>
     </div>
 </section>
 
-<!-- ==================== FOOTER ==================== -->
 <footer class="border-t border-outline-variant py-6">
     <div class="max-w-[1280px] mx-auto px-4 md:px-10 flex flex-col md:flex-row justify-between items-center gap-4">
         <div class="flex items-center gap-2">

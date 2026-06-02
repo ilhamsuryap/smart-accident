@@ -885,8 +885,13 @@ class RekapSegmen(models.Model):
         """Update rekapitulasi untuk tahun tertentu atau semua tahun"""
         from django.db.models import Sum, Count, Q
         
-        if tahun is None:
-            tahun = timezone.now().year
+        if tahun is None or tahun == 0 or tahun == '0':
+            tahun = 0
+        else:
+            try:
+                tahun = int(tahun)
+            except (ValueError, TypeError):
+                tahun = 0
         
         # Hapus rekap lama
         RekapSegmen.objects.filter(periode_tahun=tahun).delete()
@@ -895,16 +900,27 @@ class RekapSegmen(models.Model):
         segmen_list = SegmenJalan.objects.all()
         
         for segmen in segmen_list:
-            kecelakaan_data = KecelakaanPreprosesing.objects.filter(
-                segmen_jalan=segmen,
-                tanggal__year=tahun
-            ).aggregate(
-                jumlah=Count('id'),
-                meninggal=Sum('korban_meninggal'),
-                luka_berat=Sum('korban_luka_berat'),
-                luka_ringan=Sum('korban_luka_ringan'),
-                kerugian=Sum('kerugian_materi')
-            )
+            if tahun == 0:
+                kecelakaan_data = KecelakaanPreprosesing.objects.filter(
+                    segmen_jalan=segmen
+                ).aggregate(
+                    jumlah=Count('id'),
+                    meninggal=Sum('korban_meninggal'),
+                    luka_berat=Sum('korban_luka_berat'),
+                    luka_ringan=Sum('korban_luka_ringan'),
+                    kerugian=Sum('kerugian_materi')
+                )
+            else:
+                kecelakaan_data = KecelakaanPreprosesing.objects.filter(
+                    segmen_jalan=segmen,
+                    tanggal__year=tahun
+                ).aggregate(
+                    jumlah=Count('id'),
+                    meninggal=Sum('korban_meninggal'),
+                    luka_berat=Sum('korban_luka_berat'),
+                    luka_ringan=Sum('korban_luka_ringan'),
+                    kerugian=Sum('kerugian_materi')
+                )
             
             # Hitung total korban dari penjumlahan meninggal + luka_berat + luka_ringan
             total_korban = (kecelakaan_data['meninggal'] or 0) + \
@@ -955,13 +971,18 @@ class AnalisisZScore(models.Model):
         return f"{self.segmen_jalan} - {self.kategori} ({self.nilai_zscore}) - {self.tahun}"
     
     @staticmethod
+    def calculate_zscore_all_years():
+        """Hitung Z-Score untuk semua tahun (tahun=0)"""
+        AnalisisZScore.calculate_zscore(0)
+    
+    @staticmethod
     def calculate_zscore(tahun=None):
         """Hitung Z-Score untuk setiap segmen PER RUAS JALAN dengan interval dinamis"""
         from django.db.models import Avg, StdDev, Max, Min
         import decimal
         
-        if tahun is None:
-            tahun = timezone.now().year
+        if tahun is None or tahun == 0 or tahun == '0':
+            tahun = 0
         
         # 1. Pastikan data rekapitulasi kecelakaan sudah diperbarui untuk tahun yang dipilih
         RekapSegmen.update_rekap(tahun)

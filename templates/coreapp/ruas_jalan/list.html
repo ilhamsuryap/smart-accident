@@ -4,103 +4,108 @@
 
 {% block content %}
 <div class="w-full">
-    <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-            <h1 class="text-3xl font-bold">Kelola Ruas Jalan</h1>
-        </div>
-        {% if is_admin %}
-        <div>
-            <a href="{% url 'ruas_jalan_create' %}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                <i class="fas fa-plus"></i> Tambah Ruas Jalan
-            </a>
-        </div>
-        {% endif %}
-    </div>
-    
-    <!-- Search Form -->
     <div class="mb-6">
-        <form method="get" class="flex gap-2 flex-wrap">
-            <input type="text" name="search" class="flex-1 min-w-[200px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200" 
-                   placeholder="Cari nama ruas atau wilayah..." value="{{ request.GET.search }}">
-            
-          <select name="polres"
-                    class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600">
-                <option value="">-- Semua Polres --</option>
-
-                {% for polres in polres_choices %}
-                    <option value="{{ polres.id }}"
-                        {% if polres.id|stringformat:"s" == selected_polres|stringformat:"s" %}
-                            selected
-                        {% endif %}
-                    >
-                        {{ polres.nama }}
-                    </option>
-                {% endfor %}
-            </select>
-                        
-            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                <i class="fas fa-search"></i> Cari
-            </button>
-        </form>
+        <h1 class="text-3xl font-bold">Kelola Ruas Jalan</h1>
     </div>
-    
-    <!-- Ruas Jalan List -->
-    <div class="w-full">
-        {% if ruas_jalan %}
-            <div class="overflow-x-auto bg-white rounded-lg shadow-md">
-                <table class="w-full">
-                    <thead class="bg-gray-100">
-                        <tr>
-                            <th class="px-4 py-3 text-left font-semibold">No</th>
-                            <th class="px-4 py-3 text-left font-semibold">Nama Ruas</th>
-                            <th class="px-4 py-3 text-left font-semibold">Jenis Jalan</th>
-                            <th class="px-4 py-3 text-left font-semibold">Wilayah</th>
-                            <th class="px-4 py-3 text-left font-semibold">Panjang (km)</th>
-                            <th class="px-4 py-3 text-center font-semibold">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for ruas in ruas_jalan %}
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="px-4 py-3">
-                                {{ forloop.counter }}
-                            </td>
-                            <td class="px-4 py-3">
-                                {{ ruas.nama_ruas }}
-                            </td>
-                            <td class="px-4 py-3">
-                                <span class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-semibold">{{ ruas.get_jenis_jalan_display }}</span>
-                            </td>
-                            <td class="px-4 py-3">{{ ruas.wilayah }}</td>
-                            <td class="px-4 py-3">{{ ruas.panjang_km }}</td>
-                            <td class="px-4 py-3 text-center">
-                                <div class="flex gap-1 justify-center">
-                                   <a href="{% url 'ruas_jalan_detail' ruas.id %}" class="px-3 py-1 border border-blue-600 text-blue-600 rounded hover:bg-blue-50 text-sm" title="Lihat Detail">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    {% if is_admin %}
-                                    <a href="{% url 'ruas_jalan_update' ruas.id %}" class="px-3 py-1 border border-yellow-600 text-yellow-600 rounded hover:bg-yellow-50 text-sm" title="Edit">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <a href="{% url 'ruas_jalan_delete' ruas.id %}" class="px-3 py-1 border border-red-600 text-red-600 rounded hover:bg-red-50 text-sm" title="Hapus">
-                                        <i class="fas fa-trash"></i>
-                                    </a> 
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
+
+    <!-- Table Card -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+
+        <!-- Card Header: judul + search + filter + tombol tambah -->
+        <div class="border-b border-gray-100 p-5">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+
+                <h5 class="text-lg font-bold text-gray-800 flex items-center gap-2 shrink-0">
+                    <i class="fas fa-list text-blue-600"></i> Daftar Ruas Jalan
+                </h5>
+
+                <form method="get" class="flex flex-wrap gap-2 items-center">
+                    <input type="text" name="search"
+                           class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
+                           style="min-width: 200px;"
+                           placeholder="Cari nama ruas atau wilayah..."
+                           value="{{ request.GET.search }}">
+
+                    <select name="polres"
+                            class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-600">
+                        <option value="">-- Semua Polres --</option>
+                        {% for polres in polres_choices %}
+                            <option value="{{ polres.id }}"
+                                {% if polres.id|stringformat:"s" == selected_polres|stringformat:"s" %}selected{% endif %}>
+                                {{ polres.nama }}
+                            </option>
                         {% endfor %}
-                    </tbody>
-                </table>
+                    </select>
+
+                    <button type="submit"
+                            class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+                        <i class="fas fa-search"></i> Cari
+                    </button>
+
+                    {% if is_admin %}
+                    <a href="{% url 'ruas_jalan_create' %}"
+                       class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+                        <i class="fas fa-plus"></i> Tambah Ruas Jalan
+                    </a>
+                    {% endif %}
+                </form>
+
             </div>
-        {% else %}
-            <div class="p-4 rounded-lg bg-blue-100 text-blue-800">
-                <i class="fas fa-info-circle"></i> Belum ada data ruas jalan. 
-                {% if is_admin %}
-                <a href="{% url 'ruas_jalan_create' %}" class="text-blue-600 font-semibold hover:text-blue-900">Tambah sekarang</a>
-                {% endif %}
+        </div>
+
+        <!-- Table Body -->
+        <div class="overflow-x-auto">
+            {% if ruas_jalan %}
+            <table class="w-full border-collapse table-fixed">
+                <thead class="bg-gray-50 border-b border-gray-100">
+                    <tr>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-left w-14">No</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-left">Nama Ruas</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-left">Jenis Jalan</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-left">Wilayah</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-left">Panjang (km)</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-center w-36">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for ruas in ruas_jalan %}
+                    <tr class="hover:bg-gray-50/60 transition">
+                        <td class="px-6 py-4 text-sm text-gray-500">{{ forloop.counter }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ ruas.nama_ruas }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ ruas.get_jenis_jalan_display }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ ruas.wilayah }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ ruas.panjang_km }}</td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex justify-center gap-2">
+                                <a href="{% url 'ruas_jalan_detail' ruas.id %}"
+                                   class="p-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 text-xs transition">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'ruas_jalan_update' ruas.id %}"
+                                   class="p-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 text-xs transition">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'ruas_jalan_delete' ruas.id %}"
+                                   class="p-2 border border-red-500 text-red-500 rounded-lg hover:bg-red-50 text-xs transition">
+                                    <i class="fas fa-trash-alt"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="p-8 text-center">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+                    <i class="fas fa-inbox text-gray-400 text-2xl"></i>
+                </div>
+                <p class="text-gray-500 font-medium">Belum ada data ruas jalan</p>
+                <p class="text-gray-400 text-sm mt-1">Mulai dengan menambahkan ruas jalan baru</p>
             </div>
-        {% endif %}
+            {% endif %}
+        </div>
+
     </div>
 </div>
 {% endblock %}

@@ -5,17 +5,17 @@
 {% block extra_css %}
 <style>
     #mapContainer {
-        height: calc(100vh - 80px);
-        border-radius: 6px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        margin-top: 10px;
+        height: calc(100vh - 280px);
+        min-height: 450px;
+        border-radius: 0 0 16px 16px;
         position: relative;
         z-index: 1;
     }
-    
+
     .leaflet-container {
         position: relative;
         z-index: 1;
+        border-radius: 0 0 16px 16px;
     }
 
     .map-legend {
@@ -36,6 +36,7 @@
         height: 20px;
         border-radius: 2px;
         margin-right: 10px;
+        flex-shrink: 0;
     }
 
     .legend-text {
@@ -70,66 +71,66 @@
     }
 
     @keyframes slideIn {
-        from {
-            transform: translateX(400px);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
+        from { transform: translateX(400px); opacity: 0; }
+        to   { transform: translateX(0);    opacity: 1; }
     }
 
     @keyframes slideOut {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(400px);
-            opacity: 0;
-        }
+        from { transform: translateX(0);    opacity: 1; }
+        to   { transform: translateX(400px); opacity: 0; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="w-full">
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <div>
-            <h1 class="text-3xl font-bold">Peta Kerawanan Kecelakaan</h1>
-        </div>
-        <div class="flex gap-2 flex-wrap md:flex-nowrap">
-            <!-- Tahun Filter -->
-            <form method="get" class="flex gap-2">
-                <select name="tahun"
-                    id="tahunSelect"
-                    class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
-                    onchange="handleTahunChange()">
-                    <option value="">-- Pilih Tahun --</option>
-                    {% for tahun_opt in tahun_options %}
-                    <option value="{{ tahun_opt }}"
-                        {% if request.GET.tahun == tahun_opt|stringformat:"s" %}
-                        selected
-                        {% endif %}
-                        >
-                        {{ tahun_opt }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </form>
-
-            <!-- Ruas Jalan Filter -->
-            <select id="ruasFilter"
-                class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
-                onchange="handleRuasChange()">
-                <option value="">-- Semua Ruas Jalan --</option>
-            </select>
-        </div>
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold">Peta Kerawanan Kecelakaan</h1>
     </div>
 
-    <!-- Map Container -->
-    <div id="mapContainer"></div>
+    <!-- Map Card -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+
+        <!-- Card Header: filter tahun + ruas jalan -->
+        <div class="border-b border-gray-100 p-5">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+
+                <h5 class="text-lg font-bold text-gray-800 flex items-center gap-2 shrink-0">
+                    <i class="fas fa-map text-blue-600"></i> Peta Interaktif
+                </h5>
+
+                <div class="flex gap-2 flex-wrap items-center">
+                    <!-- Tahun Filter -->
+                    <form method="get" id="tahunForm">
+                        <select name="tahun"
+                                id="tahunSelect"
+                                class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
+                                onchange="handleTahunChange()">
+                            <option value="">-- Semua Tahun --</option>
+                            {% for tahun_opt in tahun_options %}
+                                <option value="{{ tahun_opt }}"
+                                    {% if tahun == tahun_opt %}selected{% endif %}>
+                                    {{ tahun_opt }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </form>
+
+                    <!-- Ruas Jalan Filter -->
+                    <select id="ruasFilter"
+                            class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
+                            onchange="handleRuasChange()">
+                        <option value="">-- Semua Ruas Jalan --</option>
+                    </select>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Map Container -->
+        <div id="mapContainer"></div>
+
+    </div>
 
     <!-- Legend -->
     <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-6">
@@ -139,7 +140,7 @@
                 <p class="text-gray-500 text-sm">Pilih tahun dan/atau ruas jalan untuk melihat kategori</p>
             </div>
         </div>
-        
+
         <div class="map-legend">
             <h6 class="mb-3 font-semibold"><i class="fas fa-circle"></i> Jenis Marker</h6>
             <div class="legend-item">
@@ -155,7 +156,7 @@
                 <div class="legend-text">Marker Awal/Akhir Ruas Jalan</div>
             </div>
         </div>
-        
+
         <div class="map-legend md:col-span-2">
             <h6 class="mb-3 font-semibold"><i class="fas fa-chart-pie"></i> Statistik</h6>
             <div id="statistikContainer">
@@ -164,23 +165,19 @@
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
 <script>
     // Pastikan tahun selalu ada dengan nilai yang valid
-    let tahun = "{{ tahun }}";
-    if (!tahun || tahun === "None" || tahun === "") {
-        tahun = new Date().getFullYear();
-    }
+   let tahun = "{{ tahun|default_if_none:'' }}";
     
     let selectedRuas = null;  // Store selected ruas jalan
     let thresholdData = {};   // Store threshold data
     let allSegmenData = null; // Store all segment data from API
     
-    console.log(`🗓️ Map Loading for Year: ${tahun}`);
+    console.log(`🗓️ Map Loading for Year: ${tahun || 'ALL YEARS'}`);
     
     let map;
     let segmenLayer, kecelakaanLayer;
@@ -219,8 +216,9 @@
 
     // ✅ NEW: Check apakah ada data update
     function checkForDataUpdates() {
-        if (!tahun || tahun === '') {
-            return;  // Skip jika tahun not selected
+        // Skip jika tahun kosong (semua tahun), karena update check tidak relevan
+        if (tahun === '') {
+            return;
         }
 
         axios.get(`/api/segmen/check-update/?tahun=${tahun}`)
@@ -342,6 +340,17 @@
         }
         
         const data = thresholdData[ruasId];
+        
+        if (data.has_data === false) {
+            legendDiv.innerHTML = `
+                <div class="dynamic-legend">
+                    <strong>${data.nama}</strong><br>
+                    <span class="text-gray-500 text-sm">Tidak ada data analisis Z-Score untuk ruas ini pada tahun ${tahun || 'Semua Tahun'}</span>
+                </div>
+            `;
+            return;
+        }
+        
         const t1 = data.t1;
         const t2 = data.t2;
         const t3 = data.t3;
@@ -413,12 +422,12 @@
         const tahunSelect = document.getElementById('tahunSelect');
         tahun = tahunSelect.value;
         
-        if (tahun) {
-            // Reload all data with new tahun
-            loadThresholdData();
-            loadSegmenData();
-            loadStatistik();
-        }
+        console.log(`📅 Year changed to: ${tahun || 'ALL YEARS'}`);
+        
+        // Reload all data with new tahun
+        loadThresholdData();
+        loadSegmenData();
+        loadStatistik();
     }
 
     // Load Segmen GeoJSON
