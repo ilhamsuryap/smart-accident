@@ -75,7 +75,7 @@ def preprocessing_data(request):
     use_db = request.GET.get('use_db') == '1'
     
     if request.method == "POST" or use_db:
-        # Pola Final YOLA: Bersihkan SEMUA cache terkait data & analisis lama
+        
         keys_to_clear = [
             'hasil_cluster', 'summary_cluster', 'jumlah_cluster', 'jumlah_data', 
             'silhouette_score', 'X_scaled', 'summary_df', 'jumlah_data_asli', 
@@ -175,7 +175,8 @@ def preprocessing_data(request):
             if 'Jenis Kendaraan' in df.columns: df['jenis_kendaraan_enc'] = df['Jenis Kendaraan'].apply(encode_kendaraan)
             else: df['jenis_kendaraan_enc'] = 0
 
-            features = ['Umur', 'faktor_kelalaian', 'faktor_pelanggaran', 'faktor_teknis', 'sesi_waktu_enc', 'jenis_hari', 'jenis_kendaraan_enc']
+            features = ['Umur', 'faktor_kelalaian', 'faktor_pelanggaran', 'faktor_teknis', 
+                        'sesi_waktu_enc', 'jenis_hari', 'jenis_kendaraan_enc']
             fitur_clustering = df[features].copy()
             scaler = StandardScaler()
             X_scaled = scaler.fit_transform(fitur_clustering)
@@ -207,7 +208,8 @@ def find_best_cluster(X, max_k=5):
 @login_required(login_url='login')
 def proses_ahc(request):
     X_scaled, full_features = request.session.get('X_scaled'), request.session.get('full_features')
-    if not X_scaled or not full_features: return render(request, 'coreapp/ahc/proses.html', {"error": "Silakan lakukan preprocessing terlebih dahulu."})
+    if not X_scaled or not full_features: return render(request, 'coreapp/ahc/proses.html', 
+                                                        {"error": "Silakan lakukan preprocessing terlebih dahulu."})
 
     X_scaled, df = np.array(X_scaled), pd.DataFrame(full_features)
     n_cluster_req = request.GET.get('cluster')
@@ -222,7 +224,8 @@ def proses_ahc(request):
     df_pca = df.copy()
     df_pca['PC1'], df_pca['PC2'], df_pca['Cluster'] = X_pca[:, 0], X_pca[:, 1], labels + 1
 
-    fig_scatter = px.scatter(df_pca, x='PC1', y='PC2', color=df_pca['Cluster'].astype(str), title='Visualisasi Cluster (PCA Projection)', labels={'color': 'Cluster'})
+    fig_scatter = px.scatter(df_pca, x='PC1', y='PC2', color=df_pca['Cluster'].astype(str), 
+    title='Visualisasi Cluster (PCA Projection)', labels={'color': 'Cluster'})
     scatter_html = fig_scatter.to_html(full_html=False)
 
     df['Cluster'] = labels + 1
