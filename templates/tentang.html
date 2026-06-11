@@ -1,0 +1,664 @@
+{% load static %}
+<!DOCTYPE html>
+<html class="scroll-smooth" lang="id">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Tentang Platform | Smart Accident</title>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#00288e",
+                        secondary: "#bb0112",
+                        background: "#f8f9ff",
+                        surface: "#f8f9ff",
+                        "on-surface": "#0d1c2e",
+                        "on-background": "#0d1c2e",
+                        "on-surface-variant": "#444653",
+                        "outline-variant": "#c4c5d5",
+                        "primary-container": "#1e40af",
+                        "primary-fixed": "#dde1ff",
+                        "primary-fixed-dim": "#b8c4ff",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed": "#001453",
+                        "on-primary-container": "#a8b8ff",
+                        "secondary-fixed": "#ffdad6",
+                        "on-secondary": "#ffffff",
+                        "surface-container-low": "#eff4ff",
+                        "surface-container": "#e6eeff",
+                        "surface-container-high": "#dce9ff",
+                        "surface-container-highest": "#d5e3fc",
+                        "surface-container-lowest": "#ffffff"
+                    },
+                    spacing: {
+                        "margin-desktop": "40px",
+                        "gutter": "24px",
+                        "container-max": "1280px"
+                    },
+                    fontFamily: {
+                        "label-md": ["Montserrat"],
+                        "body-md": ["Montserrat"],
+                        "body-lg": ["Montserrat"],
+                        "headline-md": ["Montserrat"],
+                        "headline-lg": ["Montserrat"],
+                        "headline-xl": ["Montserrat"]
+                    },
+                    fontSize: {
+                        "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "headline-xl": ["48px", { "lineHeight": "56px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            font-family: 'Montserrat', system-ui, sans-serif;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .hero-pattern {
+            background-color: #f8f9ff;
+            background-image:
+                radial-gradient(#00288e 0.5px, transparent 0.5px),
+                radial-gradient(#00288e 0.5px, #f8f9ff 0.5px);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            opacity: 0.05;
+        }
+
+        .user-menu {
+            position: relative;
+        }
+
+        .user-dropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: calc(100% + 8px);
+            min-width: 180px;
+            background: white;
+            border: 1px solid #c4c5d5;
+            border-radius: 12px;
+            padding: 6px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            z-index: 100;
+        }
+
+        .user-menu:hover .user-dropdown {
+            display: block;
+        }
+
+        .user-dropdown a {
+            display: block;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #0d1c2e;
+            text-decoration: none;
+        }
+
+        .user-dropdown a:hover {
+            background: #e6eeff;
+        }
+    </style>
+</head>
+
+<body class="bg-background text-on-background font-body-md overflow-x-hidden">
+
+    <!-- ==================== NAVBAR ==================== -->
+<!-- ==================== NAVBAR ==================== -->
+<nav class="bg-surface border-b border-outline-variant top-0 z-50 sticky">
+    <div class="w-full px-4 md:px-10 py-4 max-w-[1280px] mx-auto">
+
+        <div class="flex justify-between items-center">
+
+            <!-- Brand -->
+            <div class="flex items-center gap-2">
+                <i class="fas fa-map-location-dot text-primary text-xl"></i>
+                <span class="text-lg md:text-xl font-bold text-primary">
+                    Smart Accident
+                </span>
+            </div>
+
+            <!-- Desktop Nav -->
+            <div class="hidden lg:flex items-center gap-8">
+                <a class="text-on-surface-variant hover:text-primary transition-colors" href="/">
+                    Beranda
+                </a>
+
+                <a class="text-primary border-b-2 border-primary pb-1 font-bold" href="/tentang/">
+                    Tentang Platform
+                </a>
+
+                <a class="text-on-surface-variant hover:text-primary transition-colors" href="/keselamatan/">
+                    Informasi Keselamatan
+                </a>
+
+                <a class="text-on-surface-variant hover:text-primary transition-colors" href="/fitur/">
+                    Fitur
+                </a>
+
+                <a class="text-on-surface-variant hover:text-primary transition-colors" href="/faq/">
+                    FAQ
+                </a>
+            </div>
+
+            <!-- Auth Desktop -->
+            <div class="hidden lg:block">
+                {% if user.is_authenticated %}
+                <div class="user-menu">
+                    <button class="flex items-center gap-2 text-primary font-semibold hover:opacity-80 transition">
+                        <i class="fas fa-user text-sm"></i>
+                        {{ user.display_name }}
+                        <span class="material-symbols-outlined text-sm">expand_more</span>
+                    </button>
+
+                    <div class="user-dropdown">
+                        {% if user.is_staff %}
+                        <a href="/dashboard/">
+                            <i class="fas fa-gauge text-xs mr-2"></i>Dashboard Admin
+                        </a>
+                        <hr>
+                        {% endif %}
+
+                        <a href="{% url 'logout' %}">
+                            <i class="fas fa-right-from-bracket text-xs mr-2"></i>Logout
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <a href="{% url 'login' %}"
+                    class="bg-primary px-6 py-3 rounded-full hover:bg-primary-container transition-all duration-300 active:scale-95 flex items-center gap-2"
+                    style="color: white;">
+                    <i class="fas fa-right-to-bracket text-sm"></i>
+                    Masuk
+                </a>
+                {% endif %}
+            </div>
+
+            <!-- Mobile Button -->
+            <button id="mobileMenuButton" class="lg:hidden text-primary text-2xl">
+                <i class="fas fa-bars"></i>
+            </button>
+
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobileMenu" class="hidden lg:hidden mt-4 pb-4 border-t border-outline-variant pt-4">
+            <div class="flex flex-col gap-4">
+
+                <a href="/" class="text-on-surface-variant hover:text-primary">
+                    Beranda
+                </a>
+
+                <a href="/tentang/" class="text-primary font-bold">
+                    Tentang Platform
+                </a>
+
+                <a href="/keselamatan/" class="text-on-surface-variant hover:text-primary">
+                    Informasi Keselamatan
+                </a>
+
+                <a href="/fitur/" class="text-on-surface-variant hover:text-primary">
+                    Fitur
+                </a>
+
+                <a href="/faq/" class="text-on-surface-variant hover:text-primary">
+                    FAQ
+                </a>
+
+                <hr class="border-outline-variant">
+
+                {% if user.is_authenticated %}
+                    {% if user.is_staff %}
+                    <a href="/dashboard/" class="text-on-surface-variant hover:text-primary">
+                        Dashboard Admin
+                    </a>
+                    {% endif %}
+
+                    <a href="{% url 'logout' %}" class="text-secondary font-semibold">
+                        Logout
+                    </a>
+                {% else %}
+                    <a href="{% url 'login' %}"
+                        class="bg-primary text-white px-5 py-3 rounded-full text-center font-semibold">
+                        Masuk
+                    </a>
+                {% endif %}
+
+            </div>
+        </div>
+
+    </div>
+</nav>
+
+    <main>
+
+        <!-- ==================== HERO ==================== -->
+        <section class="relative min-h-[520px] flex items-center py-12 md:py-16 overflow-hidden">
+            <div class="absolute inset-0 hero-pattern"></div>
+
+            <div class="max-w-container-max mx-auto px-margin-desktop w-full grid grid-cols-1 lg:grid-cols-2 gap-gutter items-center relative z-10">
+
+                <div class="space-y-6">
+                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container-high text-primary font-label-md text-label-md">
+                        <span class="material-symbols-outlined text-[20px]">verified_user</span>
+                        Platform Analisis Berbasis Data
+                    </div>
+
+                    <h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight">
+                        Tentang Smart Accident
+                    </h1>
+
+                    <p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
+                    Smart Accident merupakan platform yang dikembangkan untuk mendukung pemanfaatan data
+                    kecelakaan lalu lintas secara lebih efektif. Dengan menyajikan informasi yang terstruktur dan mudah
+                    dipahami, platform ini membantu mengungkap pola kecelakaan serta memberikan wawasan yang dapat
+                    mendukung upaya peningkatan keselamatan jalan.
+                    </p>
+
+                    <div class="flex gap-4">
+                        <a href="{% url 'fitur' %}"
+                            class="bg-primary text-on-primary px-8 py-4 rounded-xl font-label-md text-label-md hover:shadow-lg transition-all active:scale-95 flex items-center gap-2">
+                            Lihat Fitur
+                            <span class="material-symbols-outlined">arrow_forward</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="relative group">
+                    <div class="absolute -inset-4 bg-primary/5 rounded-3xl blur-2xl group-hover:bg-primary/10 transition-colors duration-500"></div>
+
+                    <img
+                        src="{% static 'img/hero_section2.png' %}"
+                        alt="Ilustrasi Smart Accident"
+                        class="w-full h-auto rounded-2xl shadow-xl relative z-10 transition-transform duration-500 group-hover:scale-[1.01]"
+                    >
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ==================== VISI MISI ==================== -->
+        <section class="py-12 md:py-14 bg-surface-container-lowest">
+            <div class="max-w-container-max mx-auto px-margin-desktop">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                    <div class="bg-surface p-8 md:p-10 rounded-xl border border-outline-variant hover:border-primary transition-colors duration-300">
+                        <div class="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 text-primary">
+                            <span class="material-symbols-outlined text-[32px]">visibility</span>
+                        </div>
+
+                        <h2 class="font-headline-md text-headline-md text-primary mb-4">
+                            Visi
+                        </h2>
+
+                        <p class="font-body-md text-body-md text-on-surface-variant">
+                            Menjadi sistem informasi kecelakaan lalu lintas yang mampu menyediakan
+                            informasi, analisis, dan visualisasi data secara akurat untuk mendukung
+                            peningkatan keselamatan jalan.
+                        </p>
+                    </div>
+
+                    <div class="bg-surface p-8 md:p-10 rounded-xl border border-outline-variant hover:border-secondary transition-colors duration-300">
+                        <div class="w-16 h-16 rounded-2xl bg-secondary/10 flex items-center justify-center mb-6 text-secondary">
+                            <span class="material-symbols-outlined text-[32px]">track_changes</span>
+                        </div>
+
+                        <h2 class="font-headline-md text-headline-md text-secondary mb-4">
+                            Misi
+                        </h2>
+
+                        <ul class="space-y-4">
+                            <li class="flex gap-3">
+                                <span class="material-symbols-outlined text-secondary">check_circle</span>
+                                <span class="font-body-md text-body-md text-on-surface-variant">
+                                    Mengelola data kecelakaan lalu lintas secara terstruktur dan mudah diakses.
+                                </span>
+                            </li>
+
+                            <li class="flex gap-3">
+                                <span class="material-symbols-outlined text-secondary">check_circle</span>
+                                <span class="font-body-md text-body-md text-on-surface-variant">
+                                    Memetakan lokasi rawan kecelakaan berdasarkan data historis.
+                                </span>
+                            </li>
+
+                            <li class="flex gap-3">
+                                <span class="material-symbols-outlined text-secondary">check_circle</span>
+                                <span class="font-body-md text-body-md text-on-surface-variant">
+                                    Menyajikan hasil analisis dalam bentuk informasi, visualisasi, dan laporan yang mudah dipahami.
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== METODOLOGI ==================== -->
+<section class="py-12 md:py-14 bg-surface overflow-hidden">
+    <div class="max-w-container-max mx-auto px-margin-desktop">
+
+        <!-- Heading -->
+        <div class="flex flex-col md:flex-row justify-between items-end mb-10 gap-6">
+            <div class="max-w-2xl">
+                <h2 class="font-headline-lg text-headline-lg text-on-surface mb-4">
+                    Metode Analisis Sistem
+                </h2>
+
+                <p class="font-body-md text-body-md text-on-surface-variant">
+                    Smart Accident memanfaatkan metode analisis data untuk membantu pengguna memahami tingkat
+                    kerawanan, faktor penyebab, serta pola kecelakaan lalu lintas. Metode yang digunakan meliputi
+                    Analisis Z-Score, Agglomerative Hierarchical Clustering (AHC), dan K-Means Clustering.
+                </p>
+            </div>
+        </div>
+
+        <!-- Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+
+            <!-- Z-SCORE -->
+            <div class="bg-surface-container-low p-8 rounded-xl border border-outline-variant hover:shadow-md transition-all flex flex-col justify-between">
+                <div>
+                    <div class="text-primary font-bold mb-4 opacity-50 font-label-md">
+                        METODE 01
+                    </div>
+
+                    <h3 class="font-headline-md text-headline-md mb-4">
+                        Analisis Z-Score
+                    </h3>
+
+                    <p class="font-body-md text-body-md text-on-surface-variant">
+                        Digunakan untuk mengidentifikasi tingkat kerawanan kecelakaan berdasarkan nilai standar
+                        sehingga lokasi dengan risiko tinggi dapat diketahui lebih mudah.
+                    </p>
+                </div>
+
+                <div class="mt-8">
+                    <span class="material-symbols-outlined text-[48px] text-primary/30">
+                        monitoring
+                    </span>
+                </div>
+            </div>
+
+            <!-- AHC -->
+            <div class="bg-primary text-on-primary p-8 rounded-xl relative overflow-hidden group">
+                <div class="relative z-10">
+                    <div class="text-on-primary-container font-bold mb-4 font-label-md">
+                        METODE 02
+                    </div>
+
+                    <h3 class="font-headline-md text-headline-md mb-4">
+                        Agglomerative Hierarchical Clustering
+                    </h3>
+
+                    <p class="font-body-md text-body-md text-primary-fixed">
+                        Metode clustering yang digunakan untuk mengelompokkan data kecelakaan berdasarkan
+                        karakteristik yang serupa sehingga faktor penyebab dan pola kecelakaan dapat dianalisis
+                        secara lebih mendalam.
+                    </p>
+                </div>
+
+                <div class="absolute bottom-0 right-0 p-6 opacity-20 group-hover:scale-110 transition-transform duration-700">
+                    <span class="material-symbols-outlined text-[120px]">
+                        account_tree
+                    </span>
+                </div>
+            </div>
+
+            <!-- K-MEANS -->
+            <div class="bg-secondary p-8 rounded-xl relative overflow-hidden group">
+                <div class="relative z-10">
+                    <div class="text-secondary-fixed font-bold mb-4 font-label-md">
+                        METODE 03
+                    </div>
+
+                    <h3 class="font-headline-md text-headline-md mb-4 text-white">
+                        K-Means Clustering
+                    </h3>
+
+                    <p class="font-body-md text-body-md text-white/90">
+                        Metode K-Means Clustering digunakan untuk mengelompokkan data kecelakaan berdasarkan pola waktu kejadian guna mengidentifikasi periode waktu yang memiliki karakteristik kecelakaan yang serupa.
+                    </p>
+                </div>
+
+                <div class="absolute bottom-0 right-0 p-6 opacity-20 group-hover:scale-110 transition-transform duration-700">
+                    <span class="material-symbols-outlined text-[120px] text-white">
+                        hub
+                    </span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+        <!-- ==================== NILAI UTAMA ==================== -->
+        <section class="py-12 md:py-14 bg-background">
+            <div class="max-w-container-max mx-auto px-margin-desktop text-center mb-10">
+                <h2 class="font-headline-lg text-headline-lg text-on-surface mb-4">
+                    Nilai Utama Sistem
+                </h2>
+                <div class="w-24 h-1 bg-primary mx-auto rounded-full"></div>
+            </div>
+
+            <div class="max-w-container-max mx-auto px-margin-desktop grid grid-cols-1 md:grid-cols-3 gap-gutter">
+                <div class="flex flex-col items-center text-center p-8">
+                    <div class="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center mb-6 border border-primary/10">
+                        <span class="material-symbols-outlined text-[40px] text-primary">fact_check</span>
+                    </div>
+
+                    <h3 class="font-headline-md text-headline-md mb-3">Akurasi</h3>
+
+                    <p class="font-body-md text-body-md text-on-surface-variant">
+                        Data disusun dan dianalisis agar menghasilkan informasi yang lebih jelas dan dapat dipertanggungjawabkan.
+                    </p>
+                </div>
+
+                    <div class="flex flex-col items-center text-center p-8">
+                        <div class="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center mb-6 border border-primary/10">
+                            <span class="material-symbols-outlined text-[40px] text-primary">
+                                security
+                            </span>
+                        </div>
+
+                        <h3 class="font-headline-md text-headline-md mb-3">
+                            Keamanan Data
+                        </h3>
+
+                        <p class="font-body-md text-body-md text-on-surface-variant">
+                            Informasi dan hasil analisis hanya dapat diakses oleh pengguna yang memiliki hak akses sehingga keamanan data tetap terjaga.
+                        </p>
+                    </div>
+
+                <div class="flex flex-col items-center text-center p-8">
+                    <div class="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center mb-6 border border-primary/10">
+                        <span class="material-symbols-outlined text-[40px] text-primary">groups</span>
+                    </div>
+
+                    <h3 class="font-headline-md text-headline-md mb-3">Kebermanfaatan</h3>
+
+                    <p class="font-body-md text-body-md text-on-surface-variant">
+                        Sistem dirancang agar hasil analisis dapat memberikan manfaat dalam mendukung keselamatan lalu lintas.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== DATA DAN INFORMASI ==================== -->
+<section class="py-12 md:py-14 bg-surface-container-low border-y border-outline-variant">
+    <div class="max-w-container-max mx-auto px-margin-desktop">
+
+        <div class="text-center mb-10">
+            <span class="font-label-md text-label-md text-primary tracking-widest uppercase mb-2 block">
+                DATA DAN INFORMASI
+            </span>
+
+            <h2 class="font-headline-md text-headline-md text-on-surface">
+                Data dan Informasi Pendukung
+            </h2>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
+
+            <!-- Data Kecelakaan -->
+            <div class="flex flex-col items-center gap-4 text-center">
+                <div class="w-16 h-16 bg-surface-container-highest rounded-full flex items-center justify-center border border-outline-variant">
+                    <span class="material-symbols-outlined text-[32px]">
+                        description
+                    </span>
+                </div>
+
+                <span class="font-label-md text-label-md text-on-surface-variant">
+                    Data Kecelakaan
+                </span>
+            </div>
+
+            <!-- Lokasi Rawan -->
+            <div class="flex flex-col items-center gap-4 text-center">
+                <div class="w-16 h-16 bg-surface-container-highest rounded-full flex items-center justify-center border border-outline-variant">
+                    <span class="material-symbols-outlined text-[32px]">
+                        location_on
+                    </span>
+                </div>
+
+                <span class="font-label-md text-label-md text-on-surface-variant">
+                    Lokasi Rawan
+                </span>
+            </div>
+
+            <!-- Faktor Penyebab -->
+            <div class="flex flex-col items-center gap-4 text-center">
+                <div class="w-16 h-16 bg-surface-container-highest rounded-full flex items-center justify-center border border-outline-variant">
+                    <span class="material-symbols-outlined text-[32px]">
+                        analytics
+                    </span>
+                </div>
+
+                <span class="font-label-md text-label-md text-on-surface-variant">
+                    Faktor Penyebab
+                </span>
+            </div>
+
+            <!-- Pola Waktu -->
+            <div class="flex flex-col items-center gap-4 text-center">
+                <div class="w-16 h-16 bg-surface-container-highest rounded-full flex items-center justify-center border border-outline-variant">
+                    <span class="material-symbols-outlined text-[32px]">
+                        schedule
+                    </span>
+                </div>
+
+                <span class="font-label-md text-label-md text-on-surface-variant">
+                    Pola Waktu
+                </span>
+            </div>
+
+            <!-- Rekomendasi Penanganan -->
+            <div class="flex flex-col items-center gap-4 text-center">
+                <div class="w-16 h-16 bg-surface-container-highest rounded-full flex items-center justify-center border border-outline-variant">
+                    <span class="material-symbols-outlined text-[32px]">
+                        lightbulb
+                    </span>
+                </div>
+
+                <span class="font-label-md text-label-md text-on-surface-variant">
+                    Rekomendasi Penanganan
+                </span>
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+        <!-- ==================== CTA ==================== -->
+        <section class="py-12 md:py-14">
+            <div class="max-w-container-max mx-auto px-margin-desktop">
+                <div class="bg-primary-container text-on-primary-container p-10 md:p-12 rounded-[2rem] text-center relative overflow-hidden">
+
+                    <div class="absolute top-0 right-0 p-12 opacity-10">
+                        <span class="material-symbols-outlined text-[200px]">safety_check</span>
+                    </div>
+
+                    <div class="relative z-10">
+                        <h2 class="font-headline-xl text-headline-xl mb-6">
+                            Mulai Jelajahi Informasi Kecelakaan Lalu Lintas
+                        </h2>
+
+                        <p class="font-body-lg text-body-lg text-primary-fixed mb-8 max-w-2xl mx-auto">
+                            Gunakan Smart Accident untuk memahami informasi kecelakaan, lokasi rawan,
+                            faktor penyebab, dan hasil analisis secara lebih terstruktur.
+                        </p>
+
+                        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                            <a href="{% url 'homepage' %}"
+                                class="bg-surface text-primary px-8 py-4 rounded-xl font-bold font-label-md text-label-md hover:bg-surface-bright transition-colors">
+                                Kembali ke Beranda
+                            </a>
+
+                            <a href="{% url 'fitur' %}"
+                                class="border border-surface text-surface px-8 py-4 rounded-xl font-bold font-label-md text-label-md hover:bg-surface/10 transition-colors">
+                                Lihat Fitur
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="border-t border-outline-variant py-6">
+        <div class="max-w-[1280px] mx-auto px-4 md:px-10 flex flex-col md:flex-row justify-between items-center gap-4">
+
+            <div class="flex items-center gap-2">
+                <i class="fas fa-map-location-dot text-primary"></i>
+                <span class="font-semibold text-primary">
+                    Smart Accident
+                </span>
+            </div>
+
+            <p class="text-sm text-on-surface-variant">
+                © 2025 Smart Accident. All Rights Reserved.
+            </p>
+
+        </div>
+    </footer>
+
+<script>
+    const mobileMenuButton = document.getElementById('mobileMenuButton');
+    const mobileMenu = document.getElementById('mobileMenu');
+
+    if (mobileMenuButton && mobileMenu) {
+        mobileMenuButton.addEventListener('click', function () {
+            mobileMenu.classList.toggle('hidden');
+        });
+    }
+</script>
+</body>
+
+</html>
