@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Accident - Activity Diagrams</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        :root {
+            --font-sans: 'Inter', sans-serif;
+            --font-title: 'Outfit', sans-serif;
+            
+            /* Dark Theme (Default) */
+            --bg-primary: #090d16;
+            --bg-secondary: #111827;
+            --bg-tertiary: #1f2937;
+            --border-color: #374151;
+            --text-primary: #f9fafb;
+            --text-secondary: #9ca3af;
+            --text-tertiary: #6b7280;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --primary-light: rgba(99, 102, 241, 0.15);
+            --accent: #10b981;
+            --accent-light: rgba(16, 185, 129, 0.15);
+            --warning: #f59e0b;
+            --success: #10b981;
+            --error: #ef4444;
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+            --sidebar-width: 280px;
+        }
+
+        [data-theme="light"] {
+            /* Light Theme */
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --border-color: #e2e8f0;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-tertiary: #94a3b8;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: rgba(79, 70, 229, 0.1);
+            --accent: #059669;
+            --accent-light: rgba(5, 150, 105, 0.1);
+            --warning: #d97706;
+            --success: #059669;
+            --error: #dc2626;
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar Styling */
+        aside {
+            width: var(--sidebar-width);
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 50;
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), #818cf8);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .logo-text h1 {
+            font-family: var(--font-title);
+            font-size: 1.15rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, var(--text-primary), var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-text p {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            font-weight: 500;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 20px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+        .menu-item:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .menu-item.active {
+            background-color: var(--primary-light);
+            color: var(--primary);
+            border-color: rgba(99, 102, 241, 0.2);
+            font-weight: 600;
+        }
+
+        .menu-item i {
+            width: 18px;
+            height: 18px;
+        }
+
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Main Content Styling */
+        main {
+            margin-left: var(--sidebar-width);
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            height: 72px;
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+
+        .header-title h2 {
+            font-family: var(--font-title);
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--border-color);
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--bg-tertiary);
+        }
+
+        /* Container Layout */
+        .content-body {
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            flex-grow: 1;
+        }
+
+        /* Sub-Navigation (Tabs) */
+        .tab-container {
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: 1px solid transparent;
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .tab-btn:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            background-color: var(--primary);
+            color: #ffffff;
+            box-shadow: 0 4px 10px rgba(99, 102, 241, 0.2);
+        }
+
+        /* Grid Layout for Diagram & Docs */
+        .workspace-grid {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 24px;
+            flex-grow: 1;
+        }
+
+        @media (max-width: 1024px) {
+            .workspace-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Diagram Area Styling */
+        .diagram-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            min-height: 500px;
+        }
+
+        .card-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+
+        .card-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title i {
+            color: var(--primary);
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .control-btn {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .control-btn:hover {
+            color: var(--text-primary);
+            background-color: var(--border-color);
+        }
+
+        .diagram-viewport {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            overflow: auto;
+            position: relative;
+            cursor: grab;
+            user-select: none;
+            background-image: radial-gradient(var(--border-color) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .diagram-viewport:active {
+            cursor: grabbing;
+        }
+
+        .diagram-container {
+            transform-origin: center center;
+            transition: transform 0.1s ease-out;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
+
+        /* Documentation Card */
+        .docs-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: var(--shadow-lg);
+            height: fit-content;
+        }
+
+        .docs-title {
+            font-family: var(--font-title);
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-bottom: 2px solid var(--primary-light);
+            padding-bottom: 10px;
+        }
+
+        .flow-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .step-item {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .step-number {
+            background-color: var(--primary-light);
+            color: var(--primary);
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            flex-shrink: 0;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .step-details h4 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .step-details p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Full Screen Overlay */
+        .fullscreen-active {
+            position: fixed !important;
+            top: 24px;
+            left: 24px;
+            right: 24px;
+            bottom: 24px;
+            z-index: 100;
+            height: auto !important;
+        }
+
+        .overlay-bg {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 90;
+        }
+
+        /* Custom Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            z-index: 200;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-tertiary);
+        }
+
+        /* ==========================================================
+           Custom Mermaid Styles Overrides via CSS
+           ========================================================== */
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
+
+        .mermaid svg {
+            width: 100% !important;
+            max-width: 100% !important;
+            height: auto !important;
+            background-color: transparent !important;
+        }
+
+        /* General Nodes */
+        .mermaid rect.node-bkg,
+        .mermaid .node rect,
+        .mermaid .node circle,
+        .mermaid .node polygon,
+        .mermaid .node path,
+        .mermaid .node stadium {
+            fill: var(--bg-tertiary) !important;
+            stroke: var(--primary) !important;
+            stroke-width: 2px !important;
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.05));
+        }
+
+        /* Labels and Texts */
+        .mermaid .node .label,
+        .mermaid .node-desc,
+        .mermaid .label {
+            color: var(--text-primary) !important;
+            font-family: var(--font-sans) !important;
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+
+        /* Diamond Decisions */
+        .mermaid .node polygon {
+            fill: var(--bg-secondary) !important;
+            stroke: var(--warning) !important;
+        }
+
+        /* Start/End nodes (Stadiums) */
+        .mermaid .node stadium,
+        .mermaid .node path[d*="M 0 0 L 0"],
+        .mermaid .node rect[rx="20"],
+        .mermaid .node rect[rx="15"],
+        .mermaid .node rect[rx="10"] {
+            fill: var(--primary-light) !important;
+            stroke: var(--accent) !important;
+        }
+
+        /* Edges & Paths */
+        .mermaid .edgePath .path {
+            stroke: var(--text-secondary) !important;
+            stroke-width: 2px !important;
+        }
+
+        .mermaid .marker {
+            fill: var(--text-secondary) !important;
+            stroke: none !important;
+        }
+
+        .mermaid .edgeLabel rect {
+            fill: var(--bg-secondary) !important;
+            rx: 6px;
+            ry: 6px;
+        }
+
+        .mermaid .edgeLabel span {
+            color: var(--text-primary) !important;
+            font-family: var(--font-sans) !important;
+            font-size: 11px !important;
+            font-weight: 600 !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="overlay-bg" id="overlay"></div>
+
+    <!-- Sidebar -->
+    <aside>
+        <div class="sidebar-header">
+            <div class="logo-icon">
+                <i data-lucide="shield-alert"></i>
+            </div>
+            <div class="logo-text">
+                <h1>Smart Accident</h1>
+                <p>Activity Diagrams</p>
+            </div>
+        </div>
+
+        <ul class="sidebar-menu">
+            <li>
+                <a class="menu-item active" onclick="switchCategory('admin')" id="menu-admin">
+                    <i data-lucide="users"></i>
+                    <span>Kelola Akun Admin</span>
+                </a>
+            </li>
+            <li>
+                <a class="menu-item" onclick="switchCategory('polres')" id="menu-polres">
+                    <i data-lucide="building-2"></i>
+                    <span>Kelola Polres</span>
+                </a>
+            </li>
+            <li>
+                <a class="menu-item" onclick="switchCategory('jalan')" id="menu-jalan">
+                    <i data-lucide="milestone"></i>
+                    <span>Kelola Ruas Jalan</span>
+                </a>
+            </li>
+            <li>
+                <a class="menu-item" onclick="switchCategory('pemetaan')" id="menu-pemetaan">
+                    <i data-lucide="map-pin"></i>
+                    <span>Kelola Data Pemetaan</span>
+                </a>
+            </li>
+            <li>
+                <a class="menu-item" onclick="switchCategory('profile')" id="menu-profile">
+                    <i data-lucide="user-cog"></i>
+                    <span>Ubah Data Profile</span>
+                </a>
+            </li>
+            <li>
+                <a class="menu-item" onclick="switchCategory('login')" id="menu-login">
+                    <i data-lucide="log-in"></i>
+                    <span>Proses Login</span>
+                </a>
+            </li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <span style="font-size: 0.75rem; color: var(--text-tertiary); font-weight: 500;">v1.0.0 Stable</span>
+            <i data-lucide="help-circle" style="width: 16px; height: 16px; color: var(--text-tertiary); cursor: pointer;"></i>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main>
+        <header>
+            <div class="header-title">
+                <h2 id="current-title">Kelola Akun Admin</h2>
+            </div>
+            <div class="header-actions">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Ubah Tema">
+                    <i id="theme-icon" data-lucide="sun"></i>
+                </button>
+            </div>
+        </header>
+
+        <div class="content-body">
+            <!-- Sub Navigation Tabs -->
+            <div class="tab-container" id="tabs-wrapper">
+                <!-- Will be dynamically populated -->
+            </div>
+
+            <!-- Workspace Grid -->
+            <div class="workspace-grid">
+                <!-- Diagram Panel -->
+                <div class="diagram-card" id="diagram-panel">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i data-lucide="git-branch"></i>
+                            <span id="diagram-subtitle">Diagram Alur</span>
+                        </div>
+                        <div class="controls">
+                            <button class="control-btn" onclick="zoomIn()" title="Perbesar">
+                                <i data-lucide="zoom-in" style="width:14px; height:14px;"></i>
+                            </button>
+                            <button class="control-btn" onclick="zoomOut()" title="Perkecil">
+                                <i data-lucide="zoom-out" style="width:14px; height:14px;"></i>
+                            </button>
+                            <button class="control-btn" onclick="resetZoomPan()" title="Reset Tampilan">
+                                <i data-lucide="rotate-ccw" style="width:14px; height:14px;"></i>
+                            </button>
+                            <button class="control-btn" onclick="copyMermaidCode()" title="Salin Kode Mermaid">
+                                <i data-lucide="copy" style="width:14px; height:14px;"></i>
+                            </button>
+                            <button class="control-btn" onclick="toggleFullScreen()" title="Layar Penuh" id="fullscreen-btn">
+                                <i data-lucide="maximize" style="width:14px; height:14px;"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Viewport containing the SVG -->
+                    <div class="diagram-viewport" id="viewport">
+                        <div class="diagram-container" id="diagram-render-area">
+                            <!-- Mermaid code rendered here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step Description Panel -->
+                <div class="docs-card">
+                    <h3 class="docs-title">Deskripsi Alur Sistem</h3>
+                    <div class="flow-steps" id="docs-wrapper">
+                        <!-- Will be dynamically populated -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast message -->
+    <div class="toast" id="toast">
+        <i data-lucide="check-circle" style="width:16px; height:16px; color:var(--success);"></i>
+        <span id="toast-message">Salin berhasil</span>
+    </div>
+
+    <!-- Mermaid CDN -->
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        
+        // Expose mermaid to window
+        window.mermaid = mermaid;
+
+        // Initialize Mermaid
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: 'base',
+            securityLevel: 'loose',
+            themeVariables: {
+                fontFamily: 'Inter, sans-serif',
+                primaryColor: '#6366f1',
+                primaryTextColor: '#f9fafb',
+                primaryBorderColor: '#374151',
+                lineColor: '#6b7280',
+                secondaryColor: '#1f2937',
+                tertiaryColor: '#111827'
+            }
+        });
+
+        // Trigger first render
+        window.isMermaidReady = true;
+        document.dispatchEvent(new CustomEvent('mermaid-ready'));
+    </script>
+
+    <!-- App Logic -->
+    <script>
+        // Mermaid Diagrams Definition
+        const diagrams = {
+            admin: {
+                tambah: `flowchart TD
+    Start([Mulai]) --> ClickTambah[Admin Utama klik tombol 'Tambah Admin']
+    ClickTambah --> ShowForm[Sistem menampilkan Form Tambah Admin]
+    ShowForm --> InputData[Admin mengisi data admin baru<br>Nama, Email, Password, Role]
+    InputData --> ClickSimpan[Admin klik 'Simpan']
+    ClickSimpan --> Validate{Sistem memvalidasi data}
+    Validate -->|Data Tidak Valid| ShowError[Sistem menampilkan pesan error]
+    ShowError --> ShowForm
+    Validate -->|Data Valid| EncryptPassword[Sistem mengenkripsi password]
+    EncryptPassword --> SaveDB[Sistem menyimpan data admin ke Database]
+    SaveDB --> ShowSuccess[Sistem menampilkan notifikasi sukses]
+    ShowSuccess --> RedirectList[Sistem mengarahkan kembali ke halaman Daftar Admin]
+    RedirectList --> End([Selesai])`,
+                edit: `flowchart TD
+    Start([Mulai]) --> ClickEdit[Admin Utama klik tombol 'Edit' pada baris admin]
+    ClickEdit --> FetchData[Sistem mengambil data admin dari Database]
+    FetchData --> ShowForm[Sistem menampilkan Form Edit Admin<br>dengan data saat ini]
+    ShowForm --> EditData[Admin mengubah data admin<br>Nama, Email, Role, Password Baru *opsional]
+    EditData --> ClickUpdate[Admin klik 'Update']
+    ClickUpdate --> Validate{Sistem memvalidasi data}
+    Validate -->|Data Tidak Valid| ShowError[Sistem menampilkan pesan error]
+    ShowError --> ShowForm
+    Validate -->|Data Valid| CheckPassword{Ada password baru?}
+    CheckPassword -->|Ya| EncryptPassword[Sistem mengenkripsi password baru]
+    EncryptPassword --> SaveDB[Sistem memperbarui data admin di Database]
+    CheckPassword -->|Tidak| SaveDB
+    SaveDB --> ShowSuccess[Sistem menampilkan notifikasi sukses]
+    ShowSuccess --> RedirectList[Sistem mengarahkan kembali ke halaman Daftar Admin]
+    RedirectList --> End([Selesai])`,
+                hapus: `flowchart TD
+    Start([Mulai]) --> ClickHapus[Admin Utama klik tombol 'Hapus' pada baris admin]
+    ClickHapus --> ShowConfirm[Sistem menampilkan modal konfirmasi hapus]
+    ShowConfirm --> UserConfirm{Apakah Admin yakin?}
+    UserConfirm -->|Batal| RedirectList[Sistem menutup modal dan kembali ke Daftar Admin]
+    UserConfirm -->|Ya| DeleteDB[Sistem menghapus data admin dari Database]
+    DeleteDB --> ShowSuccess[Sistem menampilkan notifikasi sukses]
+    ShowSuccess --> RedirectList
+    RedirectList --> End([Selesai])`
+            },
+            polres: {
+                tambah: `flowchart TD
+    Start([Mulai]) --> ClickTambah[Admin klik tombol 'Tambah Polres']
+    ClickTambah --> ShowForm[Sistem menampilkan Form Tambah Polres<br>Nama Polres, Wilayah, Alamat, Kontak]
+    ShowForm --> InputData[Admin mengisi data Polres baru]
+    InputData --> ClickSimpan[Admin klik 'Simpan']
+    ClickSimpan --> Validate{Sistem memvalidasi data}
+    Validate -->|Data Tidak Valid| ShowError[Sistem menampilkan pesan error]
+    ShowError --> ShowForm
+    Validate -->|Data Valid| SaveDB[Sistem menyimpan data Polres ke Database]
+    SaveDB --> ShowSuccess[Sistem menampilkan notifikasi sukses]
+    ShowSuccess --> RedirectList[Sistem mengarahkan kembali ke halaman Daftar Polres]
+    RedirectList --> End([Selesai])`,
+                edit: `flowchart TD
+    Start([Mulai]) --> ClickEdit[Admin klik tombol 'Edit' pada baris Polres]
+    ClickEdit --> FetchData[Sistem mengambil data Polres dari Database]
+    FetchData --> ShowForm[Sistem menampilkan Form Edit Polres dengan data saat ini]
+    ShowForm --> EditData[Admin mengubah data Polres]
+    EditData --> ClickUpdate[Admin klik 'Update']
+    ClickUpdate --> Validate{Sistem memvalidasi data}
+    Validate -->|Data Tidak Valid| ShowError[Sistem menampilkan pesan error]
+    ShowError --> ShowForm
+    Validate -->|Data Valid| SaveDB[Sistem memperbarui data Polres di Database]
+    SaveDB --> ShowSuccess[Sistem menampilkan notifikasi sukses]
+    ShowSuccess --> RedirectList[Sistem mengarahkan kembali ke halaman Daftar Polres]
+    RedirectList --> End([Selesai])`,
+                hapus: `flowchart TD
+    Start([Mulai]) --> ClickHapus[Admin klik tombol 'Hapus' pada baris Polres]
+    ClickHapus --> ShowConfirm[Sistem menampilkan modal konfirmasi hapus]
+    ShowConfirm --> UserConfirm{Apakah Admin yakin?}
+    UserConfirm -->|Batal| RedirectList[Sistem menutup modal dan kembali ke Daftar Polres]
+    UserConfirm -->|Ya| DeleteDB[Sistem menghapus data Polres dari Database]
+    DeleteDB --> ShowSuccess[Sistem menampilkan notifikasi sukses]
+    ShowSuccess --> RedirectList
+    RedirectList --> End([Selesai])`
+            },
+            jalan: {
+                tambah: `flowchart TD
+    Start([Mulai]) --> ClickTambah[Admin klik tombol 'Tambah Ruas Jalan']
+    ClickTambah --> ShowForm[Sistem menampilkan Form Tambah Ruas Jalan<br>Nama Jalan, Panjang, Titik Koordinat, Geometri]
+    ShowForm --> InputData[Admin mengisi data & koordinat ruas jalan]
+    InputData --> ClickSimpan[Admin klik 'Simpan']
+    ClickSimpan --> Validate{Sistem memvalidasi data & geometri}
+    Validate -->|Data Tidak Valid| ShowError[Sistem menampilkan pesan error]
+    ShowError --> ShowForm
+    Validate -->|Data Valid| SaveDB[Sistem menyimpan data Ruas Jalan ke Database]
+    SaveDB --> ShowSuccess[Sistem menampilkan notifikasi sukses]
+    ShowSuccess --> RedirectList[Sistem mengarahkan kembali ke halaman Daftar Ruas Jalan]
+    RedirectList --> End([Selesai])`,
+                edit: `flowchart TD
+    Start([Mulai]) --> ClickEdit[Admin klik tombol 'Edit' pada ruas jalan]
+    ClickEdit --> FetchData[Sistem mengambil data Ruas Jalan dari Database]
+    FetchData --> ShowForm[Sistem menampilkan Form Edit Ruas Jalan dengan data saat ini]
+    ShowForm --> EditData[Admin mengubah data / memindahkan titik koordinat]
+    EditData --> ClickUpdate[Admin klik 'Update']
+    ClickUpdate --> Validate{Sistem memvalidasi data & geometri}
+    Validate -->|Data Tidak Valid| ShowError[Sistem menampilkan pesan error]
+    ShowError --> ShowForm
+    Validate -->|Data Valid| SaveDB[Sistem memperbarui data Ruas Jalan di Database]
+    SaveDB --> ShowSuccess[Sistem menampilkan notifikasi sukses]
+    ShowSuccess --> RedirectList[Sistem mengarahkan kembali ke halaman Daftar Ruas Jalan]
+    RedirectList --> End([Selesai])`,
+                hapus: `flowchart TD
+    Start([Mulai]) --> ClickHapus[Admin klik tombol 'Hapus' pada ruas jalan]
+    ClickHapus --> ShowConfirm[Sistem menampilkan modal konfirmasi hapus]
+    ShowConfirm --> UserConfirm{Apakah Admin yakin?}
+    UserConfirm -->|Batal| RedirectList[Sistem menutup modal dan kembali ke Daftar Ruas Jalan]
+    UserConfirm -->|Ya| DeleteDB[Sistem menghapus data Ruas Jalan dari Database]
+    DeleteDB --> ShowSuccess[Sistem menampilkan notifikasi sukses]
+    ShowSuccess --> RedirectList
+    RedirectList --> End([Selesai])`
+            },
+            pemetaan: {
+                upload: `flowchart TD
+    Start([Mulai]) --> ClickUpload[Admin klik tombol 'Upload Data Pemetaan']
+    ClickUpload --> ShowUpload[Sistem menampilkan halaman/modal Upload File]
+    ShowUpload --> SelectFile[Admin memilih file data kecelakaan<br>Format: .csv / .xlsx / .geojson]
+    SelectFile --> ClickProses[Admin klik tombol 'Proses / Upload']
+    ClickProses --> ValidateFile{Sistem memvalidasi format & struktur kolom}
+    ValidateFile -->|Format Salah| ShowError[Sistem menampilkan pesan error format]
+    ShowError --> ShowUpload
+    ValidateFile -->|Format Valid| ParseData[Sistem membaca data kecelakaan]
+    ParseData --> CalcMetrics[Sistem menghitung metrik & hotspot<br>Z-Score, Kerawanan]
+    CalcMetrics --> SaveDB[Sistem menyimpan data pemetaan ke Database]
+    SaveDB --> GenerateMap[Sistem memperbarui koordinat & marker pada peta]
+    GenerateMap --> ShowSuccess[Sistem menampilkan notifikasi sukses upload]
+    ShowSuccess --> RedirectMap[Sistem mengarahkan ke halaman Peta Pemetaan]
+    RedirectMap --> End([Selesai])`,
+                hapus: `flowchart TD
+    Start([Mulai]) --> ClickHapus[Admin klik tombol 'Hapus Data Pemetaan' pada dataset]
+    ClickHapus --> ShowConfirm[Sistem menampilkan modal konfirmasi hapus]
+    ShowConfirm --> UserConfirm{Apakah Admin yakin?}
+    UserConfirm -->|Batal| RedirectMap[Sistem menutup modal dan kembali ke halaman Pemetaan]
+    UserConfirm -->|Ya| DeleteDB[Sistem menghapus dataset pemetaan dari Database]
+    DeleteDB --> RecalcHotspots[Sistem menghitung ulang Z-Score & status kerawanan]
+    RecalcHotspots --> UpdateMap[Sistem memperbarui tampilan marker peta]
+    UpdateMap --> ShowSuccess[Sistem menampilkan notifikasi sukses]
+    ShowSuccess --> RedirectMap
+    RedirectMap --> End([Selesai])`
+            },
+            profile: {
+                edit: `flowchart TD
+    Start([Mulai]) --> ClickProfile[Admin klik menu 'Profile Saya']
+    ClickProfile --> FetchProfile[Sistem mengambil data profile saat ini]
+    FetchProfile --> ShowProfile[Sistem menampilkan halaman Profile & tombol 'Ubah Profile']
+    ShowProfile --> ClickEdit[Admin klik tombol 'Ubah Profile']
+    ClickEdit --> ShowForm[Sistem menampilkan Form Ubah Profile<br>Nama, Email, No. Telp, Foto Profile, Password saat ini]
+    ShowForm --> InputData[Admin mengisi data baru & Password saat ini]
+    InputData --> ClickSimpan[Admin klik 'Simpan Perubahan']
+    ClickSimpan --> ValidatePassword{Sistem memverifikasi password saat ini}
+    ValidatePassword -->|Password Salah| ShowErrorPass[Sistem menampilkan error: Password salah]
+    ShowErrorPass --> ShowForm
+    ValidatePassword -->|Password Benar| ValidateForm{Sistem memvalidasi data form}
+    ValidateForm -->|Data Tidak Valid| ShowErrorForm[Sistem menampilkan pesan error input]
+    ShowErrorForm --> ShowForm
+    ValidateForm -->|Data Valid| CheckPhoto{Upload foto baru?}
+    CheckPhoto -->|Ya| SavePhoto[Sistem mengunggah & menyimpan foto baru ke storage]
+    SavePhoto --> UpdateDB[Sistem memperbarui data admin di Database]
+    CheckPhoto -->|Tidak| UpdateDB
+    UpdateDB --> UpdateSession[Sistem memperbarui data session aktif]
+    UpdateSession --> ShowSuccess[Sistem menampilkan notifikasi sukses]
+    ShowSuccess --> ShowProfile
+    ShowProfile --> End([Selesai])`
+            },
+            login: {
+                email: `flowchart TD
+    Start([Mulai]) --> OpenLogin[Pengguna membuka halaman Login]
+    OpenLogin --> ShowForm[Sistem menampilkan Form Login]
+    ShowForm --> InputCredentials[Pengguna memasukkan Email & Password]
+    InputCredentials --> ClickLogin[Pengguna klik tombol 'Login']
+    ClickLogin --> ValidateInput{Sistem memvalidasi form}
+    ValidateInput -->|Form Kosong| ShowErrorForm[Sistem menampilkan error: Form wajib diisi]
+    ShowErrorForm --> ShowForm
+    ValidateInput -->|Form Terisi| CheckCredentials{Sistem mencocokkan kredensial di DB}
+    CheckCredentials -->|Salah| ShowErrorAuth[Sistem menampilkan error: Email atau Password salah]
+    ShowErrorAuth --> ShowForm
+    CheckCredentials -->|Benar| CheckActive{Akun Aktif?}
+    CheckActive -->|Tidak| ShowErrorActive[Sistem menampilkan error: Akun dinonaktifkan]
+    ShowErrorActive --> ShowForm
+    CheckActive -->|Ya| CreateSession[Sistem membuat session login]
+    CreateSession --> RedirectDashboard[Sistem mengarahkan ke Dashboard Utama]
+    RedirectDashboard --> End([Selesai])`,
+                google: `flowchart TD
+    Start([Mulai]) --> OpenLogin[Pengguna membuka halaman Login]
+    OpenLogin --> ClickGoogle[Pengguna klik tombol 'Login dengan Google']
+    ClickGoogle --> RedirectGoogle[Sistem mengarahkan ke halaman Google OAuth]
+    RedirectGoogle --> ChooseAccount[Pengguna memilih & mengautentikasi akun Google]
+    ChooseAccount --> GoogleCallback[Google mengembalikan token & data profil ke Sistem]
+    GoogleCallback --> CheckUser{Sistem memeriksa apakah email terdaftar di DB}
+    CheckUser -->|Tidak Terdaftar| ShowErrorAuth[Sistem menampilkan error: Akun Google belum terdaftar]
+    ShowErrorAuth --> OpenLogin
+    CheckUser -->|Terdaftar| CheckActive{Akun Aktif?}
+    CheckActive -->|Tidak| ShowErrorActive[Sistem menampilkan error: Akun dinonaktifkan]
+    ShowErrorActive --> OpenLogin
+    CheckActive -->|Ya| CreateSession[Sistem membuat session login]
+    CreateSession --> RedirectDashboard[Sistem mengarahkan ke Dashboard Utama]
+    RedirectDashboard --> End([Selesai])`
+            }
+        };
+
+        const flowExplanations = {
+            admin: {
+                tambah: [
+                    { step: "Inisiasi Aksi", desc: "Super Admin menekan tombol 'Tambah Admin' di dashboard manajemen admin." },
+                    { step: "Muat Form", desc: "Sistem merespons dengan menampilkan Form Tambah Admin kosong." },
+                    { step: "Pengisian Data", desc: "Admin mengisikan data wajib: Nama Lengkap, Alamat Email unik, Sandi Keamanan, dan Tingkat Akses (Role)." },
+                    { step: "Kirim Form & Validasi", desc: "Admin menekan 'Simpan'. Sistem melakukan validasi keunikan email dan kekuatan password." },
+                    { step: "Pemrosesan Data", desc: "Sistem mengenkripsi password dengan algoritma pengacakan hash satu-arah sebelum disimpan ke basis data." },
+                    { step: "Selesai", desc: "Database mencatat data admin baru. Sistem memunculkan notifikasi sukses dan mengalihkan halaman ke Daftar Admin." }
+                ],
+                edit: [
+                    { step: "Inisiasi Edit", desc: "Admin memilih opsi edit pada salah satu pengguna admin di tabel." },
+                    { step: "Pengambilan Data", desc: "Sistem memproses pengambilan data detail pengguna tersebut langsung dari database." },
+                    { step: "Tampilkan Form", desc: "Formulir edit dimuat dengan data administratif saat ini terisi secara otomatis." },
+                    { step: "Pembaruan Data", desc: "Admin mengubah data terkait dan menekan tombol 'Update'." },
+                    { step: "Validasi & Cek Password", desc: "Sistem memvalidasi email duplikat. Jika admin memasukkan password baru, sistem akan melakukan enkripsi hash ulang." },
+                    { step: "Penyimpanan & Selesai", desc: "Data diperbarui ke database. Notifikasi sukses muncul dan admin dialihkan kembali ke daftar." }
+                ],
+                hapus: [
+                    { step: "Inisiasi Hapus", desc: "Admin memilih salah satu admin dan menekan ikon 'Hapus'." },
+                    { step: "Konfirmasi Tindakan", desc: "Sistem memunculkan dialog peringatan untuk meyakinkan tindakan penghapusan." },
+                    { step: "Penghapusan Fisik", desc: "Jika disetujui, sistem menjalankan kueri penghapusan data baris admin dari database." },
+                    { step: "Pembaruan Tampilan", desc: "Tabel daftar admin disegarkan, pesan konfirmasi sukses tampil, dan halaman kembali normal." }
+                ]
+            },
+            polres: {
+                tambah: [
+                    { step: "Klik Tambah", desc: "Admin menekan tombol 'Tambah Polres' pada modul manajemen wilayah kepolisian." },
+                    { step: "Tampilkan Form", desc: "Sistem menyajikan form kosong berisi input Nama Polres, Wilayah Hukum, Alamat Fisik, dan Kontak Polres." },
+                    { step: "Validasi Kredensial", desc: "Sistem mengecek kelengkapan kolom input dan memastikan tidak ada duplikasi nama polres." },
+                    { step: "Simpan & Kembali", desc: "Data baru ditambahkan ke database, notifikasi sukses tampil, dan diarahkan kembali ke panel Polres." }
+                ],
+                edit: [
+                    { step: "Pilih Edit", desc: "Admin menekan opsi edit pada salah satu daftar Polres." },
+                    { step: "Muat Data", desc: "Sistem menarik data lama polres tersebut dan memasukkannya ke kolom form edit." },
+                    { step: "Validasi Perubahan", desc: "Sistem mengecek data baru saat tombol update ditekan." },
+                    { step: "Simpan Perubahan", desc: "Database memperbarui rekaman polres. Sistem menampilkan notifikasi sukses." }
+                ],
+                hapus: [
+                    { step: "Pilih Hapus", desc: "Admin menekan tombol hapus pada baris data Polres." },
+                    { step: "Peringatan Konfirmasi", desc: "Kotak dialog konfirmasi ditampilkan kepada admin." },
+                    { step: "Hapus DB", desc: "Database menghapus rekaman polres terpilih jika admin menyetujui modal konfirmasi." }
+                ]
+            },
+            jalan: {
+                tambah: [
+                    { step: "Awal Tindakan", desc: "Admin masuk ke panel Ruas Jalan dan menekan 'Tambah Ruas Jalan'." },
+                    { step: "Tampilkan Peta/Form", desc: "Sistem memuat formulir masukan termasuk kolom data geometri (Latitude, Longitude, Koordinat Poligon)." },
+                    { step: "Input & Validasi", desc: "Admin mengisi parameter jalan dan melakukan digitasi koordinat. Sistem memvalidasi keselarasan format spatial (geometris)." },
+                    { step: "Simpan Geometri", desc: "Data spasial disimpan menggunakan tipe data GIS. Halaman dialihkan kembali ke daftar jalan utama dengan pesan sukses." }
+                ],
+                edit: [
+                    { step: "Pilih Ruas", desc: "Admin memilih ruas jalan tertentu dan mengklik 'Edit'." },
+                    { step: "Muat Geometri", desc: "Sistem menarik geometri spasial jalan dan menampilkannya kembali pada form/peta edit." },
+                    { step: "Pembaruan Koordinat", desc: "Admin memodifikasi titik koordinat jalan atau data atribut jalan." },
+                    { step: "Update Basis Data", desc: "Sistem memvalidasi geometri baru dan memperbarui data ruas jalan di database spatial." }
+                ],
+                hapus: [
+                    { step: "Pilih Hapus", desc: "Admin menekan tombol hapus pada ruas jalan." },
+                    { step: "Peringatan Konfirmasi", desc: "Sistem memicu pop-up konfirmasi penghapusan data spasial." },
+                    { step: "Hapus Relasi Spasial", desc: "Sistem menghapus data jalan tersebut beserta relasi data hotspot kecelakaan terkait." }
+                ]
+            },
+            pemetaan: {
+                upload: [
+                    { step: "Pilih Menu Upload", desc: "Admin menekan tombol unggah berkas pemetaan pada dashboard GIS." },
+                    { step: "Pilih File Lokasi", desc: "Admin memilih file dataset kecelakaan berformat CSV, Excel (.xlsx), atau GeoJSON." },
+                    { step: "Pemeriksaan Struktur", desc: "Sistem memeriksa kecocokan header kolom (Latitude, Longitude, Severity, Tanggal)." },
+                    { step: "Proses & Kalkulasi", desc: "Sistem mem-parsing baris file, menghitung ulang pembobotan Z-Score, serta klasterisasi titik rawan kecelakaan (hotspots)." },
+                    { step: "Render Ulang Peta", desc: "Marker spasial baru dibangkitkan pada peta visual dan status pemetaan baru tersimpan di database." }
+                ],
+                hapus: [
+                    { step: "Pilih Dataset", desc: "Admin memilih dataset kecelakaan historis tertentu lalu menekan 'Hapus Data'." },
+                    { step: "Konfirmasi", desc: "Sistem menanyakan konfirmasi penghapusan data secara menyeluruh." },
+                    { step: "Hapus & Hitung Ulang", desc: "Sistem menghapus rekaman poin kecelakaan di database, dan langsung menghitung ulang algoritma Z-score pada peta." },
+                    { step: "Peta Diperbarui", desc: "Tampilan visual heatmap/marker pada peta langsung diperbarui seketika." }
+                ]
+            },
+            profile: {
+                edit: [
+                    { step: "Buka Profile", desc: "Admin membuka tab 'Profile Saya' pada sudut navigasi atas." },
+                    { step: "Buka Form Edit", desc: "Admin menekan tombol 'Ubah Profile' untuk masuk ke mode sunting." },
+                    { step: "Validasi Sandi Lama", desc: "Sistem mewajibkan pengisian Password Saat Ini untuk verifikasi keaslian sesi pengguna." },
+                    { step: "Proses Gambar (Opsional)", desc: "Jika admin mengunggah foto profil baru, sistem memotong, memvalidasi ukuran, dan menyimpannya di storage media." },
+                    { step: "Perbarui Sesi", desc: "Data di database disimpan, dan sistem memperbarui cache data session aktif yang sedang digunakan." }
+                ]
+            },
+            login: {
+                email: [
+                    { step: "Buka Halaman", desc: "Pengguna mengakses tautan URL portal administrasi Smart Accident." },
+                    { step: "Input Kredensial", desc: "Pengguna mengisikan alamat e-mail terdaftar dan password." },
+                    { step: "Validasi Form", desc: "Sistem mengecek apakah format e-mail benar dan kolom tidak dalam keadaan kosong." },
+                    { step: "Pencocokan DB", desc: "Sistem mencari e-mail di DB dan memverifikasi kecocokan hash sandi." },
+                    { step: "Cek Keaktifan Akun", desc: "Sistem memvalidasi status akun (apakah ditangguhkan atau tidak)." },
+                    { step: "Buat Sesi & Arahkan", desc: "Sistem membangkitkan cookie sesi login dan mengarahkan admin ke beranda dashboard." }
+                ],
+                google: [
+                    { step: "Pilih Tombol Google", desc: "Pengguna mengklik ikon 'Login dengan Google' pada formulir login." },
+                    { step: "Redireksi OAuth", desc: "Sistem mengarahkan pengguna ke laman resmi persetujuan Google Accounts." },
+                    { step: "Autentikasi Google", desc: "Pengguna memilih akun Gmail miliknya dan memasukkan sandi di platform Google." },
+                    { step: "Pengiriman Token", desc: "Sistem menerima callback URL berisi token akses autentikasi beserta data profil Google." },
+                    { step: "Pemeriksaan Akun", desc: "Sistem memeriksa apakah alamat email Google yang didapat sudah terasosiasi dengan akun admin terdaftar." },
+                    { step: "Pembuatan Sesi", desc: "Jika terdaftar dan aktif, sistem langsung membuatkan sesi masuk dan membawa admin ke dashboard utama." }
+                ]
+            }
+        };
+
+        const titles = {
+            admin: "Kelola Akun Admin",
+            polres: "Kelola Polres",
+            jalan: "Kelola Ruas Jalan",
+            pemetaan: "Kelola Data Pemetaan",
+            profile: "Ubah Data Profile",
+            login: "Proses Login"
+        };
+
+        const subtitleMap = {
+            admin: { tambah: "Tambah Akun Admin", edit: "Edit Akun Admin", hapus: "Hapus Akun Admin" },
+            polres: { tambah: "Tambah Polres", edit: "Edit Polres", hapus: "Hapus Polres" },
+            jalan: { tambah: "Tambah Ruas Jalan", edit: "Edit Ruas Jalan", hapus: "Hapus Ruas Jalan" },
+            pemetaan: { upload: "Upload Data Pemetaan", hapus: "Hapus Data Pemetaan" },
+            profile: { edit: "Ubah Data Profile" },
+            login: { email: "Login Email & Password", google: "Login Google" }
+        };
+
+        // Navigation state variables
+        let currentCategory = 'admin';
+        let currentAction = 'tambah';
+        
+        // Zoom & Pan variables
+        let zoomScale = 1;
+        let isDragging = false;
+        let startX, startY;
+        let translateX = 0;
+        let translateY = 0;
+
+        const viewport = document.getElementById('viewport');
+        const renderArea = document.getElementById('diagram-render-area');
+
+        // Setup Zoom and Pan listeners
+        viewport.addEventListener('mousedown', (e) => {
+            // Only drag with left click
+            if (e.button !== 0) return;
+            isDragging = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+            viewport.style.cursor = 'grabbing';
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            viewport.style.cursor = 'grab';
+        });
+
+        viewport.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            applyTransform();
+        });
+
+        viewport.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY;
+            const factor = 0.08;
+            if (delta < 0) {
+                zoomScale = Math.min(2.5, zoomScale + factor);
+            } else {
+                zoomScale = Math.max(0.4, zoomScale - factor);
+            }
+            applyTransform();
+        });
+
+        function applyTransform() {
+            renderArea.style.transform = `translate(${translateX}px, ${translateY}px) scale(${zoomScale})`;
+        }
+
+        function zoomIn() {
+            zoomScale = Math.min(2.5, zoomScale + 0.15);
+            applyTransform();
+        }
+
+        function zoomOut() {
+            zoomScale = Math.max(0.4, zoomScale - 0.15);
+            applyTransform();
+        }
+
+        function resetZoomPan() {
+            zoomScale = 1;
+            translateX = 0;
+            translateY = 0;
+            applyTransform();
+        }
+
+        // Theme switching logic
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            
+            const themeIcon = document.getElementById('theme-icon');
+            if (newTheme === 'dark') {
+                themeIcon.setAttribute('data-lucide', 'sun');
+            } else {
+                themeIcon.setAttribute('data-lucide', 'moon');
+            }
+            lucide.createIcons();
+
+            // Re-render Mermaid to ensure styling aligns nicely
+            renderDiagram();
+        }
+
+        // Setup theme on load
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        document.getElementById('theme-icon').setAttribute('data-lucide', savedTheme === 'dark' ? 'sun' : 'moon');
+
+        // Switch category tabs
+        function switchCategory(category) {
+            currentCategory = category;
+            
+            // Set first action for this category as default active
+            const actions = Object.keys(diagrams[category]);
+            currentAction = actions[0];
+
+            // Update UI Sidebar menu selection
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.getElementById(`menu-${category}`).classList.add('active');
+
+            // Update Header Title
+            document.getElementById('current-title').innerText = titles[category];
+
+            // Re-render tabs and current diagram
+            renderTabs();
+            renderDiagram();
+        }
+
+        // Render Action sub-tabs inside content body
+        function renderTabs() {
+            const wrapper = document.getElementById('tabs-wrapper');
+            wrapper.innerHTML = '';
+            
+            const actions = Object.keys(diagrams[currentCategory]);
+            actions.forEach(action => {
+                const button = document.createElement('button');
+                button.className = `tab-btn ${action === currentAction ? 'active' : ''}`;
+                button.innerText = subtitleMap[currentCategory][action];
+                button.onclick = () => {
+                    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    currentAction = action;
+                    renderDiagram();
+                };
+                wrapper.appendChild(button);
+            });
+        }
+
+        // Render Mermaid Diagram with current settings
+        async function renderDiagram() {
+            // Reset position
+            resetZoomPan();
+
+            // Update subtitle in card header
+            const actionLabel = subtitleMap[currentCategory][currentAction];
+            document.getElementById('diagram-subtitle').innerText = `${titles[currentCategory]} - ${actionLabel}`;
+
+            // Load Mermaid Syntax
+            const code = diagrams[currentCategory][currentAction];
+            
+            // Render loading
+            renderArea.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; gap:12px; color:var(--text-secondary);">
+                <i data-lucide="loader-2" style="animation: spin 1s linear infinite; width:28px; height:28px;"></i>
+                <span style="font-size:0.85rem; font-weight:500;">Rendering Diagram...</span>
+            </div>`;
+            lucide.createIcons();
+
+            // Wait for Mermaid script loading
+            if (!window.isMermaidReady) {
+                await new Promise(resolve => document.addEventListener('mermaid-ready', resolve));
+            }
+
+            try {
+                // Clear render area
+                renderArea.innerHTML = '';
+                
+                // Set element
+                const uniqueId = `mermaid-svg-${Date.now()}`;
+                const tempDiv = document.createElement('div');
+                tempDiv.id = uniqueId;
+                tempDiv.className = 'mermaid';
+                tempDiv.textContent = code;
+                renderArea.appendChild(tempDiv);
+                
+                // Trigger Mermaid Render API
+                await window.mermaid.run({
+                    nodes: [tempDiv]
+                });
+
+                // Render documentation steps
+                renderDocs();
+            } catch (err) {
+                console.error("Mermaid Render Error:", err);
+                renderArea.innerHTML = `<div style="text-align:center; padding: 24px; color:var(--error);">
+                    <i data-lucide="alert-triangle" style="width:36px; height:36px; margin-bottom:8px;"></i>
+                    <h4 style="font-size:0.9rem; font-weight:700; margin-bottom:4px;">Gagal Merender Diagram</h4>
+                    <p style="font-size:0.75rem; color:var(--text-secondary); max-width:300px; margin:0 auto;">Terjadi kesalahan parser syntax pada Mermaid diagram engine.</p>
+                </div>`;
+                lucide.createIcons();
+            }
+        }
+
+        // Render documentation steps list
+        function renderDocs() {
+            const wrapper = document.getElementById('docs-wrapper');
+            wrapper.innerHTML = '';
+            
+            const steps = flowExplanations[currentCategory][currentAction];
+            if (!steps) return;
+
+            steps.forEach((step, idx) => {
+                const item = document.createElement('div');
+                item.className = 'step-item';
+                
+                item.innerHTML = `
+                    <div class="step-number">${idx + 1}</div>
+                    <div class="step-details">
+                        <h4>${step.step}</h4>
+                        <p>${step.desc}</p>
+                    </div>
+                `;
+                wrapper.appendChild(item);
+            });
+        }
+
+        // Copy Mermaid Raw Code to clipboard
+        function copyMermaidCode() {
+            const code = diagrams[currentCategory][currentAction];
+            navigator.clipboard.writeText(code).then(() => {
+                showToast("Kode Mermaid disalin!");
+            }).catch(err => {
+                console.error("Gagal menyalin: ", err);
+            });
+        }
+
+        // Toast message notifier
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Toggle Full Screen Viewport
+        function toggleFullScreen() {
+            const panel = document.getElementById('diagram-panel');
+            const overlay = document.getElementById('overlay');
+            const btn = document.getElementById('fullscreen-btn');
+            
+            const isActive = panel.classList.toggle('fullscreen-active');
+            
+            if (isActive) {
+                overlay.style.display = 'block';
+                btn.innerHTML = `<i data-lucide="minimize" style="width:14px; height:14px;"></i><span>Kecilkan</span>`;
+            } else {
+                overlay.style.display = 'none';
+                btn.innerHTML = `<i data-lucide="maximize" style="width:14px; height:14px;"></i>`;
+            }
+            resetZoomPan();
+            lucide.createIcons();
+        }
+
+        // Close full screen on background click
+        document.getElementById('overlay').onclick = () => {
+            toggleFullScreen();
+        };
+
+        // Keydown listener for Esc key to exit fullscreen
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.getElementById('diagram-panel').classList.contains('fullscreen-active')) {
+                toggleFullScreen();
+            }
+        });
+
+        // Initialize App on load
+        window.addEventListener('load', () => {
+            lucide.createIcons();
+            switchCategory('admin');
+        });
+    </script>
+
+    <style>
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+
+</body>
+</html>

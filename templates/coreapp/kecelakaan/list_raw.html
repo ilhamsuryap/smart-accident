@@ -1,9 +1,9 @@
-<!-- {% extends 'base.html' %}
+{% extends 'base.html' %}
 
 {% block title %}Data Kecelakaan Raw - Smart Accident{% endblock %}
 
-{% block content %} -->
-<!-- <div class="bg-white rounded-lg shadow p-6">
+{% block content %}
+<div class="bg-white rounded-lg shadow p-6">
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Data Kecelakaan Raw</h1>
@@ -14,10 +14,10 @@
             <i class="fas fa-upload mr-2"></i>Upload Data Raw
         </a>
         {% endif %}
-    </div> -->
+    </div>
 
     <!-- Filter -->
-    <!-- <div class="mb-6 flex flex-col md:flex-row gap-3">
+    <div class="mb-6 flex flex-col md:flex-row gap-3">
         <form method="get" class="flex gap-2 flex-1">
             <input type="text" name="search" placeholder="Cari desa, kecamatan, atau kota..." 
                    value="{{ request.GET.search }}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
@@ -31,10 +31,10 @@
             <option value="{{ year }}" {% if request.GET.tahun|stringformat:"s" == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
             {% endfor %}
         </select>
-    </div> -->
+    </div>
 
     <!-- Table -->
-    <!-- <div class="overflow-x-auto">
+    <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead class="bg-gray-100 border-b border-gray-300">
                 <tr>
@@ -91,12 +91,12 @@
                 {% endif %}
             </tbody>
         </table>
-    </div> -->
+    </div>
 
-    <!-- {% if kecelakaan %}
+    {% if kecelakaan %}
     <div class="mt-4 text-sm text-gray-600">
         Menampilkan {{ kecelakaan|length }} dari total data
     </div>
     {% endif %}
 </div>
-{% endblock %} -->
+{% endblock %}

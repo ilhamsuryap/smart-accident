@@ -158,6 +158,7 @@ def login_view(request):
     google_error_messages = {
         'google_no_email': 'Akun Google tidak memiliki email yang dapat digunakan',
         'google_not_registered': 'Email Google Anda tidak terdaftar',
+        'google_suc'
         'google_inactive': 'Akun Anda telah dinonaktifkan',
         'google_role_denied': 'Akun Anda tidak memiliki akses ke sistem ini',
         'google_no_profile': 'Profil akun tidak ditemukan',
@@ -177,17 +178,17 @@ def login_view(request):
             try:
                 user_obj = User.objects.get(email__iexact=email)
             except User.DoesNotExist:
-                messages.error(request, 'Email tidak terdaftar dalam sistem.')
+                messages.error(request, 'Email Anda tidak terdaftar.')
                 return render(request, 'registration/login.html', {'form': form})
             except User.MultipleObjectsReturned:
                 user_obj = User.objects.filter(email__iexact=email).order_by('-created_at').first()
                 if not user_obj:
-                    messages.error(request, 'Email tidak terdaftar dalam sistem.')
+                    messages.error(request, 'Email Anda tidak terdaftar.')
                     return render(request, 'registration/login.html', {'form': form})
 
             # 2. Cek is_active dari User model langsung
             if not user_obj.is_active:
-                messages.error(request, 'Akun Anda telah dinonaktifkan. Hubungi Super Admin.')
+                messages.error(request, 'Akun Anda telah dinonaktifkan.')
                 return render(request, 'registration/login.html', {'form': form})
 
             # 3. Cek role harus superadmin atau admin
@@ -249,11 +250,6 @@ def admin_create(request):
             nama = f"{user.first_name} {user.last_name}".strip() or user.email
             messages.success(request, f'Akun admin "{nama}" berhasil dibuat.')
             return redirect('admin_list')
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    label = form.fields[field].label if field in form.fields else field
-                    messages.error(request, f'{label}: {error}')
     else:
         form = AdminCreateForm()
 
@@ -288,11 +284,6 @@ def admin_update(request, user_id):
             nama = f"{target_user.first_name} {target_user.last_name}".strip() or target_user.email
             messages.success(request, f'Akun "{nama}" berhasil diperbarui.')
             return redirect('admin_list')
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    label = form.fields[field].label if field in form.fields else field
-                    messages.error(request, f'{label}: {error}')
     else:
         # Isi form dengan data user saat ini
         form = AdminUpdateForm(
