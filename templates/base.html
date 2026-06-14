@@ -323,6 +323,11 @@
                 {% endif %}
 
                 {% if request.user.profile.role == 'superadmin' %}
+                <a class="sidebar-link {% if current == 'polda_list' or current == 'polda_create' or current == 'polda_update' or current == 'polda_delete' %}active{% endif %}"
+                    href="{% url 'polda_list' %}">
+                    <i class="fas fa-sitemap icon-left"></i>
+                    <span>Kelola Polda</span>
+                </a>
                 <a class="sidebar-link {% if current == 'polres_list' or current == 'polres_create' or current == 'polres_update' or current == 'polres_delete' %}active{% endif %}"
                     href="{% url 'polres_list' %}">
                     <i class="fas fa-building icon-left"></i>

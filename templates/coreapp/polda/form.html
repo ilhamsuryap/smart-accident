@@ -8,18 +8,18 @@
 
   <!-- Header -->
   <div class="mb-6">
-    <a href="{% url 'polres_list' %}" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition mb-3">
+    <a href="{% url 'polda_list' %}" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition mb-3">
       <i class="fas fa-arrow-left"></i> Kembali ke Daftar
     </a>
     <h1 class="text-3xl font-bold flex items-center gap-2 text-gray-800">
-      {% if polres %}
+      {% if polda %}
         <i class="fas fa-edit text-blue-600"></i>
       {% else %}
         <i class="fas fa-plus text-blue-600"></i>
       {% endif %}
       {{ title }}
     </h1>
-    <p class="text-gray-500 mt-1">Lengkapi detail informasi polres di bawah ini.</p>
+    <p class="text-gray-500 mt-1">Lengkapi detail informasi polda di bawah ini.</p>
   </div>
 
   <!-- Form Card -->
@@ -27,33 +27,9 @@
     <form method="post" novalidate class="space-y-6">
       {% csrf_token %}
 
-      <!-- Polda -->
+      <!-- Nama polda -->
       <div>
-        <label for="{{ form.polda.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-1.5">Polda</label>
-        <div class="relative">
-          <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-            <i class="fas fa-sitemap"></i>
-          </span>
-          <select name="polda" 
-                  id="{{ form.polda.id_for_label }}"
-                  class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition text-sm {% if form.polda.errors %}border-red-400 bg-red-50/50{% endif %}">
-            <option value="">-- Pilih Polda --</option>
-            {% for choice in form.polda.field.queryset %}
-              <option value="{{ choice.id }}" {% if form.polda.value|stringformat:"s" == choice.id|stringformat:"s" %}selected{% endif %}>{{ choice.nama }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        {% if form.polda.errors %}
-          <p class="text-red-600 text-xs mt-1.5 flex items-center gap-1">
-            <i class="fas fa-exclamation-circle"></i>
-            {{ form.polda.errors.0 }}
-          </p>
-        {% endif %}
-      </div>
-
-      <!-- Nama Polres -->
-      <div>
-        <label for="{{ form.nama.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-1.5">Nama Polres <span class="text-red-500">*</span></label>
+        <label for="{{ form.nama.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-1.5">Nama polda <span class="text-red-500">*</span></label>
         <div class="relative">
           <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
             <i class="fas fa-building"></i>
@@ -63,7 +39,7 @@
                  id="{{ form.nama.id_for_label }}"
                  class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition text-sm {% if form.nama.errors %}border-red-400 bg-red-50/50{% endif %}" 
                  value="{{ form.nama.value|default:'' }}" 
-                 placeholder="Contoh: Polres Metro Jakarta Pusat"
+                 placeholder="Contoh: polda Metro Jakarta Pusat"
                  required>
         </div>
         {% if form.nama.errors %}
@@ -74,9 +50,9 @@
         {% endif %}
       </div>
 
-      <!-- Kode Polres -->
+      <!-- Kode polda -->
       <div>
-        <label for="{{ form.kode.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-1.5">Kode Polres <span class="text-red-500">*</span></label>
+        <label for="{{ form.kode.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-1.5">Kode polda <span class="text-red-500">*</span></label>
         <div class="relative">
           <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
             <i class="fas fa-hashtag"></i>
@@ -86,7 +62,7 @@
                  id="{{ form.kode.id_for_label }}"
                  class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition text-sm {% if form.kode.errors %}border-red-400 bg-red-50/50{% endif %}" 
                  value="{{ form.kode.value|default:'' }}" 
-                 placeholder="Contoh: polres_jakarta_pusat"
+                 placeholder="Contoh: polda_jakarta_pusat"
                  required>
         </div>
         
@@ -110,7 +86,7 @@
                  id="{{ form.alamat.id_for_label }}"
                  rows="3"
                  class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition text-sm {% if form.alamat.errors %}border-red-400 bg-red-50/50{% endif %}" 
-                 placeholder="Masukkan alamat lengkap polres">{{ form.alamat.value|default:'' }}</textarea>
+                 placeholder="Masukkan alamat lengkap polda">{{ form.alamat.value|default:'' }}</textarea>
         </div>
         {% if form.alamat.errors %}
           <p class="text-red-600 text-xs mt-1.5 flex items-center gap-1">
@@ -153,8 +129,8 @@
                    {% if form.is_active.value %}checked{% endif %}>
           </div>
           <label for="{{ form.is_active.id_for_label }}" class="flex flex-col cursor-pointer">
-            <span class="text-sm font-semibold text-gray-800">Polres Aktif</span>
-            <span class="text-xs text-gray-500 mt-0.5">Centang untuk mengaktifkan polres ini dalam sistem</span>
+            <span class="text-sm font-semibold text-gray-800">polda Aktif</span>
+            <span class="text-xs text-gray-500 mt-0.5">Centang untuk mengaktifkan polda ini dalam sistem</span>
           </label>
         </div>
       </div>
@@ -165,7 +141,7 @@
           <i class="fas fa-save"></i>
           <span>Simpan Perubahan</span>
         </button>
-        <a href="{% url 'polres_list' %}" class="px-6 py-2.5 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition flex items-center gap-2">
+        <a href="{% url 'polda_list' %}" class="px-6 py-2.5 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition flex items-center gap-2">
           <i class="fas fa-times"></i>
           <span>Batal</span>
         </a>

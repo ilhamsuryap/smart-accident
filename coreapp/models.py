@@ -18,11 +18,29 @@ import traceback
 # MODEL POLRES (Dinamis — tidak pakai enum)
 # ============================================================================
 
+class Polda(models.Model):
+    """Model untuk data Polda yang dikelola secara dinamis oleh superadmin"""
+    id = models.AutoField(primary_key=True)
+    nama = models.CharField(max_length=50, verbose_name='Nama Polda')
+    kode = models.CharField(max_length=20, unique=True, verbose_name='Kode Polda', help_text='Contoh: polda_jatim')
+    is_active = models.BooleanField(default=True, verbose_name='Aktif')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Polda'
+        verbose_name_plural = 'Polda'
+        ordering = ['nama']
+
+    def __str__(self):
+        return self.nama
+
 class Polres(models.Model):
     """Model untuk data Polres yang dikelola secara dinamis oleh superadmin"""
     id = models.AutoField(primary_key=True)
     nama = models.CharField(max_length=25, verbose_name='Nama Polres')
     kode = models.CharField(max_length=15, unique=True, verbose_name='Kode Polres', help_text='Contoh: polres_madiun')
+    polda = models.ForeignKey(Polda, on_delete=models.SET_NULL, null=True, blank=True, related_name='polres', verbose_name='Polda')
     alamat = models.TextField(blank=True, null=True, verbose_name='Alamat')
     telepon = models.CharField(max_length=20, blank=True, null=True, verbose_name='Telepon')
     is_active = models.BooleanField(default=True, verbose_name='Aktif')
