@@ -1,0 +1,2264 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Diagrams - Smart Accident System</title>
+    <!-- Mermaid.js for rendering diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <!-- Google Fonts for premium typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-page-dark: #090d16;
+            --bg-card-dark: #111827;
+            --bg-sidebar-dark: #0f172a;
+            --border-dark: #1f2937;
+            --text-primary-dark: #f9fafb;
+            --text-secondary-dark: #9ca3af;
+            --text-muted-dark: #6b7280;
+            --bg-hover-dark: #1f2937;
+
+            --bg-page-light: #f3f4f6;
+            --bg-card-light: #ffffff;
+            --bg-sidebar-light: #1e293b; /* Keep sidebar dark for contrast */
+            --border-light: #e5e7eb;
+            --text-primary-light: #111827;
+            --text-secondary-light: #4b5563;
+            --text-muted-light: #9ca3af;
+            --bg-hover-light: #f3f4f6;
+
+            --accent: #4f46e5;
+            --accent-hover: #4338ca;
+            --accent-glow: rgba(79, 70, 229, 0.25);
+            --accent-light: #818cf8;
+
+            /* Active Theme Pointers */
+            --bg-page: var(--bg-page-dark);
+            --bg-card: var(--bg-card-dark);
+            --bg-sidebar: var(--bg-sidebar-dark);
+            --border: var(--border-dark);
+            --text-primary: var(--text-primary-dark);
+            --text-secondary: var(--text-secondary-dark);
+            --text-muted: var(--text-muted-dark);
+            --bg-hover: var(--bg-hover-dark);
+        }
+
+        body.light-theme {
+            --bg-page: var(--bg-page-light);
+            --bg-card: var(--bg-card-light);
+            --bg-sidebar: var(--bg-sidebar-light);
+            --border: var(--border-light);
+            --text-primary: var(--text-primary-light);
+            --text-secondary: var(--text-secondary-light);
+            --text-muted: var(--text-muted-light);
+            --bg-hover: var(--bg-hover-light);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-page);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            width: 320px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            color: #f8fafc;
+            height: 100vh;
+            z-index: 10;
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .sidebar-header p {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
+        .search-container {
+            padding: 16px 24px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background-color: rgba(255, 255, 255, 0.05);
+            color: #f8fafc;
+            font-size: 0.875rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-light);
+            background-color: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+        }
+
+        .menu-list {
+            list-style: none;
+            overflow-y: auto;
+            flex-grow: 1;
+            padding: 12px;
+        }
+
+        .menu-item {
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #cbd5e1;
+            margin-bottom: 4px;
+            transition: all 0.2s;
+        }
+
+        .menu-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: #f8fafc;
+        }
+
+        .menu-item.active {
+            background-color: var(--accent);
+            color: #ffffff;
+            box-shadow: 0 4px 12px var(--accent-glow);
+        }
+
+        .menu-item-icon {
+            font-size: 1.1rem;
+            opacity: 0.8;
+        }
+
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .theme-toggle-btn {
+            background: none;
+            border: none;
+            color: #cbd5e1;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .theme-toggle-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+
+        /* Main Content Styling */
+        .main-content {
+            flex-grow: 1;
+            height: 100vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            padding: 30px;
+        }
+
+        .content-header {
+            margin-bottom: 24px;
+        }
+
+        .content-header h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .content-header p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-top: 4px;
+        }
+
+        /* Sub-action tabs */
+        .tab-bar {
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+            margin-bottom: 24px;
+        }
+
+        .tab-btn {
+            background-color: transparent;
+            border: 1px solid transparent;
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            background-color: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            background-color: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        /* Tab Content Container */
+        .tab-content-container {
+            position: relative;
+            flex-grow: 1;
+        }
+
+        /* Hide tabs off-screen during load so Mermaid measures size, then toggle active state */
+        .tab-content {
+            display: block;
+            position: absolute;
+            left: -99999px;
+            top: 0;
+            width: 100%;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease-in-out;
+        }
+
+        .tab-content.active {
+            position: relative;
+            left: 0;
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Card Layout */
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .control-btn {
+            background-color: var(--bg-page);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .control-btn:hover {
+            color: var(--text-primary);
+            border-color: var(--text-muted);
+            background-color: var(--bg-hover);
+        }
+
+        /* SVG Board container */
+        .mermaid-container {
+            background: #ffffff; /* Explicit light background for maximum contrast of flowchart styling */
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            overflow: hidden;
+            position: relative;
+            min-height: 480px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+
+        .mermaid-container:active {
+            cursor: grabbing;
+        }
+
+        .mermaid-wrapper {
+            transform-origin: center center;
+            transition: transform 0.1s ease-out;
+            display: inline-block;
+        }
+
+        /* Detailed Steps Table */
+        .steps-table-container {
+            margin-top: 24px;
+        }
+
+        .steps-table-container h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .steps-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .steps-table th, .steps-table td {
+            padding: 14px 18px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .steps-table th {
+            background-color: var(--bg-hover);
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+        }
+
+        .steps-table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+        .steps-table tbody tr:hover {
+            background-color: var(--bg-hover);
+        }
+
+        .steps-table td {
+            font-size: 0.925rem;
+            line-height: 1.6;
+        }
+
+        .actor-cell {
+            background-color: rgba(79, 70, 229, 0.02);
+            border-right: 1px solid var(--border);
+        }
+
+        body.light-theme .actor-cell {
+            background-color: rgba(79, 70, 229, 0.01);
+        }
+
+        .system-cell {
+            background-color: rgba(147, 51, 234, 0.02);
+        }
+
+        body.light-theme .system-cell {
+            background-color: rgba(147, 51, 234, 0.01);
+        }
+
+        .step-num {
+            display: inline-flex;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-right: 8px;
+        }
+
+        .actor-cell .step-num {
+            background-color: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .system-cell .step-num {
+            background-color: #faf5ff;
+            color: #6b21a8;
+        }
+
+        .idle-indicator {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Tooltip style */
+        .control-btn::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #1e293b;
+            color: #ffffff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 100;
+        }
+
+        .control-btn:hover::after {
+            opacity: 1;
+        }
+
+        /* Technical Info Panel */
+        .tech-panel {
+            background-color: var(--bg-hover);
+            border-left: 4px solid var(--accent);
+            border-radius: 0 8px 8px 0;
+            padding: 16px;
+            margin-bottom: 24px;
+            font-size: 0.875rem;
+        }
+
+        .tech-panel strong {
+            color: var(--text-primary);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .tech-panel p {
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Responsive Mobile Layout */
+        @media (max-width: 992px) {
+            body {
+                flex-direction: column;
+                overflow: auto;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+            .main-content {
+                height: auto;
+                overflow: visible;
+                padding: 16px;
+            }
+            .mermaid-container {
+                min-height: 350px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>📊 Smart Accident</h1>
+            <p>Sistem Pemetaan & Analisis Risiko Kecelakaan</p>
+        </div>
+
+        <div class="search-container">
+            <input type="text" id="search-input" class="search-input" placeholder="Cari diagram alur...">
+        </div>
+
+        <ul class="menu-list">
+            <li class="menu-item active" data-target="akun">
+                <span class="menu-item-icon">👤</span>
+                <span>Kelola Akun Admin</span>
+            </li>
+            <li class="menu-item" data-target="polres">
+                <span class="menu-item-icon">🚔</span>
+                <span>Kelola Polres</span>
+            </li>
+            <li class="menu-item" data-target="ruas">
+                <span class="menu-item-icon">🛣️</span>
+                <span>Kelola Ruas Jalan</span>
+            </li>
+            <li class="menu-item" data-target="pemetaan">
+                <span class="menu-item-icon">🗺️</span>
+                <span>Kelola Data Pemetaan</span>
+            </li>
+            <li class="menu-item" data-target="profile">
+                <span class="menu-item-icon">⚙️</span>
+                <span>Ubah Data Profile</span>
+            </li>
+            <li class="menu-item" data-target="login">
+                <span class="menu-item-icon">🔑</span>
+                <span>Autentikasi Login</span>
+            </li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <span style="font-size: 0.8rem; color: #94a3b8;">v1.0 (Mermaid 10)</span>
+            <button id="theme-toggle" class="theme-toggle-btn" title="Toggle Dark/Light Mode">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m11.314 11.314l.707.707M12 7a5 5 0 100 10 5 5 0 000-10z"></path>
+                </svg>
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <div class="content-header">
+            <h2 id="feature-title">Kelola Akun Admin</h2>
+            <p id="feature-desc">Activity diagram alur penambahan, pengeditan, dan penghapusan data akun administrator.</p>
+        </div>
+
+        <!-- Secondary Pill Tab Bar -->
+        <div class="tab-bar" id="pill-tab-bar">
+            <!-- Tabs injected dynamically by JS based on selected menu item -->
+        </div>
+
+        <!-- Container for all diagram tabs -->
+        <div class="tab-content-container" id="tab-container">
+            
+            <!-- TABS FOR KELOLA AKUN ADMIN -->
+            <!-- 1a. Tambah Akun -->
+            <div class="tab-content" id="tab-akun-tambah" data-parent="akun">
+                <div class="tech-panel">
+                    <strong>💡 Rincian Arsitektur:</strong>
+                    <p>Hanya diakses oleh Super Admin / Admin berwenang. Menggunakan standard validator Django forms untuk email unik dan hashing password pbkdf2_sha256.</p>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📝 Activity Diagram - Tambah Akun</span>
+                        <div class="card-controls">
+                            <button class="control-btn btn-zoom-in" data-tooltip="Zoom In">➕</button>
+                            <button class="control-btn btn-zoom-out" data-tooltip="Zoom Out">➖</button>
+                            <button class="control-btn btn-zoom-reset" data-tooltip="Reset Zoom">🔄</button>
+                            <button class="control-btn btn-copy" data-tooltip="Copy Mermaid Code">📋</button>
+                            <button class="control-btn btn-download" data-tooltip="Download SVG">💾</button>
+                        </div>
+                    </div>
+                    <div class="mermaid-container">
+                        <div class="mermaid-wrapper">
+                            <div class="mermaid">
+flowchart LR
+    classDef aktorNode fill:#E3F2FD,stroke:#1565C0,stroke-width:2px,color:#0D47A1,rx:8px,ry:8px;
+    classDef sistemNode fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#4A148C,rx:8px,ry:8px;
+    classDef startEnd fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20,rx:20px,ry:20px;
+    classDef decision fill:#FFF9C4,stroke:#FBC02D,stroke-width:2px,color:#F57F17,rx:8px,ry:8px;
+    classDef database fill:#ECEFF1,stroke:#455A64,stroke-width:2px,color:#263238,rx:5px,ry:5px;
+
+    subgraph Aktor ["Aktor (Admin)"]
+        direction TB
+        A_start([Mulai]):::startEnd
+        A_buka[Membuka Menu Kelola Akun]:::aktorNode
+        A_klik_tambah[Klik Tombol 'Tambah Akun']:::aktorNode
+        A_isi_form[Mengisi Data Akun baru<br/>Username, Email, Role, Password]:::aktorNode
+        A_klik_simpan[Klik Tombol 'Simpan']:::aktorNode
+    end
+
+    subgraph Sistem ["Sistem"]
+        direction TB
+        S_tampil_form[Menampilkan Form Tambah Akun]:::sistemNode
+        S_validasi{Validasi Data Input}:::decision
+        S_err_msg[Menampilkan Pesan Error]:::sistemNode
+        S_simpan_db[(Menyimpan Akun ke Database)]:::database
+        S_sukses[Menampilkan Notifikasi Sukses]:::sistemNode
+        S_selesai([Selesai]):::startEnd
+    end
+
+    A_start --> A_buka
+    A_buka --> A_klik_tambah
+    A_klik_tambah --> S_tampil_form
+    S_tampil_form --> A_isi_form
+    A_isi_form --> A_klik_simpan
+    A_klik_simpan --> S_validasi
+    
+    S_validasi -- Tidak Valid --> S_err_msg
+    S_err_msg --> S_tampil_form
+    
+    S_validasi -- Valid --> S_simpan_db
+    S_simpan_db --> S_sukses
+    S_sukses --> S_selesai
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="steps-table-container">
+                    <h3>📋 Alur Aktivitas Berdasarkan Peran</h3>
+                    <table class="steps-table">
+                        <thead>
+                            <tr>
+                                <th>Aktor (Admin)</th>
+                                <th>Sistem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">1</span>Membuka Menu Kelola Akun dan mengklik tombol "Tambah Akun"</td>
+                                <td class="system-cell"><span class="step-num">2</span>Menampilkan form Tambah Akun yang berisi input Username, Email, Password, Role, dan Polres terkait.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">3</span>Mengisi form secara lengkap dan mengklik tombol "Simpan"</td>
+                                <td class="system-cell"><span class="step-num">4</span>Menerima data, melakukan validasi format email, kekuatan password, dan keunikan username/email di database.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">5</span><span class="idle-indicator">(Menunggu perbaikan jika data input tidak valid)</span></td>
+                                <td class="system-cell"><span class="step-num">6</span>Jika input <strong>Tidak Valid</strong>, menampilkan pesan kesalahan/error di form. Jika <strong>Valid</strong>, meng-hash password dan menyimpannya ke database.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">7</span><span class="idle-indicator">(Melihat notifikasi sukses)</span></td>
+                                <td class="system-cell"><span class="step-num">8</span>Menampilkan pesan notifikasi berhasil menambahkan akun, memicu relasi profile otomatis (via Django signal), dan mengarahkan kembali ke daftar akun. Selesai.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 1b. Edit Akun -->
+            <div class="tab-content" id="tab-akun-edit" data-parent="akun">
+                <div class="tech-panel">
+                    <strong>💡 Rincian Arsitektur:</strong>
+                    <p>Mengambil data dengan primary key model user. Fitur mengubah role dan status aktif akun. Database melakukan update via QuerySet Django.</p>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📝 Activity Diagram - Edit Akun</span>
+                        <div class="card-controls">
+                            <button class="control-btn btn-zoom-in" data-tooltip="Zoom In">➕</button>
+                            <button class="control-btn btn-zoom-out" data-tooltip="Zoom Out">➖</button>
+                            <button class="control-btn btn-zoom-reset" data-tooltip="Reset Zoom">🔄</button>
+                            <button class="control-btn btn-copy" data-tooltip="Copy Mermaid Code">📋</button>
+                            <button class="control-btn btn-download" data-tooltip="Download SVG">💾</button>
+                        </div>
+                    </div>
+                    <div class="mermaid-container">
+                        <div class="mermaid-wrapper">
+                            <div class="mermaid">
+flowchart LR
+    classDef aktorNode fill:#E3F2FD,stroke:#1565C0,stroke-width:2px,color:#0D47A1,rx:8px,ry:8px;
+    classDef sistemNode fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#4A148C,rx:8px,ry:8px;
+    classDef startEnd fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20,rx:20px,ry:20px;
+    classDef decision fill:#FFF9C4,stroke:#FBC02D,stroke-width:2px,color:#F57F17,rx:8px,ry:8px;
+    classDef database fill:#ECEFF1,stroke:#455A64,stroke-width:2px,color:#263238,rx:5px,ry:5px;
+
+    subgraph Aktor ["Aktor (Admin)"]
+        direction TB
+        A_start([Mulai]):::startEnd
+        A_buka[Membuka Menu Kelola Akun]:::aktorNode
+        A_pilih_akun[Memilih Akun dari Daftar]:::aktorNode
+        A_klik_edit[Klik Tombol 'Edit']:::aktorNode
+        A_ubah_form[Mengubah Data Akun<br/>Email, Role, Status Aktif]:::aktorNode
+        A_klik_update[Klik Tombol 'Update']:::aktorNode
+    end
+
+    subgraph Sistem ["Sistem"]
+        direction TB
+        S_ambil_data[(Mengambil Data Akun)]:::database
+        S_tampil_form[Menampilkan Form Edit dengan Data]:::sistemNode
+        S_validasi{Validasi Data Input}:::decision
+        S_err_msg[Menampilkan Pesan Error]:::sistemNode
+        S_update_db[(Memperbarui Data Akun)]:::database
+        S_sukses[Menampilkan Notifikasi Sukses]:::sistemNode
+        S_selesai([Selesai]):::startEnd
+    end
+
+    A_start --> A_buka
+    A_buka --> A_pilih_akun
+    A_pilih_akun --> A_klik_edit
+    A_klik_edit --> S_ambil_data
+    S_ambil_data --> S_tampil_form
+    S_tampil_form --> A_ubah_form
+    A_ubah_form --> A_klik_update
+    A_klik_update --> S_validasi
+    
+    S_validasi -- Tidak Valid --> S_err_msg
+    S_err_msg --> S_tampil_form
+    
+    S_validasi -- Valid --> S_update_db
+    S_update_db --> S_sukses
+    S_sukses --> S_selesai
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="steps-table-container">
+                    <h3>📋 Alur Aktivitas Berdasarkan Peran</h3>
+                    <table class="steps-table">
+                        <thead>
+                            <tr>
+                                <th>Aktor (Admin)</th>
+                                <th>Sistem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">1</span>Membuka menu, memilih akun yang ingin diubah, dan mengklik tombol "Edit"</td>
+                                <td class="system-cell"><span class="step-num">2</span>Query data user terpilih ke database, lalu merender halaman form edit yang berisi data awal user tersebut.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">3</span>Mengubah nilai input (Email, Role, atau status Keaktifan) lalu mengklik "Update"</td>
+                                <td class="system-cell"><span class="step-num">4</span>Memvalidasi input baru. Memastikan email yang diubah tidak berbenturan dengan user lain.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">5</span><span class="idle-indicator">(Melihat error jika validasi gagal)</span></td>
+                                <td class="system-cell"><span class="step-num">6</span>Jika <strong>Valid</strong>, memperbarui record di database. Jika <strong>Tidak Valid</strong>, memunculkan pesan kesalahan.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">7</span><span class="idle-indicator">(Menerima pesan sukses)</span></td>
+                                <td class="system-cell"><span class="step-num">8</span>Menampilkan pesan notifikasi berhasil memperbarui akun, lalu me-redirect ke halaman utama kelola akun. Selesai.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 1c. Hapus Akun -->
+            <div class="tab-content" id="tab-akun-hapus" data-parent="akun">
+                <div class="tech-panel">
+                    <strong>💡 Rincian Arsitektur:</strong>
+                    <p>Keamanan integritas referensial. Menghapus akun admin akan mengeksekusi django `on_delete=models.CASCADE` pada profil, namun disarankan soft-delete (menonaktifkan status aktif) agar riwayat log data kecelakaan yang pernah diupload tidak hilang.</p>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📝 Activity Diagram - Hapus Akun</span>
+                        <div class="card-controls">
+                            <button class="control-btn btn-zoom-in" data-tooltip="Zoom In">➕</button>
+                            <button class="control-btn btn-zoom-out" data-tooltip="Zoom Out">➖</button>
+                            <button class="control-btn btn-zoom-reset" data-tooltip="Reset Zoom">🔄</button>
+                            <button class="control-btn btn-copy" data-tooltip="Copy Mermaid Code">📋</button>
+                            <button class="control-btn btn-download" data-tooltip="Download SVG">💾</button>
+                        </div>
+                    </div>
+                    <div class="mermaid-container">
+                        <div class="mermaid-wrapper">
+                            <div class="mermaid">
+flowchart LR
+    classDef aktorNode fill:#E3F2FD,stroke:#1565C0,stroke-width:2px,color:#0D47A1,rx:8px,ry:8px;
+    classDef sistemNode fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#4A148C,rx:8px,ry:8px;
+    classDef startEnd fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20,rx:20px,ry:20px;
+    classDef decision fill:#FFF9C4,stroke:#FBC02D,stroke-width:2px,color:#F57F17,rx:8px,ry:8px;
+    classDef database fill:#ECEFF1,stroke:#455A64,stroke-width:2px,color:#263238,rx:5px,ry:5px;
+
+    subgraph Aktor ["Aktor (Admin)"]
+        direction TB
+        A_start([Mulai]):::startEnd
+        A_buka[Membuka Menu Kelola Akun]:::aktorNode
+        A_pilih_akun[Memilih Akun dari Daftar]:::aktorNode
+        A_klik_hapus[Klik Tombol 'Hapus']:::aktorNode
+        A_konfirmasi{Konfirmasi Hapus?}:::decision
+        A_pilih_batal[Pilih 'Batal']:::aktorNode
+        A_pilih_ya[Pilih 'Ya, Hapus']:::aktorNode
+    end
+
+    subgraph Sistem ["Sistem"]
+        direction TB
+        S_tampil_dialog[Menampilkan Dialog Konfirmasi]:::sistemNode
+        S_hapus_db[(Menghapus Akun/Set Nonaktif)]:::database
+        S_sukses[Menampilkan Notifikasi Sukses]:::sistemNode
+        S_kembali[Kembali ke Daftar Akun]:::sistemNode
+        S_selesai([Selesai]):::startEnd
+    end
+
+    A_start --> A_buka
+    A_buka --> A_pilih_akun
+    A_pilih_akun --> A_klik_hapus
+    A_klik_hapus --> S_tampil_dialog
+    S_tampil_dialog --> A_konfirmasi
+    
+    A_konfirmasi -- Batal --> A_pilih_batal
+    A_pilih_batal --> S_kembali
+    
+    A_konfirmasi -- Ya --> A_pilih_ya
+    A_pilih_ya --> S_hapus_db
+    S_hapus_db --> S_sukses
+    S_sukses --> S_kembali
+    S_kembali --> S_selesai
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="steps-table-container">
+                    <h3>📋 Alur Aktivitas Berdasarkan Peran</h3>
+                    <table class="steps-table">
+                        <thead>
+                            <tr>
+                                <th>Aktor (Admin)</th>
+                                <th>Sistem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">1</span>Memilih akun dari daftar dan mengklik tombol "Hapus"</td>
+                                <td class="system-cell"><span class="step-num">2</span>Menampilkan modal dialog konfirmasi konseptual: "Apakah Anda yakin ingin menghapus akun ini?"</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">3</span>Memilih tombol <strong>Ya, Hapus</strong> (atau <strong>Batal</strong> jika ingin membatalkan)</td>
+                                <td class="system-cell"><span class="step-num">4</span>Mengevaluasi keputusan konfirmasi. Jika Batal, menutup modal dan kembali ke daftar tanpa mengubah database.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">5</span><span class="idle-indicator">(Menunggu proses database selesai)</span></td>
+                                <td class="system-cell"><span class="step-num">6</span>Jika konfirmasi disetujui, sistem menghapus baris akun dari tabel `coreapp_user` (atau mengubah properti `is_active` menjadi False).</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">7</span><span class="idle-indicator">(Daftar diperbarui otomatis)</span></td>
+                                <td class="system-cell"><span class="step-num">8</span>Menampilkan pesan notifikasi berhasil menghapus data akun dan memperbarui list data akun. Selesai.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TABS FOR KELOLA POLRES -->
+            <!-- 2a. Tambah Polres -->
+            <div class="tab-content" id="tab-polres-tambah" data-parent="polres">
+                <div class="tech-panel">
+                    <strong>💡 Rincian Arsitektur:</strong>
+                    <p>Polres bertindak sebagai entitas kewilayahan utama. Hanya Super Admin yang dapat menambahkan Polres baru dengan validasi field Kode Polres yang bersifat Unique.</p>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📝 Activity Diagram - Tambah Polres</span>
+                        <div class="card-controls">
+                            <button class="control-btn btn-zoom-in" data-tooltip="Zoom In">➕</button>
+                            <button class="control-btn btn-zoom-out" data-tooltip="Zoom Out">➖</button>
+                            <button class="control-btn btn-zoom-reset" data-tooltip="Reset Zoom">🔄</button>
+                            <button class="control-btn btn-copy" data-tooltip="Copy Mermaid Code">📋</button>
+                            <button class="control-btn btn-download" data-tooltip="Download SVG">💾</button>
+                        </div>
+                    </div>
+                    <div class="mermaid-container">
+                        <div class="mermaid-wrapper">
+                            <div class="mermaid">
+flowchart LR
+    classDef aktorNode fill:#E3F2FD,stroke:#1565C0,stroke-width:2px,color:#0D47A1,rx:8px,ry:8px;
+    classDef sistemNode fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#4A148C,rx:8px,ry:8px;
+    classDef startEnd fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20,rx:20px,ry:20px;
+    classDef decision fill:#FFF9C4,stroke:#FBC02D,stroke-width:2px,color:#F57F17,rx:8px,ry:8px;
+    classDef database fill:#ECEFF1,stroke:#455A64,stroke-width:2px,color:#263238,rx:5px,ry:5px;
+
+    subgraph Aktor ["Aktor (Super Admin)"]
+        direction TB
+        A_start([Mulai]):::startEnd
+        A_buka[Membuka Menu Kelola Polres]:::aktorNode
+        A_klik_tambah[Klik Tombol 'Tambah Polres']:::aktorNode
+        A_isi_form[Mengisi Data Polres<br/>Nama, Kode Polres, Alamat, Telepon]:::aktorNode
+        A_klik_simpan[Klik Tombol 'Simpan']:::aktorNode
+    end
+
+    subgraph Sistem ["Sistem"]
+        direction TB
+        S_tampil_form[Menampilkan Form Tambah Polres]:::sistemNode
+        S_validasi{Validasi Data & Keunikan Kode}:::decision
+        S_err_msg[Menampilkan Pesan Error]:::sistemNode
+        S_simpan_db[(Menyimpan Polres ke Database)]:::database
+        S_sukses[Menampilkan Notifikasi Sukses]:::sistemNode
+        S_selesai([Selesai]):::startEnd
+    end
+
+    A_start --> A_buka
+    A_buka --> A_klik_tambah
+    A_klik_tambah --> S_tampil_form
+    S_tampil_form --> A_isi_form
+    A_isi_form --> A_klik_simpan
+    A_klik_simpan --> S_validasi
+    
+    S_validasi -- Tidak Valid / Kode Duplikat --> S_err_msg
+    S_err_msg --> S_tampil_form
+    
+    S_validasi -- Valid --> S_simpan_db
+    S_simpan_db --> S_sukses
+    S_sukses --> S_selesai
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="steps-table-container">
+                    <h3>📋 Alur Aktivitas Berdasarkan Peran</h3>
+                    <table class="steps-table">
+                        <thead>
+                            <tr>
+                                <th>Aktor (Super Admin)</th>
+                                <th>Sistem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">1</span>Membuka halaman Kelola Polres dan mengklik "Tambah Polres"</td>
+                                <td class="system-cell"><span class="step-num">2</span>Mengecek hak akses pengguna, kemudian merender form tambah Polres baru.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">3</span>Menginputkan data: Nama Polres, Kode Polres (kode wilayah), Alamat, dan Telepon, lalu mengklik "Simpan"</td>
+                                <td class="system-cell"><span class="step-num">4</span>Menerima payload form, mengecek apakah Kode Polres sudah terdaftar sebelumnya di database.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">5</span><span class="idle-indicator">(Mengoreksi kode jika terjadi duplikasi)</span></td>
+                                <td class="system-cell"><span class="step-num">6</span>Jika kode duplikat, menolak penyimpanan dan menampilkan error. Jika kode unik, menyimpan data baru ke tabel `coreapp_polres`.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">7</span><span class="idle-indicator">(Polres baru terdaftar)</span></td>
+                                <td class="system-cell"><span class="step-num">8</span>Menampilkan pemberitahuan sukses dan mengarahkan kembali halaman ke daftar Polres. Selesai.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 2b. Edit Polres -->
+            <div class="tab-content" id="tab-polres-edit" data-parent="polres">
+                <div class="tech-panel">
+                    <strong>💡 Rincian Arsitektur:</strong>
+                    <p>Memungkinkan pengeditan data Polres. Kode polres biasanya tidak diizinkan diubah (read-only) untuk mencegah rusaknya integritas referensial data eksternal.</p>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📝 Activity Diagram - Edit Polres</span>
+                        <div class="card-controls">
+                            <button class="control-btn btn-zoom-in" data-tooltip="Zoom In">➕</button>
+                            <button class="control-btn btn-zoom-out" data-tooltip="Zoom Out">➖</button>
+                            <button class="control-btn btn-zoom-reset" data-tooltip="Reset Zoom">🔄</button>
+                            <button class="control-btn btn-copy" data-tooltip="Copy Mermaid Code">📋</button>
+                            <button class="control-btn btn-download" data-tooltip="Download SVG">💾</button>
+                        </div>
+                    </div>
+                    <div class="mermaid-container">
+                        <div class="mermaid-wrapper">
+                            <div class="mermaid">
+flowchart LR
+    classDef aktorNode fill:#E3F2FD,stroke:#1565C0,stroke-width:2px,color:#0D47A1,rx:8px,ry:8px;
+    classDef sistemNode fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#4A148C,rx:8px,ry:8px;
+    classDef startEnd fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20,rx:20px,ry:20px;
+    classDef decision fill:#FFF9C4,stroke:#FBC02D,stroke-width:2px,color:#F57F17,rx:8px,ry:8px;
+    classDef database fill:#ECEFF1,stroke:#455A64,stroke-width:2px,color:#263238,rx:5px,ry:5px;
+
+    subgraph Aktor ["Aktor (Super Admin)"]
+        direction TB
+        A_start([Mulai]):::startEnd
+        A_buka[Membuka Menu Kelola Polres]:::aktorNode
+        A_pilih_polres[Memilih Polres dari Daftar]:::aktorNode
+        A_klik_edit[Klik Tombol 'Edit']:::aktorNode
+        A_ubah_form[Mengubah Data Polres<br/>Nama, Alamat, Telepon, Status]:::aktorNode
+        A_klik_update[Klik Tombol 'Update']:::aktorNode
+    end
+
+    subgraph Sistem ["Sistem"]
+        direction TB
+        S_ambil_data[(Mengambil Data Polres)]:::database
+        S_tampil_form[Menampilkan Form Edit dengan Data]:::sistemNode
+        S_validasi{Validasi Data Input}:::decision
+        S_err_msg[Menampilkan Pesan Error]:::sistemNode
+        S_update_db[(Memperbarui Data Polres)]:::database
+        S_sukses[Menampilkan Notifikasi Sukses]:::sistemNode
+        S_selesai([Selesai]):::startEnd
+    end
+
+    A_start --> A_buka
+    A_buka --> A_pilih_polres
+    A_pilih_polres --> A_klik_edit
+    A_klik_edit --> S_ambil_data
+    S_ambil_data --> S_tampil_form
+    S_tampil_form --> A_ubah_form
+    A_ubah_form --> A_klik_update
+    A_klik_update --> S_validasi
+    
+    S_validasi -- Tidak Valid --> S_err_msg
+    S_err_msg --> S_tampil_form
+    
+    S_validasi -- Valid --> S_update_db
+    S_update_db --> S_sukses
+    S_sukses --> S_selesai
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="steps-table-container">
+                    <h3>📋 Alur Aktivitas Berdasarkan Peran</h3>
+                    <table class="steps-table">
+                        <thead>
+                            <tr>
+                                <th>Aktor (Super Admin)</th>
+                                <th>Sistem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">1</span>Membuka menu list Polres, memilih instansi Polres, dan mengklik tombol "Edit"</td>
+                                <td class="system-cell"><span class="step-num">2</span>Menarik data Polres tersebut dari DB, lalu menampilkannya pada form pengeditan.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">3</span>Mengedit informasi Alamat, Nomor Telepon, atau Nama Instansi, lalu mengklik "Update"</td>
+                                <td class="system-cell"><span class="step-num">4</span>Menerima request update dan menjalankan pemeriksaan integritas validasi form.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">5</span><span class="idle-indicator">(Mengamati perubahan status)</span></td>
+                                <td class="system-cell"><span class="step-num">6</span>Jika data input bersih, memperbarui baris data di tabel `coreapp_polres` menggunakan query update.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">7</span><span class="idle-indicator">(Melihat daftar terupdate)</span></td>
+                                <td class="system-cell"><span class="step-num">8</span>Menampilkan pesan konfirmasi sukses memperbarui data Polres dan me-redirect browser kembali. Selesai.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 2c. Hapus Polres -->
+            <div class="tab-content" id="tab-polres-hapus" data-parent="polres">
+                <div class="tech-panel">
+                    <strong>💡 Rincian Arsitektur:</strong>
+                    <p>Karena Polres memiliki relasi Foreign Key ke user dan ruas jalan, penghapusan data Polres menggunakan opsi `on_delete=models.SET_NULL` agar data historis jalan & kecelakaan yang dilaporkan Polres tersebut tidak ikut terhapus.</p>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📝 Activity Diagram - Hapus Polres</span>
+                        <div class="card-controls">
+                            <button class="control-btn btn-zoom-in" data-tooltip="Zoom In">➕</button>
+                            <button class="control-btn btn-zoom-out" data-tooltip="Zoom Out">➖</button>
+                            <button class="control-btn btn-zoom-reset" data-tooltip="Reset Zoom">🔄</button>
+                            <button class="control-btn btn-copy" data-tooltip="Copy Mermaid Code">📋</button>
+                            <button class="control-btn btn-download" data-tooltip="Download SVG">💾</button>
+                        </div>
+                    </div>
+                    <div class="mermaid-container">
+                        <div class="mermaid-wrapper">
+                            <div class="mermaid">
+flowchart LR
+    classDef aktorNode fill:#E3F2FD,stroke:#1565C0,stroke-width:2px,color:#0D47A1,rx:8px,ry:8px;
+    classDef sistemNode fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#4A148C,rx:8px,ry:8px;
+    classDef startEnd fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20,rx:20px,ry:20px;
+    classDef decision fill:#FFF9C4,stroke:#FBC02D,stroke-width:2px,color:#F57F17,rx:8px,ry:8px;
+    classDef database fill:#ECEFF1,stroke:#455A64,stroke-width:2px,color:#263238,rx:5px,ry:5px;
+
+    subgraph Aktor ["Aktor (Super Admin)"]
+        direction TB
+        A_start([Mulai]):::startEnd
+        A_buka[Membuka Menu Kelola Polres]:::aktorNode
+        A_pilih_polres[Memilih Polres dari Daftar]:::aktorNode
+        A_klik_hapus[Klik Tombol 'Hapus']:::aktorNode
+        A_konfirmasi{Konfirmasi Hapus?}:::decision
+        A_pilih_batal[Pilih 'Batal']:::aktorNode
+        A_pilih_ya[Pilih 'Ya, Hapus']:::aktorNode
+    end
+
+    subgraph Sistem ["Sistem"]
+        direction TB
+        S_tampil_dialog[Menampilkan Dialog Konfirmasi]:::sistemNode
+        S_hapus_db[(Menghapus Polres dari DB &<br/>Set Null relasi User/Profile)]:::database
+        S_sukses[Menampilkan Notifikasi Sukses]:::sistemNode
+        S_kembali[Kembali ke Daftar Polres]:::sistemNode
+        S_selesai([Selesai]):::startEnd
+    end
+
+    A_start --> A_buka
+    A_buka --> A_pilih_polres
+    A_pilih_polres --> A_klik_hapus
+    A_klik_hapus --> S_tampil_dialog
+    S_tampil_dialog --> A_konfirmasi
+    
+    A_konfirmasi -- Batal --> A_pilih_batal
+    A_pilih_batal --> S_kembali
+    
+    A_konfirmasi -- Ya --> A_pilih_ya
+    A_pilih_ya --> S_hapus_db
+    S_hapus_db --> S_sukses
+    S_sukses --> S_kembali
+    S_kembali --> S_selesai
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="steps-table-container">
+                    <h3>📋 Alur Aktivitas Berdasarkan Peran</h3>
+                    <table class="steps-table">
+                        <thead>
+                            <tr>
+                                <th>Aktor (Super Admin)</th>
+                                <th>Sistem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">1</span>Memilih Polres dari daftar dan mengklik tombol "Hapus"</td>
+                                <td class="system-cell"><span class="step-num">2</span>Menampilkan dialog konfirmasi dengan menyertakan peringatan implikasi data relasional.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">3</span>Mengonfirmasi tindakan dengan memilih opsi "Ya, Hapus"</td>
+                                <td class="system-cell"><span class="step-num">4</span>Mengevaluasi keputusan konfirmasi. Jika disetujui, menjalankan operasi DELETE query ke database.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">5</span><span class="idle-indicator">(Menunggu integritas data diproses)</span></td>
+                                <td class="system-cell"><span class="step-num">6</span>Database mengeksekusi penghapusan baris Polres, dan melakukan `SET NULL` pada kolom FK `polres_id` di tabel User/Profile secara otomatis.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">7</span><span class="idle-indicator">(Melihat list terbaru)</span></td>
+                                <td class="system-cell"><span class="step-num">8</span>Menampilkan status notifikasi sukses terhapus dan merender kembali daftar Polres. Selesai.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TABS FOR KELOLA RUAS JALAN -->
+            <!-- 3a. Tambah Ruas Jalan -->
+            <div class="tab-content" id="tab-ruas-tambah" data-parent="ruas">
+                <div class="tech-panel">
+                    <strong>💡 Rincian Arsitektur:</strong>
+                    <p>Ruas Jalan memiliki koordinat spasial awal-akhir dan data spasial multiline (GeoJSON LineString). Form dilengkapi map Leaflet untuk penggambaran geometri.</p>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📝 Activity Diagram - Tambah Ruas Jalan</span>
+                        <div class="card-controls">
+                            <button class="control-btn btn-zoom-in" data-tooltip="Zoom In">➕</button>
+                            <button class="control-btn btn-zoom-out" data-tooltip="Zoom Out">➖</button>
+                            <button class="control-btn btn-zoom-reset" data-tooltip="Reset Zoom">🔄</button>
+                            <button class="control-btn btn-copy" data-tooltip="Copy Mermaid Code">📋</button>
+                            <button class="control-btn btn-download" data-tooltip="Download SVG">💾</button>
+                        </div>
+                    </div>
+                    <div class="mermaid-container">
+                        <div class="mermaid-wrapper">
+                            <div class="mermaid">
+flowchart LR
+    classDef aktorNode fill:#E3F2FD,stroke:#1565C0,stroke-width:2px,color:#0D47A1,rx:8px,ry:8px;
+    classDef sistemNode fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#4A148C,rx:8px,ry:8px;
+    classDef startEnd fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20,rx:20px,ry:20px;
+    classDef decision fill:#FFF9C4,stroke:#FBC02D,stroke-width:2px,color:#F57F17,rx:8px,ry:8px;
+    classDef database fill:#ECEFF1,stroke:#455A64,stroke-width:2px,color:#263238,rx:5px,ry:5px;
+
+    subgraph Aktor ["Aktor (Admin / Polres)"]
+        direction TB
+        A_start([Mulai]):::startEnd
+        A_buka[Membuka Menu Kelola Ruas Jalan]:::aktorNode
+        A_klik_tambah[Klik Tombol 'Tambah Ruas Jalan']:::aktorNode
+        A_isi_form[Mengisi Form & Gambar/Draw Line<br/>di Peta Koordinat GeoJSON]:::aktorNode
+        A_klik_simpan[Klik Tombol 'Simpan']:::aktorNode
+    end
+
+    subgraph Sistem ["Sistem"]
+        direction TB
+        S_tampil_form[Menampilkan Form Tambah Ruas<br/>dengan Map Leaflet/OpenStreetMap]:::sistemNode
+        S_validasi{Validasi Data & Format GeoJSON}:::decision
+        S_err_msg[Menampilkan Pesan Error Validasi]:::sistemNode
+        S_simpan_db[(Menyimpan Ruas Jalan ke DB)]:::database
+        S_sukses[Menampilkan Notifikasi Sukses]:::sistemNode
+        S_selesai([Selesai]):::startEnd
+    end
+
+    A_start --> A_buka
+    A_buka --> A_klik_tambah
+    A_klik_tambah --> S_tampil_form
+    S_tampil_form --> A_isi_form
+    A_isi_form --> A_klik_simpan
+    A_klik_simpan --> S_validasi
+    
+    S_validasi -- Tidak Valid / GeoJSON Rusak --> S_err_msg
+    S_err_msg --> S_tampil_form
+    
+    S_validasi -- Valid --> S_simpan_db
+    S_simpan_db --> S_sukses
+    S_sukses --> S_selesai
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="steps-table-container">
+                    <h3>📋 Alur Aktivitas Berdasarkan Peran</h3>
+                    <table class="steps-table">
+                        <thead>
+                            <tr>
+                                <th>Aktor (Admin / Polres)</th>
+                                <th>Sistem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">1</span>Membuka menu Ruas Jalan dan mengklik "Tambah Ruas Jalan"</td>
+                                <td class="system-cell"><span class="step-num">2</span>Merender form tambah ruas jalan, memuat peta interaktif OpenStreetMap/Leaflet untuk input gambar geometri jalan.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">3</span>Mengisi nama jalan, panjang, polres penanggung jawab, lalu menggambar garis (LineString) jalan di peta interaktif dan klik "Simpan"</td>
+                                <td class="system-cell"><span class="step-num">4</span>Mengekstrak metadata input dan data spasial GeoJSON, lalu melakukan validasi kelayakan data geografis.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">5</span><span class="idle-indicator">(Mengedit jalur jika format koordinat ditolak)</span></td>
+                                <td class="system-cell"><span class="step-num">6</span>Jika format koordinat salah/rusak, menampilkan error overlay. Jika valid, menyimpan data ruas jalan ke tabel `coreapp_ruasjalan` di database.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">7</span><span class="idle-indicator">(Mengamati peta jalan baru)</span></td>
+                                <td class="system-cell"><span class="step-num">8</span>Menampilkan notifikasi sukses, lalu mengarahkan kembali ke peta/daftar ruas jalan utama. Selesai.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 3b. Edit Ruas Jalan -->
+            <div class="tab-content" id="tab-ruas-edit" data-parent="ruas">
+                <div class="tech-panel">
+                    <strong>💡 Rincian Arsitektur:</strong>
+                    <p>Mengambil koordinat GeoJSON lama dari database untuk diproyeksikan kembali ke peta edit Leaflet. Perubahan koordinat langsung divalidasi oleh backend GeoDjango.</p>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📝 Activity Diagram - Edit Ruas Jalan</span>
+                        <div class="card-controls">
+                            <button class="control-btn btn-zoom-in" data-tooltip="Zoom In">➕</button>
+                            <button class="control-btn btn-zoom-out" data-tooltip="Zoom Out">➖</button>
+                            <button class="control-btn btn-zoom-reset" data-tooltip="Reset Zoom">🔄</button>
+                            <button class="control-btn btn-copy" data-tooltip="Copy Mermaid Code">📋</button>
+                            <button class="control-btn btn-download" data-tooltip="Download SVG">💾</button>
+                        </div>
+                    </div>
+                    <div class="mermaid-container">
+                        <div class="mermaid-wrapper">
+                            <div class="mermaid">
+flowchart LR
+    classDef aktorNode fill:#E3F2FD,stroke:#1565C0,stroke-width:2px,color:#0D47A1,rx:8px,ry:8px;
+    classDef sistemNode fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#4A148C,rx:8px,ry:8px;
+    classDef startEnd fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20,rx:20px,ry:20px;
+    classDef decision fill:#FFF9C4,stroke:#FBC02D,stroke-width:2px,color:#F57F17,rx:8px,ry:8px;
+    classDef database fill:#ECEFF1,stroke:#455A64,stroke-width:2px,color:#263238,rx:5px,ry:5px;
+
+    subgraph Aktor ["Aktor (Admin / Polres)"]
+        direction TB
+        A_start([Mulai]):::startEnd
+        A_buka[Membuka Menu Kelola Ruas Jalan]:::aktorNode
+        A_pilih_ruas[Memilih Ruas Jalan dari Daftar]:::aktorNode
+        A_klik_edit[Klik Tombol 'Edit']:::aktorNode
+        A_ubah_form[Mengubah Data & Edit Line<br/>di Peta Koordinat GeoJSON]:::aktorNode
+        A_klik_update[Klik Tombol 'Update']:::aktorNode
+    end
+
+    subgraph Sistem ["Sistem"]
+        direction TB
+        S_ambil_data[(Mengambil Data Ruas Jalan)]:::database
+        S_tampil_form[Menampilkan Form Edit & Map<br/>dengan Line Gambar Terkini]:::sistemNode
+        S_validasi{Validasi Data & Format GeoJSON}:::decision
+        S_err_msg[Menampilkan Pesan Error Validasi]:::sistemNode
+        S_update_db[(Memperbarui Ruas Jalan di DB)]:::database
+        S_sukses[Menampilkan Notifikasi Sukses]:::sistemNode
+        S_selesai([Selesai]):::startEnd
+    end
+
+    A_start --> A_buka
+    A_buka --> A_pilih_ruas
+    A_pilih_ruas --> A_klik_edit
+    A_klik_edit --> S_ambil_data
+    S_ambil_data --> S_tampil_form
+    S_tampil_form --> A_ubah_form
+    A_ubah_form --> A_klik_update
+    A_klik_update --> S_validasi
+    
+    S_validasi -- Tidak Valid --> S_err_msg
+    S_err_msg --> S_tampil_form
+    
+    S_validasi -- Valid --> S_update_db
+    S_update_db --> S_sukses
+    S_sukses --> S_selesai
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="steps-table-container">
+                    <h3>📋 Alur Aktivitas Berdasarkan Peran</h3>
+                    <table class="steps-table">
+                        <thead>
+                            <tr>
+                                <th>Aktor (Admin / Polres)</th>
+                                <th>Sistem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">1</span>Memilih salah satu Ruas Jalan dari tabel dan mengklik tombol "Edit"</td>
+                                <td class="system-cell"><span class="step-num">2</span>Query data ruas jalan lama, memuat layer peta interaktif dengan polylines spasial yang lama digambar di peta.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">3</span>Menggeser titik koordinat (vertex) di peta atau mengganti isian tekstual, lalu mengklik "Update"</td>
+                                <td class="system-cell"><span class="step-num">4</span>Membaca data payload baru, memvalidasi integritas koordinat geometris.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">5</span><span class="idle-indicator">(Meninjau kesalahan jika ditolak)</span></td>
+                                <td class="system-cell"><span class="step-num">6</span>Jika input valid, melakukan database update ke tabel `coreapp_ruasjalan`. Jika tidak valid, mengembalikan feedback error.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">7</span><span class="idle-indicator">(Melihat peta terupdate)</span></td>
+                                <td class="system-cell"><span class="step-num">8</span>Menampilkan notifikasi keberhasilan pembaruan ruas jalan dan me-redirect ke peta ruas jalan. Selesai.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 3c. Hapus Ruas Jalan -->
+            <div class="tab-content" id="tab-ruas-hapus" data-parent="ruas">
+                <div class="tech-panel">
+                    <strong>💡 Rincian Arsitektur:</strong>
+                    <p>Menghapus Ruas Jalan akan memicu cascade delete pada level model (`coreapp_segmenjalan` terhapus otomatis) karena segmen adalah bagian pecahan dari ruas jalan tersebut.</p>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📝 Activity Diagram - Hapus Ruas Jalan</span>
+                        <div class="card-controls">
+                            <button class="control-btn btn-zoom-in" data-tooltip="Zoom In">➕</button>
+                            <button class="control-btn btn-zoom-out" data-tooltip="Zoom Out">➖</button>
+                            <button class="control-btn btn-zoom-reset" data-tooltip="Reset Zoom">🔄</button>
+                            <button class="control-btn btn-copy" data-tooltip="Copy Mermaid Code">📋</button>
+                            <button class="control-btn btn-download" data-tooltip="Download SVG">💾</button>
+                        </div>
+                    </div>
+                    <div class="mermaid-container">
+                        <div class="mermaid-wrapper">
+                            <div class="mermaid">
+flowchart LR
+    classDef aktorNode fill:#E3F2FD,stroke:#1565C0,stroke-width:2px,color:#0D47A1,rx:8px,ry:8px;
+    classDef sistemNode fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#4A148C,rx:8px,ry:8px;
+    classDef startEnd fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20,rx:20px,ry:20px;
+    classDef decision fill:#FFF9C4,stroke:#FBC02D,stroke-width:2px,color:#F57F17,rx:8px,ry:8px;
+    classDef database fill:#ECEFF1,stroke:#455A64,stroke-width:2px,color:#263238,rx:5px,ry:5px;
+
+    subgraph Aktor ["Aktor (Admin / Polres)"]
+        direction TB
+        A_start([Mulai]):::startEnd
+        A_buka[Membuka Menu Kelola Ruas Jalan]:::aktorNode
+        A_pilih_ruas[Memilih Ruas Jalan dari Daftar]:::aktorNode
+        A_klik_hapus[Klik Tombol 'Hapus']:::aktorNode
+        A_konfirmasi{Konfirmasi Hapus?}:::decision
+        A_pilih_batal[Pilih 'Batal']:::aktorNode
+        A_pilih_ya[Pilih 'Ya, Hapus']:::aktorNode
+    end
+
+    subgraph Sistem ["Sistem"]
+        direction TB
+        S_tampil_dialog[Menampilkan Dialog Konfirmasi<br/>Peringatan: Segmen terhubung akan terhapus!]:::sistemNode
+        S_hapus_db[(Menghapus Ruas Jalan dari DB<br/>secara Cascading)]:::database
+        S_sukses[Menampilkan Notifikasi Sukses]:::sistemNode
+        S_kembali[Kembali ke Daftar Ruas Jalan]:::sistemNode
+        S_selesai([Selesai]):::startEnd
+    end
+
+    A_start --> A_buka
+    A_buka --> A_pilih_ruas
+    A_pilih_ruas --> A_klik_hapus
+    A_klik_hapus --> S_tampil_dialog
+    S_tampil_dialog --> A_konfirmasi
+    
+    A_konfirmasi -- Batal --> A_pilih_batal
+    A_pilih_batal --> S_kembali
+    
+    A_konfirmasi -- Ya --> A_pilih_ya
+    A_pilih_ya --> S_hapus_db
+    S_hapus_db --> S_sukses
+    S_sukses --> S_kembali
+    S_kembali --> S_selesai
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="steps-table-container">
+                    <h3>📋 Alur Aktivitas Berdasarkan Peran</h3>
+                    <table class="steps-table">
+                        <thead>
+                            <tr>
+                                <th>Aktor (Admin / Polres)</th>
+                                <th>Sistem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">1</span>Memilih ruas jalan tertentu dari tabel dan mengklik tombol "Hapus"</td>
+                                <td class="system-cell"><span class="step-num">2</span>Menampilkan dialog konfirmasi dengan peringatan keras: "Menghapus ruas jalan ini akan secara otomatis menghapus seluruh segmen jalan terkait!"</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">3</span>Mengonfirmasi tindakan hapus dengan menekan tombol "Ya, Hapus"</td>
+                                <td class="system-cell"><span class="step-num">4</span>Membaca status konfirmasi pengguna. Jika batal, kembali ke dashboard list.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">5</span><span class="idle-indicator">(Menunggu penghapusan database cascading selesai)</span></td>
+                                <td class="system-cell"><span class="step-num">6</span>Jika disetujui, mengeksekusi query DELETE. Database Django ORM secara otomatis melakukan penghapusan cascading ke tabel `coreapp_segmenjalan`.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">7</span><span class="idle-indicator">(Mengamati perubahan list)</span></td>
+                                <td class="system-cell"><span class="step-num">8</span>Menampilkan alert notifikasi sukses hapus, dan memuat ulang tabel daftar ruas jalan terbaru. Selesai.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TABS FOR KELOLA DATA PEMETAAN -->
+            <!-- 4a. Upload Data Pemetaan -->
+            <div class="tab-content" id="tab-pemetaan-upload" data-parent="pemetaan">
+                <div class="tech-panel">
+                    <strong>💡 Rincian Arsitektur:</strong>
+                    <p>Setelah data CSV/Excel dibaca, sistem menjalankan algoritma spasial (Perpendicular Distance) untuk mengasosiasikan latitude & longitude kecelakaan secara otomatis ke segmen jalan terdekat. Setelah itu, rekapitulasi data per segmen & perhitungan Z-Score langsung dijalankan di background.</p>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📝 Activity Diagram - Upload Data Pemetaan</span>
+                        <div class="card-controls">
+                            <button class="control-btn btn-zoom-in" data-tooltip="Zoom In">➕</button>
+                            <button class="control-btn btn-zoom-out" data-tooltip="Zoom Out">➖</button>
+                            <button class="control-btn btn-zoom-reset" data-tooltip="Reset Zoom">🔄</button>
+                            <button class="control-btn btn-copy" data-tooltip="Copy Mermaid Code">📋</button>
+                            <button class="control-btn btn-download" data-tooltip="Download SVG">💾</button>
+                        </div>
+                    </div>
+                    <div class="mermaid-container">
+                        <div class="mermaid-wrapper">
+                            <div class="mermaid">
+flowchart LR
+    classDef aktorNode fill:#E3F2FD,stroke:#1565C0,stroke-width:2px,color:#0D47A1,rx:8px,ry:8px;
+    classDef sistemNode fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#4A148C,rx:8px,ry:8px;
+    classDef startEnd fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20,rx:20px,ry:20px;
+    classDef decision fill:#FFF9C4,stroke:#FBC02D,stroke-width:2px,color:#F57F17,rx:8px,ry:8px;
+    classDef database fill:#ECEFF1,stroke:#455A64,stroke-width:2px,color:#263238,rx:5px,ry:5px;
+
+    subgraph Aktor ["Aktor (Admin / Polres)"]
+        direction TB
+        A_start([Mulai]):::startEnd
+        A_buka[Membuka Menu Data Pemetaan]:::aktorNode
+        A_download[Unduh Template Excel/CSV - Opsional]:::aktorNode
+        A_klik_upload[Klik Tombol 'Upload Data']:::aktorNode
+        A_pilih_file[Memilih File Data Kecelakaan]:::aktorNode
+        A_klik_proses[Klik Tombol 'Proses Upload']:::aktorNode
+    end
+
+    subgraph Sistem ["Sistem"]
+        direction TB
+        S_tampil_form[Menampilkan Modal Upload]:::sistemNode
+        S_baca_file[Membaca File Excel/CSV]:::sistemNode
+        S_validasi{Validasi Struktur & Data}:::decision
+        S_err_msg[Menampilkan Error Baris/Kolom]:::sistemNode
+        S_proses_map[Auto-Assign ke Segmen Terdekat<br/>Perpendicular Distance]:::sistemNode
+        S_simpan_db[(Menyimpan Kecelakaan Preprosesing)]:::database
+        S_rekap_zscore[(Update Rekap Segmen &<br/>Hitung Ulang Z-Score)]:::database
+        S_sukses[Menampilkan Ringkasan & Sukses]:::sistemNode
+        S_selesai([Selesai]):::startEnd
+    end
+
+    A_start --> A_buka
+    A_buka --> A_download
+    A_download --> A_klik_upload
+    A_buka --> A_klik_upload
+    A_klik_upload --> S_tampil_form
+    S_tampil_form --> A_pilih_file
+    A_pilih_file --> A_klik_proses
+    A_klik_proses --> S_baca_file
+    S_baca_file --> S_validasi
+    
+    S_validasi -- Tidak Valid / Salah Format --> S_err_msg
+    S_err_msg --> S_tampil_form
+    
+    S_validasi -- Valid --> S_proses_map
+    S_proses_map --> S_simpan_db
+    S_simpan_db --> S_rekap_zscore
+    S_rekap_zscore --> S_sukses
+    S_sukses --> S_selesai
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="steps-table-container">
+                    <h3>📋 Alur Aktivitas Berdasarkan Peran</h3>
+                    <table class="steps-table">
+                        <thead>
+                            <tr>
+                                <th>Aktor (Admin / Polres)</th>
+                                <th>Sistem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">1</span>Membuka menu pemetaan, (opsional) mengunduh template Excel, mengklik tombol "Upload Data"</td>
+                                <td class="system-cell"><span class="step-num">2</span>Menampilkan form modal dialog untuk memilih file spreadsheet (Excel / CSV).</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">3</span>Memilih file data kecelakaan dari harddisk lokal dan mengklik tombol "Proses Upload"</td>
+                                <td class="system-cell"><span class="step-num">4</span>Membaca file menggunakan library python (e.g. pandas), melakukan validasi header kolom & tipe data koordinat.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">5</span><span class="idle-indicator">(Mengoreksi file excel jika validasi gagal)</span></td>
+                                <td class="system-cell"><span class="step-num">6</span>Jika format tidak valid, membatalkan proses dan merender detail baris/kolom yang salah. Jika valid, memetakan koordinat latitude/longitude setiap data kecelakaan ke segmen jalan terdekat (toleransi jarak perpendicular ~50m).</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">7</span><span class="idle-indicator">(Menunggu perhitungan statistik di database)</span></td>
+                                <td class="system-cell"><span class="step-num">8</span>Menyimpan record ke tabel preprocessing, secara otomatis mengkalkulasi ulang data rekapitulasi segmen dan memperbarui status kategori kerawanan Z-Score statistik.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">9</span><span class="idle-indicator">(Melihat statistik hasil upload)</span></td>
+                                <td class="system-cell"><span class="step-num">10</span>Menampilkan notifikasi sukses beserta ringkasan log data (jumlah baris berhasil diimpor). Selesai.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 4b. Hapus Data Pemetaan -->
+            <div class="tab-content" id="tab-pemetaan-hapus" data-parent="pemetaan">
+                <div class="tech-panel">
+                    <strong>💡 Rincian Arsitektur:</strong>
+                    <p>Setelah record kecelakaan dihapus, signal/logic Django akan secara otomatis mentrigger perhitungan ulang (re-calculate) rekap kecelakaan per tahun di segmen terkait, serta melakukan kalkulasi ulang formula Z-Score pada ruas jalan tersebut agar visualisasi peta heatmap langsung akurat.</p>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📝 Activity Diagram - Hapus Data Pemetaan</span>
+                        <div class="card-controls">
+                            <button class="control-btn btn-zoom-in" data-tooltip="Zoom In">➕</button>
+                            <button class="control-btn btn-zoom-out" data-tooltip="Zoom Out">➖</button>
+                            <button class="control-btn btn-zoom-reset" data-tooltip="Reset Zoom">🔄</button>
+                            <button class="control-btn btn-copy" data-tooltip="Copy Mermaid Code">📋</button>
+                            <button class="control-btn btn-download" data-tooltip="Download SVG">💾</button>
+                        </div>
+                    </div>
+                    <div class="mermaid-container">
+                        <div class="mermaid-wrapper">
+                            <div class="mermaid">
+flowchart LR
+    classDef aktorNode fill:#E3F2FD,stroke:#1565C0,stroke-width:2px,color:#0D47A1,rx:8px,ry:8px;
+    classDef sistemNode fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#4A148C,rx:8px,ry:8px;
+    classDef startEnd fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20,rx:20px,ry:20px;
+    classDef decision fill:#FFF9C4,stroke:#FBC02D,stroke-width:2px,color:#F57F17,rx:8px,ry:8px;
+    classDef database fill:#ECEFF1,stroke:#455A64,stroke-width:2px,color:#263238,rx:5px,ry:5px;
+
+    subgraph Aktor ["Aktor (Admin / Polres)"]
+        direction TB
+        A_start([Mulai]):::startEnd
+        A_buka[Membuka Menu Data Pemetaan]:::aktorNode
+        A_pilih_data[Memilih Baris Data Kecelakaan]:::aktorNode
+        A_klik_hapus[Klik Tombol 'Hapus']:::aktorNode
+        A_konfirmasi{Konfirmasi Hapus?}:::decision
+        A_pilih_batal[Pilih 'Batal']:::aktorNode
+        A_pilih_ya[Pilih 'Ya, Hapus']:::aktorNode
+    end
+
+    subgraph Sistem ["Sistem"]
+        direction TB
+        S_tampil_dialog[Menampilkan Dialog Konfirmasi]:::sistemNode
+        S_hapus_db[(Menghapus Data Kecelakaan dari DB)]:::database
+        S_rekap_zscore[(Hitung Ulang Rekap Segmen<br/>& Nilai Z-Score)]:::database
+        S_sukses[Menampilkan Notifikasi Sukses]:::sistemNode
+        S_kembali[Kembali ke Daftar Data]:::sistemNode
+        S_selesai([Selesai]):::startEnd
+    end
+
+    A_start --> A_buka
+    A_buka --> A_pilih_data
+    A_pilih_data --> A_klik_hapus
+    A_klik_hapus --> S_tampil_dialog
+    S_tampil_dialog --> A_konfirmasi
+    
+    A_konfirmasi -- Batal --> A_pilih_batal
+    A_pilih_batal --> S_kembali
+    
+    A_konfirmasi -- Ya --> A_pilih_ya
+    A_pilih_ya --> S_hapus_db
+    S_hapus_db --> S_rekap_zscore
+    S_rekap_zscore --> S_sukses
+    S_sukses --> S_kembali
+    S_kembali --> S_selesai
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="steps-table-container">
+                    <h3>📋 Alur Aktivitas Berdasarkan Peran</h3>
+                    <table class="steps-table">
+                        <thead>
+                            <tr>
+                                <th>Aktor (Admin / Polres)</th>
+                                <th>Sistem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">1</span>Membuka tabel daftar kecelakaan (pemetaan), memilih baris data kecelakaan tertentu, dan mengklik "Hapus"</td>
+                                <td class="system-cell"><span class="step-num">2</span>Menampilkan modal dialog konfirmasi hapus data kecelakaan.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">3</span>Mengonfirmasi tindakan hapus dengan menekan tombol "Ya, Hapus"</td>
+                                <td class="system-cell"><span class="step-num">4</span>Membaca keputusan konfirmasi. Jika batal, menutup dialog modal kembali.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">5</span><span class="idle-indicator">(Menunggu penghitungan ulang data spasial)</span></td>
+                                <td class="system-cell"><span class="step-num">6</span>Mengeksekusi query DELETE record kecelakaan tersebut di database, kemudian memicu routine python recalculation untuk statistik rekapitulasi segmen terkait.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">7</span><span class="idle-indicator">(Menunggu update status Z-Score terupdate)</span></td>
+                                <td class="system-cell"><span class="step-num">8</span>Menjalankan fungsi kalkulasi ulang Z-Score standar deviasi pada seluruh segmen di ruas jalan tersebut, lalu memperbarui data kategorinya di database.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">9</span><span class="idle-indicator">(Melihat list data terupdate)</span></td>
+                                <td class="system-cell"><span class="step-num">10</span>Menampilkan notifikasi keberhasilan penghapusan data dan merender ulang tabel data pemetaan. Selesai.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TABS FOR UBAH DATA PROFILE -->
+            <!-- 5a. Edit Data Profile -->
+            <div class="tab-content" id="tab-profile-edit" data-parent="profile">
+                <div class="tech-panel">
+                    <strong>💡 Rincian Arsitektur:</strong>
+                    <p>Relasi OneToOne antara User model dan Profile model (`coreapp_profile`). Form ini memvalidasi ekstensi file avatar (foto profil) dan nomor telepon agar sesuai dengan format standar.</p>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📝 Activity Diagram - Edit Data Profile</span>
+                        <div class="card-controls">
+                            <button class="control-btn btn-zoom-in" data-tooltip="Zoom In">➕</button>
+                            <button class="control-btn btn-zoom-out" data-tooltip="Zoom Out">➖</button>
+                            <button class="control-btn btn-zoom-reset" data-tooltip="Reset Zoom">🔄</button>
+                            <button class="control-btn btn-copy" data-tooltip="Copy Mermaid Code">📋</button>
+                            <button class="control-btn btn-download" data-tooltip="Download SVG">💾</button>
+                        </div>
+                    </div>
+                    <div class="mermaid-container">
+                        <div class="mermaid-wrapper">
+                            <div class="mermaid">
+flowchart LR
+    classDef aktorNode fill:#E3F2FD,stroke:#1565C0,stroke-width:2px,color:#0D47A1,rx:8px,ry:8px;
+    classDef sistemNode fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#4A148C,rx:8px,ry:8px;
+    classDef startEnd fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20,rx:20px,ry:20px;
+    classDef decision fill:#FFF9C4,stroke:#FBC02D,stroke-width:2px,color:#F57F17,rx:8px,ry:8px;
+    classDef database fill:#ECEFF1,stroke:#455A64,stroke-width:2px,color:#263238,rx:5px,ry:5px;
+
+    subgraph Aktor ["Aktor (User Login)"]
+        direction TB
+        A_start([Mulai]):::startEnd
+        A_buka[Membuka Menu Profil / Akun Saya]:::aktorNode
+        A_klik_edit[Klik Tombol 'Edit Profil']:::aktorNode
+        A_ubah_form[Mengubah Data Profil<br/>Alamat, Telp, Institusi, Jabatan, Foto]:::aktorNode
+        A_klik_simpan[Klik Tombol 'Simpan Perubahan']:::aktorNode
+    end
+
+    subgraph Sistem ["Sistem"]
+        direction TB
+        S_ambil_data[(Mengambil Data User & Profil)]:::database
+        S_tampil_form[Menampilkan Halaman Form Edit]:::sistemNode
+        S_validasi{Validasi Data Input}:::decision
+        S_err_msg[Menampilkan Pesan Error]:::sistemNode
+        S_update_db[(Memperbarui Data Profil)]:::database
+        S_sukses[Menampilkan Notifikasi Sukses]:::sistemNode
+        S_selesai([Selesai]):::startEnd
+    end
+
+    A_start --> A_buka
+    A_buka --> S_ambil_data
+    S_ambil_data --> S_tampil_form
+    S_tampil_form --> A_klik_edit
+    A_klik_edit --> A_ubah_form
+    A_ubah_form --> A_klik_simpan
+    A_klik_simpan --> S_validasi
+    
+    S_validasi -- Tidak Valid --> S_err_msg
+    S_err_msg --> S_tampil_form
+    
+    S_validasi -- Valid --> S_update_db
+    S_update_db --> S_sukses
+    S_sukses --> S_selesai
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="steps-table-container">
+                    <h3>📋 Alur Aktivitas Berdasarkan Peran</h3>
+                    <table class="steps-table">
+                        <thead>
+                            <tr>
+                                <th>Aktor (User Login)</th>
+                                <th>Sistem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">1</span>Membuka menu profil saya / akun saya di pojok kanan atas navbar</td>
+                                <td class="system-cell"><span class="step-num">2</span>Query data user & data profil (tabel `coreapp_profile`) yang aktif dari session login, lalu menampilkannya.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">3</span>Mengklik tombol "Edit Profil"</td>
+                                <td class="system-cell"><span class="step-num">4</span>Merender form isian edit profil yang berisi data saat ini (Alamat, Telepon, Institusi, Jabatan, Foto Profil).</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">5</span>Mengubah data profil yang dibutuhkan dan mengklik tombol "Simpan Perubahan"</td>
+                                <td class="system-cell"><span class="step-num">6</span>Mengevaluasi validitas format data input dan tipe file gambar/avatar yang diunggah.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">7</span><span class="idle-indicator">(Mengoreksi isian form yang bermasalah)</span></td>
+                                <td class="system-cell"><span class="step-num">8</span>Jika input salah, menampilkan error message di atas form. Jika valid, mengunggah foto ke folder `/media/` dan memperbarui record di database.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">9</span><span class="idle-indicator">(Melihat profil baru terupdate)</span></td>
+                                <td class="system-cell"><span class="step-num">10</span>Menampilkan pesan notifikasi berhasil memperbarui profil dan merender kembali halaman detail profil user. Selesai.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TABS FOR LOGIN -->
+            <!-- 6a. Login Email dan Password -->
+            <div class="tab-content" id="tab-login-email" data-parent="login">
+                <div class="tech-panel">
+                    <strong>💡 Rincian Arsitektur:</strong>
+                    <p>Menggunakan standard middleware Django Authentication Session. Mengecek status keaktifan akun user (`is_active`) untuk memblokir akun yang dinonaktifkan oleh administrator.</p>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📝 Activity Diagram - Login Email & Password</span>
+                        <div class="card-controls">
+                            <button class="control-btn btn-zoom-in" data-tooltip="Zoom In">➕</button>
+                            <button class="control-btn btn-zoom-out" data-tooltip="Zoom Out">➖</button>
+                            <button class="control-btn btn-zoom-reset" data-tooltip="Reset Zoom">🔄</button>
+                            <button class="control-btn btn-copy" data-tooltip="Copy Mermaid Code">📋</button>
+                            <button class="control-btn btn-download" data-tooltip="Download SVG">💾</button>
+                        </div>
+                    </div>
+                    <div class="mermaid-container">
+                        <div class="mermaid-wrapper">
+                            <div class="mermaid">
+flowchart LR
+    classDef aktorNode fill:#E3F2FD,stroke:#1565C0,stroke-width:2px,color:#0D47A1,rx:8px,ry:8px;
+    classDef sistemNode fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#4A148C,rx:8px,ry:8px;
+    classDef startEnd fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20,rx:20px,ry:20px;
+    classDef decision fill:#FFF9C4,stroke:#FBC02D,stroke-width:2px,color:#F57F17,rx:8px,ry:8px;
+    classDef database fill:#ECEFF1,stroke:#455A64,stroke-width:2px,color:#263238,rx:5px,ry:5px;
+
+    subgraph Aktor ["Aktor (Admin / Polres)"]
+        direction TB
+        A_start([Mulai]):::startEnd
+        A_buka[Membuka Halaman Login]:::aktorNode
+        A_isi_login[Memasukkan Email & Password]:::aktorNode
+        A_klik_login[Klik Tombol 'Login']:::aktorNode
+    end
+
+    subgraph Sistem ["Sistem"]
+        direction TB
+        S_tampil_login[Menampilkan Halaman Login]:::sistemNode
+        S_cek_kredensial{Cek Email & Password di DB}:::decision
+        S_err_kredensial[Menampilkan Pesan: 'Kredensial Salah']:::sistemNode
+        S_cek_aktif{Cek Apakah Akun Aktif?}:::decision
+        S_err_aktif[Menampilkan Pesan: 'Akun Dinonaktifkan']:::sistemNode
+        S_buat_session[Membuat Session Login User]:::sistemNode
+        S_dashboard[Mengarahkan ke Dashboard Utama]:::sistemNode
+        S_selesai([Selesai]):::startEnd
+    end
+
+    A_start --> A_buka
+    A_buka --> S_tampil_login
+    S_tampil_login --> A_isi_login
+    A_isi_login --> A_klik_login
+    A_klik_login --> S_cek_kredensial
+    
+    S_cek_kredensial -- Tidak Cocok --> S_err_kredensial
+    S_err_kredensial --> S_tampil_login
+    
+    S_cek_kredensial -- Cocok --> S_cek_aktif
+    
+    S_cek_aktif -- Tidak Aktif --> S_err_aktif
+    S_err_aktif --> S_tampil_login
+    
+    S_cek_aktif -- Aktif --> S_buat_session
+    S_buat_session --> S_dashboard
+    S_dashboard --> S_selesai
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="steps-table-container">
+                    <h3>📋 Alur Aktivitas Berdasarkan Peran</h3>
+                    <table class="steps-table">
+                        <thead>
+                            <tr>
+                                <th>Aktor (Admin / Polres)</th>
+                                <th>Sistem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">1</span>Membuka browser dan mengakses URL halaman login website</td>
+                                <td class="system-cell"><span class="step-num">2</span>Merender dan menampilkan halaman login yang berisi input Email dan Password.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">3</span>Memasukkan Email & Password akun yang terdaftar, lalu mengklik tombol "Login"</td>
+                                <td class="system-cell"><span class="step-num">4</span>Menerima kredensial login, mencocokkan input email dengan database serta memverifikasi kecocokan hash password.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">5</span><span class="idle-indicator">(Mengoreksi kredensial jika ditolak)</span></td>
+                                <td class="system-cell"><span class="step-num">6</span>Jika kredensial <strong>Salah/Tidak Cocok</strong>, menampilkan error message "Email atau password salah". Jika <strong>Cocok</strong>, memeriksa status keaktifan user (`is_active`).</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">7</span><span class="idle-indicator">(Melihat info pemblokiran jika nonaktif)</span></td>
+                                <td class="system-cell"><span class="step-num">8</span>Jika status `is_active` bernilai False, menampilkan error "Akun Anda dinonaktifkan". Jika True, menyimpan token session user ke cookie browser.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">9</span><span class="idle-indicator">(Masuk ke halaman dashboard)</span></td>
+                                <td class="system-cell"><span class="step-num">10</span>Mengarahkan (redirect) user ke halaman utama Dashboard Aplikasi. Selesai.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 6b. Login Google OAuth -->
+            <div class="tab-content" id="tab-login-google" data-parent="login">
+                <div class="tech-panel">
+                    <strong>💡 Rincian Arsitektur:</strong>
+                    <p>Terintegrasi dengan library Django Allauth OAuth2. Jika email Google belum terdaftar di database, sistem akan membuat user baru secara otomatis dengan status dinonaktifkan (`is_active=False`) terlebih dahulu agar butuh persetujuan/aktivasi oleh Super Admin.</p>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📝 Activity Diagram - Login Google (OAuth)</span>
+                        <div class="card-controls">
+                            <button class="control-btn btn-zoom-in" data-tooltip="Zoom In">➕</button>
+                            <button class="control-btn btn-zoom-out" data-tooltip="Zoom Out">➖</button>
+                            <button class="control-btn btn-zoom-reset" data-tooltip="Reset Zoom">🔄</button>
+                            <button class="control-btn btn-copy" data-tooltip="Copy Mermaid Code">📋</button>
+                            <button class="control-btn btn-download" data-tooltip="Download SVG">💾</button>
+                        </div>
+                    </div>
+                    <div class="mermaid-container">
+                        <div class="mermaid-wrapper">
+                            <div class="mermaid">
+flowchart LR
+    classDef aktorNode fill:#E3F2FD,stroke:#1565C0,stroke-width:2px,color:#0D47A1,rx:8px,ry:8px;
+    classDef sistemNode fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#4A148C,rx:8px,ry:8px;
+    classDef startEnd fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20,rx:20px,ry:20px;
+    classDef decision fill:#FFF9C4,stroke:#FBC02D,stroke-width:2px,color:#F57F17,rx:8px,ry:8px;
+    classDef database fill:#ECEFF1,stroke:#455A64,stroke-width:2px,color:#263238,rx:5px,ry:5px;
+
+    subgraph Aktor ["Aktor (Admin / Polres)"]
+        direction TB
+        A_start([Mulai]):::startEnd
+        A_buka[Membuka Halaman Login]:::aktorNode
+        A_klik_google[Klik Tombol 'Login with Google']:::aktorNode
+        A_pilih_akun[Memilih Akun Google & Otorisasi]:::aktorNode
+    end
+
+    subgraph Sistem ["Sistem"]
+        direction TB
+        S_tampil_login[Menampilkan Halaman Login]:::sistemNode
+        S_redirect_google[Mengarahkan ke Google OAuth Consent Page]:::sistemNode
+        S_receive_callback[Menerima Callback Token dari Google]:::sistemNode
+        S_cek_token{Validasi Token ke Server Google}:::decision
+        S_err_token[Menampilkan Pesan: 'Gagal Otentikasi']:::sistemNode
+        S_cek_terdaftar{Apakah Email/Google ID<br/>Terdaftar di DB?}:::decision
+        S_buat_akun[(Buat Akun Baru - Status Nonaktif<br/>Menunggu Persetujuan)]:::database
+        S_notif_daftar[Tampilkan Notifikasi:<br/>Akun Terdaftar & Butuh Aktivasi]:::sistemNode
+        S_cek_aktif{Apakah Akun Aktif?}:::decision
+        S_err_aktif[Menampilkan Pesan: 'Akun Belum Aktif']:::sistemNode
+        S_buat_session[Membuat Session Login User]:::sistemNode
+        S_dashboard[Mengarahkan ke Dashboard Utama]:::sistemNode
+        S_selesai([Selesai]):::startEnd
+    end
+
+    A_start --> A_buka
+    A_buka --> S_tampil_login
+    S_tampil_login --> A_klik_google
+    A_klik_google --> S_redirect_google
+    S_redirect_google --> A_pilih_akun
+    A_pilih_akun --> S_receive_callback
+    S_receive_callback --> S_cek_token
+    
+    S_cek_token -- Tidak Valid --> S_err_token
+    S_err_token --> S_tampil_login
+    
+    S_cek_token -- Valid --> S_cek_terdaftar
+    
+    S_cek_terdaftar -- Belum Terdaftar --> S_buat_akun
+    S_buat_akun --> S_notif_daftar
+    S_notif_daftar --> S_selesai
+    
+    S_cek_terdaftar -- Sudah Terdaftar --> S_cek_aktif
+    
+    S_cek_aktif -- Tidak Aktif --> S_err_aktif
+    S_err_aktif --> S_tampil_login
+    
+    S_cek_aktif -- Aktif --> S_buat_session
+    S_buat_session --> S_dashboard
+    S_dashboard --> S_selesai
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="steps-table-container">
+                    <h3>📋 Alur Aktivitas Berdasarkan Peran</h3>
+                    <table class="steps-table">
+                        <thead>
+                            <tr>
+                                <th>Aktor (Admin / Polres)</th>
+                                <th>Sistem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">1</span>Membuka halaman login dan mengklik tombol "Login with Google"</td>
+                                <td class="system-cell"><span class="step-num">2</span>Mengarahkan client browser menuju halaman otorisasi/consent page Google Account OAuth.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">3</span>Memilih akun Google Anda pada antarmuka Google dan memberikan otorisasi profil dasar</td>
+                                <td class="system-cell"><span class="step-num">4</span>Google mengirimkan callback token otentikasi. Sistem menangkap token callback dan mengirimkannya ke Google API untuk memvalidasi otentisitas token.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">5</span><span class="idle-indicator">(Melihat error jika otorisasi ditolak)</span></td>
+                                <td class="system-cell"><span class="step-num">6</span>Jika token palsu/tidak valid, menampilkan error otentikasi. Jika valid, memeriksa apakah email Google terdaftar di database user.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">7</span><span class="idle-indicator">(Mengamati info registrasi jika belum punya akun)</span></td>
+                                <td class="system-cell"><span class="step-num">8</span>Jika email <strong>Belum Terdaftar</strong>, membuat user baru di database dengan status `is_active=False` (menunggu persetujuan admin) dan menampilkan informasi pendaftaran berhasil. Proses selesai.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">9</span><span class="idle-indicator">(Mengamati pengecekan keaktifan akun)</span></td>
+                                <td class="system-cell"><span class="step-num">10</span>Jika email <strong>Sudah Terdaftar</strong>, memeriksa keaktifan akun (`is_active`). Jika akun dinonaktifkan, memblokir login dan menampilkan error. Jika akun aktif, membuat session user.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">11</span><span class="idle-indicator">(Melihat halaman utama dashboard)</span></td>
+                                <td class="system-cell"><span class="step-num">12</span>Mengarahkan user langsung ke halaman utama Dashboard Aplikasi. Selesai.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // Mermaid JS Init
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose',
+            flowchart: {
+                useMaxWidth: false,
+                htmlLabels: true
+            }
+        });
+
+        // Config data mapping for menus & sub-tabs
+        const config = {
+            akun: {
+                title: "Kelola Akun Admin",
+                desc: "Activity diagram alur penambahan, pengeditan, dan penghapusan data akun administrator.",
+                tabs: [
+                    { id: "tambah", label: "Tambah Akun" },
+                    { id: "edit", label: "Edit Akun" },
+                    { id: "hapus", label: "Hapus Akun" }
+                ]
+            },
+            polres: {
+                title: "Kelola Polres",
+                desc: "Activity diagram alur registrasi kantor polisi wilayah (Polres), pemutakhiran data alamat/kontak, dan penghapusan record instansi.",
+                tabs: [
+                    { id: "tambah", label: "Tambah Polres" },
+                    { id: "edit", label: "Edit Polres" },
+                    { id: "hapus", label: "Hapus Polres" }
+                ]
+            },
+            ruas: {
+                title: "Kelola Ruas Jalan",
+                desc: "Activity diagram alur pemetaan ruas jalan baru menggunakan koordinat spasial GeoJSON, modifikasi rute garis, dan penghapusan data.",
+                tabs: [
+                    { id: "tambah", label: "Tambah Ruas" },
+                    { id: "edit", label: "Edit Ruas" },
+                    { id: "hapus", label: "Hapus Ruas" }
+                ]
+            },
+            pemetaan: {
+                title: "Kelola Data Pemetaan",
+                desc: "Activity diagram alur import data kecelakaan via spreadsheet (Excel/CSV), pencarian segmen jalan terdekat otomatis, dan penghapusan data.",
+                tabs: [
+                    { id: "upload", label: "Upload Data" },
+                    { id: "hapus", label: "Hapus Data" }
+                ]
+            },
+            profile: {
+                title: "Ubah Data Profile",
+                desc: "Activity diagram alur pembaruan data biografi, institusi, nomor kontak, serta pengunggahan foto profil (avatar) pengguna yang sedang login.",
+                tabs: [
+                    { id: "edit", label: "Edit Data Profile" }
+                ]
+            },
+            login: {
+                title: "Autentikasi Login",
+                desc: "Activity diagram alur masuk ke dalam sistem menggunakan kredensial email & password terdaftar maupun integrasi tombol Google Sign-In (OAuth2).",
+                tabs: [
+                    { id: "email", label: "Login Email & Password" },
+                    { id: "google", label: "Login Google OAuth" }
+                ]
+            }
+        };
+
+        let activeMenu = "akun";
+        let activeSubTab = "tambah";
+
+        // DOM elements
+        const menuItems = document.querySelectorAll('.menu-item');
+        const pillTabBar = document.getElementById('pill-tab-bar');
+        const featureTitle = document.getElementById('feature-title');
+        const featureDesc = document.getElementById('feature-desc');
+        const searchInput = document.getElementById('search-input');
+        const themeToggleBtn = document.getElementById('theme-toggle');
+
+        // Sidebar Navigation click handlers
+        menuItems.forEach(item => {
+            item.addEventListener('click', () => {
+                menuItems.forEach(mi => mi.classList.remove('active'));
+                item.classList.add('active');
+                
+                activeMenu = item.getAttribute('data-target');
+                activeSubTab = config[activeMenu].tabs[0].id;
+                
+                renderTabs();
+                switchTabContent();
+            });
+        });
+
+        // Search Filter Sidebar Items
+        searchInput.addEventListener('input', (e) => {
+            const val = e.target.value.toLowerCase();
+            menuItems.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(val)) {
+                    item.style.display = "flex";
+                } else {
+                    item.style.display = "none";
+                }
+            });
+        });
+
+        // Theme Toggle Handler
+        themeToggleBtn.addEventListener('click', () => {
+            document.body.classList.toggle('light-theme');
+            const isLight = document.body.classList.contains('light-theme');
+            themeToggleBtn.innerHTML = isLight ? `
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                </svg>
+            ` : `
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m11.314 11.314l.707.707M12 7a5 5 0 100 10 5 5 0 000-10z"></path>
+                </svg>
+            `;
+        });
+
+        // Render secondary tab pills
+        function renderTabs() {
+            const data = config[activeMenu];
+            featureTitle.textContent = data.title;
+            featureDesc.textContent = data.desc;
+            
+            pillTabBar.innerHTML = "";
+            data.tabs.forEach(tab => {
+                const btn = document.createElement('button');
+                btn.className = `tab-btn ${tab.id === activeSubTab ? 'active' : ''}`;
+                btn.textContent = tab.label;
+                btn.setAttribute('data-tab', tab.id);
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-btn').forEach(tb => tb.classList.remove('active'));
+                    btn.classList.add('active');
+                    activeSubTab = tab.id;
+                    switchTabContent();
+                });
+                pillTabBar.appendChild(btn);
+            });
+        }
+
+        // Toggle visibility of tab contents
+        function switchTabContent() {
+            const targetId = `tab-${activeMenu}-${activeSubTab}`;
+            document.querySelectorAll('.tab-content').forEach(tc => {
+                tc.classList.remove('active');
+            });
+            
+            const activeContent = document.getElementById(targetId);
+            if (activeContent) {
+                activeContent.classList.add('active');
+                initZoomPan(activeContent);
+            }
+        }
+
+        // Zoom and Pan implementation
+        function initZoomPan(activeContainer) {
+            const container = activeContainer.querySelector('.mermaid-container');
+            const wrapper = activeContainer.querySelector('.mermaid-wrapper');
+            if (!container || !wrapper) return;
+
+            let zoom = 1;
+            let panX = 0;
+            let panY = 0;
+            let isDragging = false;
+            let startX = 0;
+            let startY = 0;
+
+            function updateTransform() {
+                wrapper.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+            }
+
+            // Bind button events
+            activeContainer.querySelector('.btn-zoom-in').onclick = () => {
+                zoom = Math.min(zoom + 0.15, 3.5);
+                updateTransform();
+            };
+
+            activeContainer.querySelector('.btn-zoom-out').onclick = () => {
+                zoom = Math.max(zoom - 0.15, 0.4);
+                updateTransform();
+            };
+
+            activeContainer.querySelector('.btn-zoom-reset').onclick = () => {
+                zoom = 1;
+                panX = 0;
+                panY = 0;
+                updateTransform();
+            };
+
+            // Dragging interactions
+            container.onmousedown = (e) => {
+                isDragging = true;
+                startX = e.clientX - panX;
+                startY = e.clientY - panY;
+            };
+
+            window.onmouseup = () => {
+                isDragging = false;
+            };
+
+            container.onmousemove = (e) => {
+                if (!isDragging) return;
+                panX = e.clientX - startX;
+                panY = e.clientY - startY;
+                updateTransform();
+            };
+
+            // Wheel zooming
+            container.onwheel = (e) => {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? -0.05 : 0.05;
+                zoom = Math.min(Math.max(zoom + delta, 0.4), 3.5);
+                updateTransform();
+            };
+
+            // Copy Mermaid Code Handler
+            activeContainer.querySelector('.btn-copy').onclick = () => {
+                // Find raw text from comment or raw content in DOM before render. 
+                // Since Mermaid replaces content, we keep the original code in a hidden element or fetch from mermaid-wrapper element attributes
+                const originalCode = activeContainer.querySelector('.mermaid').getAttribute('data-original-code') 
+                                     || activeContainer.querySelector('.mermaid svg').nextSibling?.textContent
+                                     || activeContainer.querySelector('.mermaid').textContent;
+                
+                navigator.clipboard.writeText(originalCode.trim()).then(() => {
+                    const btn = activeContainer.querySelector('.btn-copy');
+                    btn.setAttribute('data-tooltip', 'Copied! ✅');
+                    setTimeout(() => {
+                        btn.setAttribute('data-tooltip', 'Copy Mermaid Code');
+                    }, 2000);
+                });
+            };
+
+            // Download SVG Handler
+            activeContainer.querySelector('.btn-download').onclick = () => {
+                const svgEl = activeContainer.querySelector('.mermaid svg');
+                if (!svgEl) return;
+                
+                const svgData = new XMLSerializer().serializeToString(svgEl);
+                const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `activity_diagram_${activeMenu}_${activeSubTab}.svg`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            };
+        }
+
+        // Cache original code for copy function before Mermaid compiles it
+        window.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.mermaid').forEach(el => {
+                el.setAttribute('data-original-code', el.textContent.trim());
+            });
+            renderTabs();
+            switchTabContent();
+        });
+    </script>
+</body>
+</html>

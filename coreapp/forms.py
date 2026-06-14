@@ -17,6 +17,10 @@ class LoginForm(forms.Form):
     """Form login menggunakan email dan password"""
     email = forms.EmailField(
         label='Email',
+        error_messages={
+            'required': 'Email tidak boleh kosong.',
+            'invalid': 'Format email tidak valid (contoh: user@example.com).'
+        },
         widget=forms.EmailInput(attrs={
             'class': 'form-control',
             'placeholder': 'Masukkan email Anda',
@@ -26,6 +30,9 @@ class LoginForm(forms.Form):
     )
     password = forms.CharField(
         label='Password',
+        error_messages={
+            'required': 'Password tidak boleh kosong.'
+        },
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
             'placeholder': 'Masukkan password Anda',
@@ -42,6 +49,10 @@ class AdminCreateForm(forms.ModelForm):
     email = forms.EmailField(
         label='Email',
         required=True,
+        error_messages={
+            'required': 'Email tidak boleh kosong.',
+            'invalid': 'Format email tidak valid (contoh:user@example.com).'
+        },
         widget=forms.EmailInput(attrs={
             'class': 'form-control',
             'placeholder': 'email@polres.go.id',
@@ -70,6 +81,9 @@ class AdminCreateForm(forms.ModelForm):
     )
     password1 = forms.CharField(
         label='Password',
+        error_messages={
+            'required': 'Password tidak boleh kosong.'
+        },
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
             'placeholder': 'Minimal 8 karakter',
@@ -78,6 +92,9 @@ class AdminCreateForm(forms.ModelForm):
     )
     password2 = forms.CharField(
         label='Konfirmasi Password',
+        error_messages={
+            'required': 'Konfirmasi password tidak boleh kosong.'
+        },
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
             'placeholder': 'Ulangi password',
@@ -87,7 +104,10 @@ class AdminCreateForm(forms.ModelForm):
     polres = forms.ModelChoiceField(
         label='Polres',
         queryset=Polres.objects.filter(is_active=True),
-        required=False,
+        required=True,
+        error_messages={
+            'required': 'Polres harus dipilih.'
+        },
         empty_label='-- Pilih Polres --',
         widget=forms.Select(attrs={
             'class': 'form-control',
@@ -290,6 +310,14 @@ class PolresForm(forms.ModelForm):
     class Meta:
         model = Polres
         fields = ['nama', 'kode', 'alamat', 'telepon', 'is_active']
+        error_messages = {
+            'nama': {
+                'required': 'Nama Polres tidak boleh kosong.'
+            },
+            'kode': {
+                'required': 'Kode Polres tidak boleh kosong.'  
+            }
+        }
         widgets = {
             'nama': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -327,11 +355,22 @@ class PolresForm(forms.ModelForm):
 # RUAS JALAN & KECELAKAAN FORMS (existing)
 # ========================
 class RuasJalanForm(forms.ModelForm):
-    """Form untuk CRUD Ruas Jalan"""
+    """Form untuk CRUD Ruas Jalan"""    
 
     class Meta:
         model = RuasJalan
         fields = ['nama_ruas', 'jenis_jalan', 'wilayah', 'panjang_km', 'lat_awal', 'lon_awal', 'lat_akhir', 'lon_akhir', 'geometry']
+        error_messages = {
+            'nama_ruas': {
+                'required': 'Nama ruas jalan tidak boleh kosong.'
+            },
+            'jenis_jalan': {
+                'required': 'Jenis jalan harus dipilih.'
+            },
+            'wilayah': {
+                'required': 'Wilayah tidak boleh kosong.'
+            },
+        }
         widgets = {
             'geometry': forms.HiddenInput(),
             'nama_ruas': forms.TextInput(attrs={

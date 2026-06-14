@@ -87,6 +87,7 @@
                             {{ form.nama_ruas }}
                             {% if form.nama_ruas.errors %}
                             <div class="text-red-600 text-sm mt-1">
+                                <i class="fas fa-exclamation-circle"></i>
                                 {% for error in form.nama_ruas.errors %}{{ error }}<br>{% endfor %}
                             </div>
                             {% endif %}
@@ -98,6 +99,7 @@
                             {{ form.jenis_jalan }}
                             {% if form.jenis_jalan.errors %}
                             <div class="text-red-600 text-sm mt-1">
+                                <i class="fas fa-exclamation-circle"></i>
                                 {% for error in form.jenis_jalan.errors %}{{ error }}<br>{% endfor %}
                             </div>
                             {% endif %}
@@ -109,6 +111,7 @@
                             {{ form.wilayah }}
                             {% if form.wilayah.errors %}
                             <div class="text-red-600 text-sm mt-1">
+                                <i class="fas fa-exclamation-circle"></i>
                                 {% for error in form.wilayah.errors %}{{ error }}<br>{% endfor %}
                             </div>
                             {% endif %}
@@ -120,6 +123,7 @@
                             {{ form.panjang_km }}
                             {% if form.panjang_km.errors %}
                             <div class="text-red-600 text-sm mt-1">
+                                <i class="fas fa-exclamation-circle"></i>
                                 {% for error in form.panjang_km.errors %}{{ error }}<br>{% endfor %}
                             </div>
                             {% endif %}
