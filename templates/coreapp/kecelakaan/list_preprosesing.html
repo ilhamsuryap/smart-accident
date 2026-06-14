@@ -36,7 +36,13 @@
         <form method="get" class="flex gap-2 flex-1">
             <input type="text" name="search" placeholder="Cari nomor kecelakaan" 
                    value="{{ request.GET.search }}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
-            <select name="polres" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+            <select name="polda" onchange="this.form.submit()" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                <option value="">Semua Polda</option>
+                {% for pld in polda_choices %}
+                    <option value="{{ pld.id }}" {% if selected_polda|stringformat:"s" == pld.id|stringformat:"s" %}selected{% endif %}>{{ pld.nama }}</option>
+                {% endfor %}
+            </select>
+            <select name="polres" onchange="this.form.submit()" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
                 <option value="">Semua Polres</option>
                 {% for pl in polres_choices %}
                     <option value="{{ pl.id }}" {% if selected_polres|stringformat:"s" == pl.id|stringformat:"s" %}selected{% endif %}>{{ pl.nama }}</option>

@@ -4,7 +4,7 @@ from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.core.exceptions import ValidationError
 from .models import (
     RuasJalan, SegmenJalan, Kecelakaan, RekapSegmen, AnalisisZScore,
-    KecelakaanRaw, KecelakaanPreprosesing, Profile, Polres
+    KecelakaanRaw, KecelakaanPreprosesing, Profile, Polres, Polda
 )
 
 User = get_user_model()
@@ -302,6 +302,45 @@ class AdminUpdateForm(forms.Form):
 
 
 # ========================
+# POLDA MANAGEMENT FORM (Superadmin only)
+# ========================
+class PoldaForm(forms.ModelForm):
+    """Form untuk superadmin mengelola data Polda"""
+
+    class Meta:
+        model = Polda
+        fields = ['nama', 'kode', 'is_active']
+        error_messages = {
+            'nama': {
+                'required': 'Nama Polda tidak boleh kosong.'
+            },
+            'kode': {
+                'required': 'Kode Polda tidak boleh kosong.'  
+            }
+        }
+        widgets = {
+            'nama': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Contoh: Polda Jawa Timur',
+                'id': 'id_nama',
+            }),
+            'kode': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Contoh: polda_jatim',
+                'id': 'id_kode',
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+                'id': 'id_is_active',
+            }),
+        }
+
+    def clean_kode(self):
+        kode = self.cleaned_data.get('kode', '').strip().lower().replace(' ', '_')
+        return kode
+
+
+# ========================
 # POLRES MANAGEMENT FORM (Superadmin only)
 # ========================
 class PolresForm(forms.ModelForm):
@@ -309,7 +348,7 @@ class PolresForm(forms.ModelForm):
 
     class Meta:
         model = Polres
-        fields = ['nama', 'kode', 'alamat', 'telepon', 'is_active']
+        fields = ['polda', 'nama', 'kode', 'alamat', 'telepon', 'is_active']
         error_messages = {
             'nama': {
                 'required': 'Nama Polres tidak boleh kosong.'
@@ -319,6 +358,10 @@ class PolresForm(forms.ModelForm):
             }
         }
         widgets = {
+            'polda': forms.Select(attrs={
+                'class': 'form-control',
+                'id': 'id_polda',
+            }),
             'nama': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Contoh: Polres Madiun',

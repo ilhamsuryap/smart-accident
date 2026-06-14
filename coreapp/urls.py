@@ -26,6 +26,11 @@ urlpatterns = [
     path('superadmin/polres/create/', views.polres_create, name='polres_create'),
     path('superadmin/polres/<int:pk>/edit/', views.polres_update, name='polres_update'),
     path('superadmin/polres/<int:pk>/delete/', views.polres_delete, name='polres_delete'),
+
+    path('superadmin/polda/', views.polda_list, name='polda_list'),
+    path('superadmin/polda/create/', views.polda_create, name='polda_create'),
+    path('superadmin/polda/<int:pk>/edit/', views.polda_update, name='polda_update'),
+    path('superadmin/polda/<int:pk>/delete/', views.polda_delete, name='polda_delete'),
     # Dashboard (Admin)
     path('dashboard/', views.dashboard_view, name='dashboard'),
 

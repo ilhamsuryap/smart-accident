@@ -15,7 +15,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import (
     RuasJalan, SegmenJalan, Kecelakaan, AnalisisZScore, RekapSegmen,
-    Kota, Kecamatan, Kelurahan, ClusterData, AIConfig, Profile, Polres,
+    Kota, Kecamatan, Kelurahan, ClusterData, AIConfig, Profile, Polres, Polda,
     KecelakaanRaw, KecelakaanPreprosesing, LakaMentah
 )
 from rest_framework import status
@@ -40,7 +40,7 @@ from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import silhouette_score
 from django.core.paginator import Paginator
 from .forms import (
-    LoginForm, AdminCreateForm, AdminUpdateForm, PolresForm,
+    LoginForm, AdminCreateForm, AdminUpdateForm, PolresForm, PoldaForm,
     RuasJalanForm, SegmenJalanForm,
     KecelakaanForm, RekapSegmenForm, UploadKecelakaanRawForm, UploadKecelakaanPreprosesForm
 )
@@ -147,6 +147,72 @@ def polres_delete(request, pk):
         request,
         'coreapp/polres/polres_confirm_delete.html',
         {'polres': polres}
+    )
+
+@login_required
+def polda_list(request):
+    if request.user.role != 'superadmin':
+        return redirect('/')
+
+    polda_list = Polda.objects.all()
+    active_count = polda_list.filter(is_active=True).count()
+
+    return render(request, 'coreapp/polda/list.html', {
+        'polda_list': polda_list,
+        'active_count': active_count
+    })
+
+@login_required
+def polda_create(request):
+    if request.user.role != 'superadmin':
+        return redirect('/')
+
+    form = PoldaForm(request.POST or None)
+    if form.is_valid():
+        form.save()
+        messages.success(request, 'Polda berhasil ditambahkan.')
+        return redirect('polda_list')
+
+    return render(request, 'coreapp/polda/form.html', {
+        'form': form,
+        'title': 'Tambah Polda Baru',
+        'polda': None
+    })
+
+@login_required
+def polda_update(request, pk):
+    if request.user.role != 'superadmin':
+        return redirect('/')
+
+    polda = get_object_or_404(Polda, pk=pk)
+    form = PoldaForm(request.POST or None, instance=polda)
+    if form.is_valid():
+        form.save()
+        messages.success(request, 'Polda berhasil diperbarui.')
+        return redirect('polda_list')
+
+    return render(request, 'coreapp/polda/form.html', {
+        'form': form,
+        'title': f'Edit Polda: {polda.nama}',
+        'polda': polda
+    })
+
+@login_required
+def polda_delete(request, pk):
+    if request.user.role != 'superadmin':
+        return redirect('/')
+
+    polda = get_object_or_404(Polda, pk=pk)
+    if request.method == 'POST':
+        polda_name = polda.nama
+        polda.delete()
+        messages.success(request, f'Polda "{polda_name}" berhasil dihapus.')
+        return redirect('polda_list')
+
+    return render(
+        request,
+        'coreapp/polda/polda_confirm_delete.html',
+        {'polda': polda}
     )
 def login_view(request):
     """View login berbasis EMAIL + PASSWORD dengan validasi role dan is_active."""
@@ -386,6 +452,11 @@ def faq_view(request):
 @login_required(login_url='login')
 def dashboard_view(request):
     """Dashboard utama - untuk admin/user yang login"""
+    selected_polda = request.GET.get('polda')
+    polda_instance = None
+    if selected_polda and selected_polda.isdigit():
+        polda_instance = get_object_or_404(Polda, id=int(selected_polda))
+
     selected_polres = request.GET.get('polres')
     polres_instance = None
     if selected_polres and selected_polres.isdigit():
@@ -396,7 +467,13 @@ def dashboard_view(request):
     kecelakaan_qs = KecelakaanPreprosesing.objects.all()
     cluster_data = ClusterData.objects.all()
     
-    if polres_instance:
+    if polda_instance and not polres_instance:
+        # If Polda is selected but no specific Polres, filter by Polda
+        ruas_qs = ruas_qs.filter(polres__polda=polda_instance)
+        segmen_qs = segmen_qs.filter(ruas_jalan__polres__polda=polda_instance)
+        kecelakaan_qs = kecelakaan_qs.filter(polres__polda=polda_instance)
+        cluster_data = cluster_data.filter(polres__polda=polda_instance)
+    elif polres_instance:
         ruas_qs = ruas_qs.filter(polres=polres_instance)
         segmen_qs = segmen_qs.filter(ruas_jalan__polres=polres_instance)
         kecelakaan_qs = kecelakaan_qs.filter(polres=polres_instance)
@@ -498,7 +575,13 @@ def dashboard_view(request):
     context['top_age_range_count'] = age_groups.get(top_age_range, 0)
 
     # Sediakan daftar polres untuk dropdown filter
-    context['polres_list'] = Polres.objects.all()
+    context['polda_list'] = Polda.objects.all()
+    context['selected_polda'] = int(selected_polda) if selected_polda and selected_polda.isdigit() else None
+    
+    polres_qs_context = Polres.objects.all()
+    if polda_instance:
+        polres_qs_context = polres_qs_context.filter(polda=polda_instance)
+    context['polres_list'] = polres_qs_context
     context['selected_polres'] = int(selected_polres) if selected_polres and selected_polres.isdigit() else None
 
     return render(request, 'coreapp/dashboard.html', context)
@@ -519,16 +602,27 @@ def ruas_jalan_list(request):
             Q(wilayah__icontains=search)
         )
     
+    # Filter berdasarkan polda
+    selected_polda = request.GET.get('polda', '')
+    if selected_polda and selected_polda != 'all':
+        ruas_jalan = ruas_jalan.filter(polres__polda_id=selected_polda)
+
     # Filter berdasarkan polres
     selected_polres = request.GET.get('polres', '')
     if selected_polres and selected_polres != 'all':
         ruas_jalan = ruas_jalan.filter(polres=selected_polres)
     
+    polres_qs = Polres.objects.all()
+    if selected_polda and selected_polda != 'all':
+        polres_qs = polres_qs.filter(polda_id=selected_polda)
+        
     context = {
         'ruas_jalan': ruas_jalan,
         'is_admin': is_admin(request.user),
-        'polres_choices': Polres.objects.all(),
-        'selected_polres': selected_polres
+        'polda_choices': Polda.objects.all(),
+        'selected_polda': int(selected_polda) if selected_polda and selected_polda.isdigit() else '',
+        'polres_choices': polres_qs,
+        'selected_polres': int(selected_polres) if selected_polres and selected_polres.isdigit() else ''
     }
     return render(request, 'coreapp/ruas_jalan/list.html', context)
 
@@ -2562,17 +2656,28 @@ def kecelakaan_preprosesing_list(request):
         tahun = request.GET.get('tahun')
         kecelakaan = kecelakaan.filter(tanggal__year=tahun)
     
+    # Filter berdasarkan polda
+    selected_polda = request.GET.get('polda', '')
+    if selected_polda and selected_polda != 'all':
+        kecelakaan = kecelakaan.filter(polres__polda_id=selected_polda)
+
     # Filter berdasarkan polres
     selected_polres = request.GET.get('polres', '')
     if selected_polres and selected_polres != 'all':
         kecelakaan = kecelakaan.filter(polres=selected_polres)
+        
+    polres_qs = Polres.objects.all()
+    if selected_polda and selected_polda != 'all':
+        polres_qs = polres_qs.filter(polda_id=selected_polda)
     
     context = {
         'kecelakaan': kecelakaan[:100],
         'is_admin': is_admin(request.user),
         'tahun_options': range(2020, timezone.now().year + 1),
         'title': 'Data Kecelakaan Preprosesing',
-        'polres_choices': Polres.objects.all(),
+        'polda_choices': Polda.objects.all(),
+        'selected_polda': int(selected_polda) if selected_polda and selected_polda.isdigit() else '',
+        'polres_choices': polres_qs,
         'selected_polres': selected_polres
     }
     return render(request, 'coreapp/kecelakaan/list_preprosesing.html', context)
@@ -2664,6 +2769,11 @@ def laka_mentah_list(request):
     if selected_tahun:
         all_data = all_data.filter(tahun=selected_tahun)
         
+    # Filter Polda
+    selected_polda = request.GET.get('polda')
+    if selected_polda and selected_polda.isdigit():
+        all_data = all_data.filter(polres__polda_id=int(selected_polda))
+
     # Filter Polres
     selected_polres = request.GET.get('polres')
     if selected_polres and selected_polres.isdigit():
@@ -2704,6 +2814,12 @@ def laka_mentah_list(request):
     selected_tahun_int = int(selected_tahun) if selected_tahun and selected_tahun.isdigit() else None
     selected_polres_int = int(selected_polres) if selected_polres and selected_polres.isdigit() else None
     
+    selected_polda_int = int(selected_polda) if selected_polda and selected_polda.isdigit() else None
+    
+    polres_list = Polres.objects.all()
+    if selected_polda_int:
+        polres_list = polres_list.filter(polda_id=selected_polda_int)
+        
     context = {
         'data_list': page_obj,
         'total_data': total_count,
@@ -2713,8 +2829,10 @@ def laka_mentah_list(request):
         'years_list': years_list,
         'filter_years': filter_years,
         'selected_tahun': selected_tahun_int,
+        'polda_list': Polda.objects.all(),
+        'selected_polda': selected_polda_int,
         'selected_polres': selected_polres_int,
-        'polres_list': Polres.objects.all(),
+        'polres_list': polres_list,
     }
     return render(request, 'coreapp/laka_mentah/list.html', context)
 

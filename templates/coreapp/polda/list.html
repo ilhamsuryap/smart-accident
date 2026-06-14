@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Kelola Polres - Smart Accident{% endblock %}
+{% block title %}Kelola polda - Smart Accident{% endblock %}
 
 {% block content %}
 <div class="w-full">
@@ -10,15 +10,15 @@
   <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
     <div>
       <h1 class="text-3xl font-bold flex items-center gap-2 text-gray-800">
-        <i class="fas fa-building text-blue-600"></i> Kelola Polres
+        <i class="fas fa-building text-blue-600"></i> Kelola polda
       </h1>
       <p class="text-gray-500 mt-1">Super Admin &mdash; Manajemen data kepolisian regional</p>
     </div>
     <div class="flex flex-col sm:flex-row gap-2">
       
-      <a href="{% url 'polres_create' %}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 shadow-sm font-semibold transition text-sm">
+      <a href="{% url 'polda_create' %}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 shadow-sm font-semibold transition text-sm">
         <i class="fas fa-plus"></i>
-        <span>Tambah Polres</span>
+        <span>Tambah polda</span>
       </a>
     </div>
   </div>
@@ -27,15 +27,15 @@
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
     <!-- Card Total -->
     <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-blue-600 hover:shadow-md transition">
-      <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Polres</p>
+      <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Total polda</p>
       <div class="flex items-end justify-between mt-1">
-        <p class="text-3xl font-black text-blue-600">{{ polres_list.count }}</p>
+        <p class="text-3xl font-black text-blue-600">{{ polda_list.count }}</p>
         <i class="fas fa-building text-blue-100 text-2xl"></i>
       </div>
     </div>
     <!-- Card Aktif -->
     <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-emerald-500 hover:shadow-md transition">
-      <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Polres Aktif</p>
+      <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">polda Aktif</p>
       <div class="flex items-end justify-between mt-1">
         <p class="text-3xl font-black text-emerald-500">{{ active_count }}</p>
         <i class="fas fa-check-circle text-emerald-100 text-2xl"></i>
@@ -47,7 +47,7 @@
   <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
     <div class="border-b border-gray-100 p-5 flex flex-col md:flex-row justify-between items-center gap-4">
       <h5 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-        <i class="fas fa-list text-blue-600"></i> Daftar Polres
+        <i class="fas fa-list text-blue-600"></i> Daftar polda
       </h5>
       <!-- Search Input -->
      <div class="relative w-full md:w-64">
@@ -58,28 +58,27 @@
           type="text"
           id="searchInput"
           class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 text-sm transition"
-          placeholder="Cari nama polres..."
+          placeholder="Cari nama polda..."
           autocomplete="off"
         >
       </div>
     </div>
 
     <div class="overflow-x-auto">
-      {% if polres_list %}
-      <table class="w-full text-left border-collapse" id="polresTable">
+      {% if polda_list %}
+      <table class="w-full text-left border-collapse" id="poldaTable">
         <thead class="bg-gray-50 border-b border-gray-100">
           <tr>
             <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider ">No</th>
-            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Nama Polres</th>
-            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider ">Polda</th>
+            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Nama polda</th>
             <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider ">Alamat</th>
             <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
             <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Aksi</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
-          {% for polres in polres_list %}
-          <tr class="hover:bg-gray-50/55 transition polres-row">
+          {% for polda in polda_list %}
+          <tr class="hover:bg-gray-50/55 transition polda-row">
             <td class="px-6 py-4 text-sm text-gray-500">{{ forloop.counter }}</td>
             <td class="px-6 py-4">
               <div class="flex items-center gap-3">
@@ -87,18 +86,15 @@
                   <i class="fas fa-home"></i>
                 </div>
                 <div>
-                  <div class="font-semibold text-gray-800 text-center">{{ polres.nama }}</div>
+                  <div class="font-semibold text-gray-800 text-center">{{ polda.nama }}</div>
                 </div>
               </div>
             </td>
             <td class="px-6 py-4">
-              <div class="text-sm font-semibold text-gray-700">{{ polres.polda.nama|default:"-" }}</div>
+              <div class="text-sm text-gray-600">{{ polda.alamat }}</div>
             </td>
             <td class="px-6 py-4">
-              <div class="text-sm text-gray-600">{{ polres.alamat }}</div>
-            </td>
-            <td class="px-6 py-4">
-              {% if polres.is_active %}
+              {% if polda.is_active %}
                 <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
                   <i class="fas fa-circle-check text-emerald-600"></i>
                   Aktif
@@ -112,13 +108,13 @@
             </td>
             <td class="px-6 py-4 text-center">
               <div class="flex items-center justify-center gap-2">
-                <a href="{% url 'polres_update' polres.id %}" 
+                <a href="{% url 'polda_update' polda.id %}" 
                    class="px-2.5 py-1.5 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 text-xs transition" >
                   <i class="fas fa-edit"></i>
                 </a>
 
 
-                 <a href="{% url 'polres_delete' polres.id %}" 
+                 <a href="{% url 'polda_delete' polda.id %}" 
                    class="px-2.5 py-1.5 border border-red-500 text-red-500 rounded-lg hover:bg-red-50 text-xs transition" >
                   <i class="fas fa-trash-alt"></i>
                 </a>
@@ -133,8 +129,8 @@
         <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
           <i class="fas fa-inbox text-gray-400 text-2xl"></i>
         </div>
-        <p class="text-gray-500 font-medium">Belum ada data Polres</p>
-        <p class="text-gray-400 text-sm mt-1">Mulai dengan menambahkan polres baru</p>
+        <p class="text-gray-500 font-medium">Belum ada data polda</p>
+        <p class="text-gray-400 text-sm mt-1">Mulai dengan menambahkan polda baru</p>
       </div>
       {% endif %}
     </div>
@@ -146,7 +142,7 @@
   // Search functionality
   document.getElementById('searchInput').addEventListener('keyup', function(e) {
     const searchTerm = e.target.value.toLowerCase();
-    const rows = document.querySelectorAll('.polres-row');
+    const rows = document.querySelectorAll('.polda-row');
     
     rows.forEach(row => {
       const text = row.textContent.toLowerCase();
