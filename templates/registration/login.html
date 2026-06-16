@@ -62,12 +62,10 @@
                                required 
                                autofocus>
                     </div>
-                    {% if form.email.errors %}
-                        <div class="text-red-600 text-sm mt-1.5 flex items-center">
-                            <i class="fas fa-exclamation-circle mr-1.5 text-xs"></i>
-                            {{ form.email.errors.0 }}
-                        </div>
-                    {% endif %}
+                    <div id="email-error" class="text-red-600 text-sm mt-1.5 flex items-center {% if not form.email.errors %}hidden{% endif %}">
+                        <i class="fas fa-exclamation-circle mr-1.5 text-xs"></i>
+                        <span id="email-error-text">{% if form.email.errors %}{{ form.email.errors.0 }}{% endif %}</span>
+                    </div>
                 </div>
 
                 <div>
@@ -83,12 +81,10 @@
                                placeholder="Masukkan password" 
                                required>
                     </div>
-                    {% if form.password.errors %}
-                        <div class="text-red-600 text-sm mt-1.5 flex items-center">
-                            <i class="fas fa-exclamation-circle mr-1.5 text-xs"></i>
-                            {{ form.password.errors.0 }}
-                        </div>
-                    {% endif %}
+                    <div id="password-error" class="text-red-600 text-sm mt-1.5 flex items-center {% if not form.password.errors %}hidden{% endif %}">
+                        <i class="fas fa-exclamation-circle mr-1.5 text-xs"></i>
+                        <span id="password-error-text">{% if form.password.errors %}{{ form.password.errors.0 }}{% endif %}</span>
+                    </div>
                 </div>
 
                 <!-- Tombol Login dengan warna biru (rgb(37, 99, 235) = blue-600) -->
@@ -139,5 +135,136 @@
             <p class="text-xs text-gray-400">© 2025 Smart Accident. All rights reserved.</p>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            const emailInput = document.getElementById('id_email');
+            const passwordInput = document.getElementById('id_password');
+            const emailError = document.getElementById('email-error');
+            const emailErrorText = document.getElementById('email-error-text');
+            const passwordError = document.getElementById('password-error');
+            const passwordErrorText = document.getElementById('password-error-text');
+
+            let emailTimeout = null;
+            let passwordTimeout = null;
+
+            // Helper function to show error with 5s auto-hide
+            function showError(input, errorContainer, errorTextElement, message, timeoutKey) {
+                // Clear any existing timeout for this input
+                if (timeoutKey === 'email' && emailTimeout) {
+                    clearTimeout(emailTimeout);
+                    emailTimeout = null;
+                } else if (timeoutKey === 'password' && passwordTimeout) {
+                    clearTimeout(passwordTimeout);
+                    passwordTimeout = null;
+                }
+
+                input.classList.remove('border-gray-300', 'focus:border-blue-500', 'focus:ring-blue-200');
+                input.classList.add('border-red-400', 'bg-red-50', 'focus:border-red-500', 'focus:ring-red-200');
+                errorTextElement.textContent = message;
+                errorContainer.classList.remove('hidden');
+
+                // Set new timeout to hide error after 5 seconds
+                const timeoutId = setTimeout(function() {
+                    clearError(input, errorContainer, timeoutKey);
+                }, 5000);
+
+                if (timeoutKey === 'email') {
+                    emailTimeout = timeoutId;
+                } else if (timeoutKey === 'password') {
+                    passwordTimeout = timeoutId;
+                }
+            }
+
+            // Helper function to clear error
+            function clearError(input, errorContainer, timeoutKey) {
+                if (timeoutKey === 'email' && emailTimeout) {
+                    clearTimeout(emailTimeout);
+                    emailTimeout = null;
+                } else if (timeoutKey === 'password' && passwordTimeout) {
+                    clearTimeout(passwordTimeout);
+                    passwordTimeout = null;
+                }
+
+                input.classList.remove('border-red-400', 'bg-red-50', 'focus:border-red-500', 'focus:ring-red-200');
+                input.classList.add('border-gray-300', 'focus:border-blue-500', 'focus:ring-blue-200');
+                errorContainer.classList.add('hidden');
+            }
+
+            // Auto-hide backend alert messages after 5 seconds
+            const alerts = document.querySelectorAll('[role="alert"]');
+            alerts.forEach(function(alert) {
+                setTimeout(function() {
+                    alert.style.transition = 'opacity 0.5s ease';
+                    alert.style.opacity = '0';
+                    setTimeout(function() {
+                        alert.remove();
+                    }, 500);
+                }, 5000);
+            });
+
+            // Auto-hide field errors rendered on page load after 5 seconds
+            if (emailError && !emailError.classList.contains('hidden')) {
+                emailTimeout = setTimeout(function() {
+                    clearError(emailInput, emailError, 'email');
+                }, 5000);
+            }
+            if (passwordError && !passwordError.classList.contains('hidden')) {
+                passwordTimeout = setTimeout(function() {
+                    clearError(passwordInput, passwordError, 'password');
+                }, 5000);
+            }
+
+            // Real-time validation on input
+            emailInput.addEventListener('input', function() {
+                if (emailInput.value.trim() !== '') {
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (emailRegex.test(emailInput.value.trim())) {
+                        clearError(emailInput, emailError, 'email');
+                    } else {
+                        showError(emailInput, emailError, emailErrorText, 'Format email tidak valid (contoh: user@example.com).', 'email');
+                    }
+                } else {
+                    clearError(emailInput, emailError, 'email');
+                }
+            });
+
+            passwordInput.addEventListener('input', function() {
+                if (passwordInput.value !== '') {
+                    clearError(passwordInput, passwordError, 'password');
+                }
+            });
+
+            // Form submit validation
+            form.addEventListener('submit', function(event) {
+                let hasError = false;
+                const emailValue = emailInput.value.trim();
+                const passwordValue = passwordInput.value;
+
+                // Validate Email
+                if (emailValue === '') {
+                    showError(emailInput, emailError, emailErrorText, 'Email tidak boleh kosong.', 'email');
+                    hasError = true;
+                } else {
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(emailValue)) {
+                        showError(emailInput, emailError, emailErrorText, 'Format email tidak valid (contoh: user@example.com).', 'email');
+                        hasError = true;
+                    }
+                }
+
+                // Validate Password
+                if (passwordValue === '') {
+                    showError(passwordInput, passwordError, passwordErrorText, 'Password tidak boleh kosong.', 'password');
+                    hasError = true;
+                }
+
+                if (hasError) {
+                    event.preventDefault();
+                }
+            });
+        });
+    </script>
 </body>
 </html>

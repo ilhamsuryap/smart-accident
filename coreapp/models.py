@@ -18,10 +18,29 @@ import traceback
 # MODEL POLRES (Dinamis — tidak pakai enum)
 # ============================================================================
 
+class Polda(models.Model):
+    """Model untuk data Polda yang dikelola secara dinamis oleh superadmin"""
+    id = models.AutoField(primary_key=True)
+    nama = models.CharField(max_length=50, verbose_name='Nama Polda')
+    kode = models.CharField(max_length=20, unique=True, verbose_name='Kode Polda', help_text='Contoh: polda_jatim')
+    is_active = models.BooleanField(default=True, verbose_name='Aktif')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Polda'
+        verbose_name_plural = 'Polda'
+        ordering = ['nama']
+
+    def __str__(self):
+        return self.nama
+
 class Polres(models.Model):
     """Model untuk data Polres yang dikelola secara dinamis oleh superadmin"""
-    nama = models.CharField(max_length=100, verbose_name='Nama Polres')
-    kode = models.CharField(max_length=50, unique=True, verbose_name='Kode Polres', help_text='Contoh: polres_madiun')
+    id = models.AutoField(primary_key=True)
+    nama = models.CharField(max_length=25, verbose_name='Nama Polres')
+    kode = models.CharField(max_length=15, unique=True, verbose_name='Kode Polres', help_text='Contoh: polres_madiun')
+    polda = models.ForeignKey(Polda, on_delete=models.SET_NULL, null=True, blank=True, related_name='polres', verbose_name='Polda')
     alamat = models.TextField(blank=True, null=True, verbose_name='Alamat')
     telepon = models.CharField(max_length=20, blank=True, null=True, verbose_name='Telepon')
     is_active = models.BooleanField(default=True, verbose_name='Aktif')
@@ -100,13 +119,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
     
     id = models.AutoField(primary_key=True)
-    username = models.CharField(max_length=150, unique=True, null=True, blank=True, verbose_name='Username')
-    first_name = models.CharField(max_length=150, blank=True, verbose_name='Nama Depan')
-    last_name = models.CharField(max_length=150, blank=True, verbose_name='Nama Belakang')
-    name = models.CharField(max_length=255, verbose_name='Nama Lengkap')
-    email = models.EmailField(unique=True, verbose_name='Email Institusi')
-    password = models.CharField(max_length=128, null=True, blank=True, verbose_name='Password')
-    google_id = models.CharField(max_length=255, null=True, blank=True, unique=True, verbose_name='Google ID')
+    username = models.CharField(max_length=15, unique=True, null=True, blank=True, verbose_name='Username')
+    first_name = models.CharField(max_length=10, blank=True, verbose_name='Nama Depan')
+    last_name = models.CharField(max_length=10, blank=True, verbose_name='Nama Belakang')
+    name = models.CharField(max_length=20, verbose_name='Nama Lengkap')
+    email = models.EmailField(max_length=30, unique=True, verbose_name='Email Institusi')
+    password = models.CharField(max_length=255, null=True, blank=True, verbose_name='Password')
+    # google_id = models.CharField(max_length=255, null=True, blank=True, unique=True, verbose_name='Google ID')
     role = models.CharField(
         max_length=20, 
         choices=ROLE_CHOICES, 
@@ -123,20 +142,20 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name='Staff Status',
         help_text='Tentukan apakah user dapat mengakses admin panel'
     )
-    created_by = models.ForeignKey(
-        'self',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='created_users',
-        verbose_name='Dibuat Oleh',
-        help_text='Superadmin yang membuat akun ini'
-    )
-    last_login_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name='Login Terakhir'
-    )
+    # created_by = models.ForeignKey(
+    #     'self',
+    #     on_delete=models.SET_NULL,
+    #     null=True,
+    #     blank=True,
+    #     related_name='created_users',
+    #     verbose_name='Dibuat Oleh',
+    #     help_text='Superadmin yang membuat akun ini'
+    # )
+    # last_login_at = models.DateTimeField(
+    #     null=True,
+    #     blank=True,
+    #     verbose_name='Login Terakhir'
+    # )
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Dibuat Pada'
@@ -261,25 +280,25 @@ class Profile(models.Model):
         blank=True,
         verbose_name='Nomor Telepon'
     )
-    avatar = models.ImageField(
-        upload_to='profile/',
-        null=True,
-        blank=True,
-        verbose_name='Avatar'
-    )
+    # avatar = models.ImageField(
+    #     upload_to='profile/',
+    #     null=True,
+    #     blank=True,
+    #     verbose_name='Avatar'
+    # )
     bio = models.TextField(
         null=True,
         blank=True,
         verbose_name='Bio'
     )
-    institution = models.CharField(
-        max_length=255,
-        null=True,
-        blank=True,
-        verbose_name='Institusi'
-    )
+    # institution = models.CharField(
+    #     max_length=255,
+    #     null=True,
+    #     blank=True,
+    #     verbose_name='Institusi'
+    # )
     position = models.CharField(
-        max_length=255,
+        max_length=20,
         null=True,
         blank=True,
         verbose_name='Jabatan'
@@ -345,9 +364,9 @@ class RuasJalan(models.Model):
     )
     
     id = models.AutoField(primary_key=True)
-    nama_ruas = models.CharField(max_length=100)
+    nama_ruas = models.CharField(max_length=50)
     jenis_jalan = models.CharField(max_length=20, choices=JENIS_JALAN_CHOICES)
-    wilayah = models.CharField(max_length=100)
+    wilayah = models.CharField(max_length=40)
     panjang_km = models.DecimalField(max_digits=10, decimal_places=3, validators=[MinValueValidator(0)])
     lat_awal = models.DecimalField(max_digits=25, decimal_places=20, null=True, blank=True, help_text="Latitude titik awal ruas jalan")
     lon_awal = models.DecimalField(max_digits=25, decimal_places=20, null=True, blank=True, help_text="Longitude titik awal ruas jalan")
@@ -649,9 +668,9 @@ class SegmenJalan(models.Model):
     lon_awal = models.DecimalField(max_digits=25, decimal_places=20, null=True, blank=True)
     lat_akhir = models.DecimalField(max_digits=25, decimal_places=20, null=True, blank=True)
     lon_akhir = models.DecimalField(max_digits=25, decimal_places=20, null=True, blank=True)
-    titik_awal = models.CharField(max_length=100, null=True, blank=True, help_text="Label titik awal (contoh: Titik 1)")
-    titik_akhir = models.CharField(max_length=100, null=True, blank=True, help_text="Label titik akhir (contoh: Titik 2)")
-    nama_segmen = models.CharField(max_length=255, null=True, blank=True, help_text="Nama segmen, bisa diubah dinamis")
+    titik_awal = models.CharField(max_length=30, null=True, blank=True, help_text="Label titik awal (contoh: Titik 1)")
+    titik_akhir = models.CharField(max_length=30, null=True, blank=True, help_text="Label titik akhir (contoh: Titik 2)")
+    nama_segmen = models.CharField(max_length=20, null=True, blank=True, help_text="Nama segmen, bisa diubah dinamis")
     keterangan = models.TextField(null=True, blank=True, help_text="Penjelasan/keterangan segmen")
     geometry = models.TextField(null=True, blank=True, help_text="GeoJSON LineString untuk segmen ini")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -1150,8 +1169,8 @@ class KecelakaanRaw(models.Model):
 
 class KecelakaanPreprosesing(models.Model):
     """Model untuk data kecelakaan yang sudah dipreproses (akan diassign ke segmen)"""
-    id = models.BigAutoField(primary_key=True)
-    nomor_kecelakaan = models.CharField(max_length=50, null=True, blank=True, help_text='Nomor identitas kecelakaan')
+    id = models.AutoField(primary_key=True)
+    nomor_kecelakaan = models.CharField(max_length=5, null=True, blank=True, help_text='Nomor identitas kecelakaan')
     tanggal = models.DateField()
     waktu = models.TimeField()
     latitude = models.DecimalField(max_digits=30, decimal_places=20)
@@ -1161,9 +1180,9 @@ class KecelakaanPreprosesing(models.Model):
     korban_luka_berat = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     korban_luka_ringan = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     kerugian_materi = models.DecimalField(max_digits=15, decimal_places=2, default=0, validators=[MinValueValidator(0)])
-    desa = models.CharField(max_length=100)
-    kecamatan = models.CharField(max_length=100)
-    kabupaten_kota = models.CharField(max_length=100)
+    desa = models.CharField(max_length=25)
+    kecamatan = models.CharField(max_length=25)
+    kabupaten_kota = models.CharField(max_length=25)
     keterangan = models.TextField(blank=True)
     polres = models.ForeignKey(
         'Polres',
