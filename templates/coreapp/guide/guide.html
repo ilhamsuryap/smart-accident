@@ -1,0 +1,365 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<div class="p-6 bg-gray-100 min-h-screen">
+
+    <!-- Header + Navbar Tabs -->
+    <div class="bg-white rounded-xl shadow p-6 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">
+                📖 Panduan Penggunaan Aplikasi
+            </h1>
+            <p class="text-gray-600 mt-2">
+                Panduan penggunaan Sistem Informasi Geografis pemetaan
+                kerawanan kecelakaan lalu lintas.
+            </p>
+        </div>
+
+        <nav class="flex gap-1 bg-gray-100 rounded-lg p-1 self-start sm:self-center">
+            <button id="tab-ruas" onclick="showGuide('ruas')"
+                class="px-3 py-1.5 rounded-md text-sm font-medium text-white bg-blue-600 transition-colors duration-150 whitespace-nowrap">
+                🛣️ Ruas Jalan
+            </button>
+
+            <button id="tab-upload" onclick="showGuide('upload')"
+                class="px-3 py-1.5 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-200 transition-colors duration-150 whitespace-nowrap">
+                📊 Upload Data
+            </button>
+
+            <button id="tab-peta" onclick="showGuide('peta')"
+                class="px-3 py-1.5 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-200 transition-colors duration-150 whitespace-nowrap">
+                🗺️ Peta Kerawanan
+            </button>
+        </nav>
+    </div>
+
+
+    <!-- Membuat Ruas Jalan -->
+    <div id="guide-ruas" class="bg-white rounded-xl shadow p-8 mb-6">
+
+        <h2 class="text-2xl font-bold text-blue-600 mb-6 pb-3 border-b border-gray-100">
+            1. Membuat Ruas Jalan
+        </h2>
+
+        <div class="space-y-10">
+
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">1</span>
+                    <h3 class="font-semibold text-lg text-gray-800">Masuk ke menu Pemetaan</h3>
+                </div>
+
+                <p class="text-gray-600 mb-4 ml-10">
+                    Pilih menu <b>Pemetaan</b> pada sidebar untuk membuka halaman Kelola Ruas Jalan.
+                </p>
+
+                <div class="ml-10 max-w-xl">
+                    <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/RuasJalan_1.png' %}" class="w-full block">
+                    </div>
+                </div>
+            </div>
+
+
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">2</span>
+                    <h3 class="font-semibold text-lg text-gray-800">Tambah ruas jalan</h3>
+                </div>
+
+                <p class="text-gray-600 mb-4 ml-10">
+                    Klik tombol <b>Tambah Ruas Jalan</b>, kemudian masukkan informasi ruas jalan.
+                </p>
+
+                <div class="ml-10 max-w-xl">
+                    <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/RuasJalan_2.png' %}" class="w-full block">
+                    </div>
+                </div>
+            </div>
+
+
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">3</span>
+                    <h3 class="font-semibold text-lg text-gray-800">Menggambar ruas jalan</h3>
+                </div>
+
+                <p class="text-gray-600 mb-4 ml-10">
+                    Klik titik pada peta mengikuti jalur jalan hingga membentuk garis.
+                    Pastikan koordinat sesuai dengan kondisi jalan sebenarnya.
+                </p>
+
+                <div class="ml-10 max-w-xl">
+                    <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/RuasJalan_3.png' %}" class="w-full block">
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">4</span>
+                    <h3 class="font-semibold text-lg text-gray-800">Isi Data Ruas Jalan</h3>
+                </div>
+
+                <p class="text-gray-600 mb-4 ml-10">
+                    Data Ruas Jalan otomatis terisi dan klik simpan.
+                </p>
+
+                <div class="ml-10 max-w-xs">
+                    <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/RuasJalan_4.png' %}" class="w-full block">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+
+    <!-- Upload Data -->
+    <div id="guide-upload" class="hidden bg-white rounded-xl shadow p-8 mb-6">
+
+        <h2 class="text-2xl font-bold text-blue-600 mb-6 pb-3 border-b border-gray-100">
+            2. Mengunggah Data Kecelakaan
+        </h2>
+
+        <div class="space-y-10">
+
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">1</span>
+                    <h3 class="font-semibold text-lg text-gray-800">Masuk ke menu Pemetaan
+
+
+</h3>
+                </div>
+
+                <p class="text-gray-600 mb-4 ml-10">
+                Pilih menu Pemetaan pada sidebar untuk membuka halaman Kelola Data Pemetaan dan klik upload.
+                </p>
+
+                <div class="ml-10 max-w-xs">
+                    <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/DataPemetaan_1.png' %}" class="w-full block">
+                    </div>
+                </div>
+            </div>
+
+
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">2</span>
+                    <h3 class="font-semibold text-lg text-gray-800">Download Template</h3>
+                </div>
+
+                <p class="text-gray-600 mb-4 ml-10">
+                    Download Template format excel terlebih dahulu, dan sesuaikan format datanya untuk memudahkan dalam pengunggahan data kecelakaan, kemudian upload data.
+                </p>
+
+                <div class="ml-10 max-w-xl">
+                    <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/DataPemetaan_2.png' %}" class="w-full block">
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+    </div>
+
+    <!-- Peta Kerawanan -->
+    <div id="guide-peta" class="hidden bg-white rounded-xl shadow p-8 mb-6">
+
+        <h2 class="text-2xl font-bold text-blue-600 mb-6 pb-3 border-b border-gray-100">
+            3. Melihat Peta Kerawanan Kecelakaan
+        </h2>
+
+
+        <div class="space-y-10">
+
+            <!-- Langkah 1 -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center">
+                        1
+                    </span>
+
+                    <h3 class="font-semibold text-lg text-gray-800">
+                        Membuka halaman peta kerawanan
+                    </h3>
+                </div>
+
+                <p class="text-gray-600 mb-4 ml-10">
+                    Buka menu <b>Pemetaan</b> pada sidebar kemudian pilih
+                    tampilan hasil kerawanan untuk melihat segmen jalan berdasarkan tingkat risiko kecelakaan.
+                </p>
+
+                <div class="ml-10 max-w-xl">
+                    <div class="rounded-lg overflow-hidden border shadow">
+                        <img src="{% static 'img/Peta_1.png' %}" class="w-full">
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Langkah 2 -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center">
+                        2
+                    </span>
+
+                    <h3 class="font-semibold text-lg text-gray-800">
+                        Memahami warna tingkat kerawanan
+                    </h3>
+                </div>
+
+                <p class="text-gray-600 ml-10 mb-4">
+                    Setiap warna pada segmen jalan menunjukkan tingkat kerawanan kecelakaan.
+                </p>
+
+                <div class="ml-10 grid grid-cols-1 md:grid-cols-2 gap-3">
+
+                    <div class="flex items-center gap-3 bg-red-50 p-3 rounded">
+                        🔴 <span>Rawan Kecelakaan Sangat Tinggi</span>
+                    </div>
+
+                    <div class="flex items-center gap-3 bg-orange-50 p-3 rounded">
+                        🟠 <span>Rawan Kecelakaan Tinggi</span>
+                    </div>
+
+                    <div class="flex items-center gap-3 bg-yellow-50 p-3 rounded">
+                        🟡 <span>Rawan Kecelakaan Sedang</span>
+                    </div>
+
+                    <div class="flex items-center gap-3 bg-green-50 p-3 rounded">
+                        🟢 <span>Rawan Kecelakaan Rendah</span>
+                    </div>
+
+                    <div class="flex items-center gap-3 bg-blue-50 p-3 rounded">
+                        🟢 <span>Rawan Kecelakaan Sangat Rendah</span>
+                    </div>
+
+                </div>
+            </div>
+
+
+            <!-- Langkah 3 -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center">
+                        3
+                    </span>
+
+                    <h3 class="font-semibold text-lg text-gray-800">
+                        Melihat informasi detail segmen
+                    </h3>
+                </div>
+
+                <p class="text-gray-600 mb-4 ml-10">
+                    Klik salah satu ruas atau segmen jalan pada peta.
+                    Sistem akan menampilkan informasi seperti nama ruas jalan,
+                    jumlah kecelakaan, nilai Z-Score, dan tingkat kerawanan.
+                </p>
+
+                <div class="ml-10 max-w-xl">
+                    <div class="rounded-lg overflow-hidden border shadow">
+                        <img src="{% static 'img/Peta_2.png' %}" class="w-full">
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+    </div>
+
+    <!-- Catatan -->
+    <div class="bg-yellow-100 border-l-4 border-yellow-500 rounded-lg p-6">
+
+        <h3 class="font-bold text-yellow-700">
+            ⚠️ Catatan Penting
+        </h3>
+
+        <ul class="list-disc ml-6 mt-3 text-gray-700 space-y-2">
+            <li>Jangan mengubah nama kolom pada template Excel.</li>
+            <li>Pastikan latitude dan longitude menggunakan format desimal (-7.7182, 111.5352).</li>
+        </ul>
+
+    </div>
+
+</div>
+<script>
+function showGuide(name) {
+
+    const guides = ['ruas', 'upload', 'peta'];
+
+    const activeColors = {
+        ruas: 'bg-blue-600',
+        upload: 'bg-blue-600',
+        peta: 'bg-blue-600'
+    };
+
+    // Sembunyikan semua guide dan reset semua tab ke style inactive
+    guides.forEach(item => {
+        document.getElementById('guide-' + item).classList.add('hidden');
+
+        const tab = document.getElementById('tab-' + item);
+
+        tab.className =
+            "px-3 py-1.5 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-200 transition-colors duration-150 whitespace-nowrap";
+    });
+
+
+    // Tampilkan guide yang dipilih
+    document.getElementById('guide-' + name).classList.remove('hidden');
+
+
+    // Beri warna sesuai tab yang aktif
+    const activeTab = document.getElementById('tab-' + name);
+
+    activeTab.className =
+        "px-3 py-1.5 rounded-md text-sm font-medium text-white " + activeColors[name] +
+        " transition-colors duration-150 whitespace-nowrap";
+}
+</script>
+
+{% endblock %}

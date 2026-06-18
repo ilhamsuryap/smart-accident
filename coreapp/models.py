@@ -23,6 +23,8 @@ class Polda(models.Model):
     id = models.AutoField(primary_key=True)
     nama = models.CharField(max_length=50, verbose_name='Nama Polda')
     kode = models.CharField(max_length=20, unique=True, verbose_name='Kode Polda', help_text='Contoh: polda_jatim')
+    alamat = models.TextField(blank=True, null=True, verbose_name='Alamat')
+    telepon = models.CharField(max_length=20, blank=True, null=True, verbose_name='Telepon')
     is_active = models.BooleanField(default=True, verbose_name='Aktif')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -1170,7 +1172,7 @@ class KecelakaanRaw(models.Model):
 class KecelakaanPreprosesing(models.Model):
     """Model untuk data kecelakaan yang sudah dipreproses (akan diassign ke segmen)"""
     id = models.AutoField(primary_key=True)
-    nomor_kecelakaan = models.CharField(max_length=5, null=True, blank=True, help_text='Nomor identitas kecelakaan')
+    nomor_kecelakaan = models.CharField(unique=True, max_length=5, null=True, blank=True, help_text='Nomor identitas kecelakaan')
     tanggal = models.DateField()
     waktu = models.TimeField()
     latitude = models.DecimalField(max_digits=30, decimal_places=20)
