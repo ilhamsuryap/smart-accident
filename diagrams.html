@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagram Smart Accident</title>
+    <!-- Load Mermaid.js dari CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    </script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #1152d4;
+            margin-bottom: 40px;
+        }
+        h2 {
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+            margin-top: 50px;
+            color: #374151;
+        }
+        .diagram-box {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Diagram Sistem Smart Accident</h1>
+
+    <h2>Class Diagram</h2>
+    <div class="diagram-box">
+        <div class="mermaid">
+        classDiagram
+            %% --- VIEWS / CONTROLLERS ---
+            class AuthViews {
+                +login_view(request)
+                +logout_view(request)
+            }
+            class PolresViews {
+                +polres_list(request)
+                +polres_create(request)
+                +polres_update(request, pk)
+                +polres_delete(request, pk)
+            }
+            class PoldaViews {
+                +polda_list(request)
+                +polda_create(request)
+                +polda_update(request, pk)
+                +polda_delete(request, pk)
+            }
+            class AdminViews {
+                +admin_list(request)
+                +admin_create(request)
+                +admin_update(request, user_id)
+                +admin_delete(request, user_id)
+            }
+            class RuasJalanViews {
+                +ruas_jalan_list(request)
+                +ruas_jalan_create(request)
+                +ruas_jalan_update(request, pk)
+                +ruas_jalan_delete(request, pk)
+            }
+            class KecelakaanViews {
+                +kecelakaan_list(request)
+                +import_excel_preproses(request)
+                +kecelakaan_preprosesing_delete(request, pk)
+            }
+            class ProfileViews {
+                +profile_view(request)
+            }
+
+            %% --- ENTITIES (MODELS) ---
+            class User {
+                +String email
+                +String name
+                +String role
+                +Boolean is_active
+                +objects.get()$
+                +objects.filter()$
+                +objects.create()$
+                +save()
+                +delete()
+            }
+            class Profile {
+                +String phone
+                +String position
+                +String alamat
+                +save()
+            }
+            class Polda {
+                +String nama
+                +String kode
+                +Boolean is_active
+                +objects.all()$
+                +save()
+                +delete()
+            }
+            class Polres {
+                +String nama
+                +String kode
+                +String alamat
+                +String telepon
+                +Boolean is_active
+                +objects.all()$
+                +save()
+                +delete()
+            }
+            class RuasJalan {
+                +String nama_ruas
+                +String jenis_jalan
+                +Float panjang_km
+                +objects.all()$
+                +save()
+                +delete()
+                +generate_segmen()
+            }
+            class SegmenJalan {
+                +Float km_awal
+                +Float km_akhir
+                +Float panjang_segmen
+                +String nama_segmen
+                +objects.create()$
+                +objects.filter()$
+                +get_accident_count()
+            }
+            class KecelakaanPreprosesing {
+                +Date tanggal
+                +Time waktu
+                +Float latitude
+                +Float longitude
+                +Integer korban_meninggal
+                +objects.all()$
+                +objects.create()$
+                +save()
+                +delete()
+                +find_closest_segment()
+            }
+
+            %% --- RELATIONS ---
+            User "1" *-- "1" Profile : has
+            Polda "1" o-- "*" Polres : manages
+            Polres "1" o-- "*" RuasJalan : manages
+            RuasJalan "1" *-- "*" SegmenJalan : consists_of
+            SegmenJalan "1" o-- "*" KecelakaanPreprosesing : occurs_on
+            Polres "1" o-- "*" User : has_admin
+
+            AuthViews ..> User : uses
+            ProfileViews ..> Profile : uses
+            PoldaViews ..> Polda : uses
+            PolresViews ..> Polres : uses
+            AdminViews ..> User : uses
+            RuasJalanViews ..> RuasJalan : uses
+            RuasJalanViews ..> SegmenJalan : uses
+            KecelakaanViews ..> KecelakaanPreprosesing : uses
+        </div>
+    </div>
+
+    <h2>1. Sequence Diagram: Login</h2>
+    <div class="diagram-box">
+        <div class="mermaid">
+        sequenceDiagram
+            autonumber
+            actor Pengguna
+            participant Boundary as &lt;&lt;Boundary&gt;&gt;<br/>LoginUI
+            participant Control as &lt;&lt;Control&gt;&gt;<br/>AuthViews
+            participant Entity as &lt;&lt;Entity&gt;&gt;<br/>User
+
+            Pengguna->>Boundary: submit email & password
+            Boundary->>Control: login_view(request)
+            Control->>Entity: objects.get(email)
+            
+            alt User ditemukan & is_active
+                Control->>Control: authenticate(email, password)
+                Control->>Control: login(request, user)
+                Control-->>Boundary: redirect dashboard
+                Boundary-->>Pengguna: tampilkan dashboard
+            else Gagal
+                Control-->>Boundary: render login.html (error)
+                Boundary-->>Pengguna: tampilkan pesan error
+            end
+        </div>
+    </div>
+
+    <h2>2. Sequence Diagram: Kelola Polres</h2>
+    <div class="diagram-box">
+        <div class="mermaid">
+        sequenceDiagram
+            autonumber
+            actor Superadmin
+            participant Boundary as &lt;&lt;Boundary&gt;&gt;<br/>PolresUI
+            participant Control as &lt;&lt;Control&gt;&gt;<br/>PolresViews
+            participant Entity as &lt;&lt;Entity&gt;&gt;<br/>Polres
+
+            Superadmin->>Boundary: akses list Polres
+            Boundary->>Control: polres_list(request)
+            Control->>Entity: objects.all()
+            Entity-->>Control: queryset
+            Control-->>Boundary: render list.html
+            Boundary-->>Superadmin: tampilkan data
+
+            alt Tambah Polres
+                Superadmin->>Boundary: isi form & submit
+                Boundary->>Control: polres_create(request)
+                Control->>Entity: save()
+                Control-->>Boundary: redirect polres_list
+                Boundary-->>Superadmin: tampilkan sukses
+            else Edit Polres
+                Superadmin->>Boundary: edit form & submit
+                Boundary->>Control: polres_update(request, pk)
+                Control->>Entity: save()
+                Control-->>Boundary: redirect polres_list
+                Boundary-->>Superadmin: tampilkan sukses
+            else Hapus Polres
+                Superadmin->>Boundary: konfirmasi hapus
+                Boundary->>Control: polres_delete(request, pk)
+                Control->>Entity: delete()
+                Control-->>Boundary: redirect polres_list
+                Boundary-->>Superadmin: tampilkan sukses
+            end
+        </div>
+    </div>
+
+    <h2>3. Sequence Diagram: Kelola Polda</h2>
+    <div class="diagram-box">
+        <div class="mermaid">
+        sequenceDiagram
+            autonumber
+            actor Superadmin
+            participant Boundary as &lt;&lt;Boundary&gt;&gt;<br/>PoldaUI
+            participant Control as &lt;&lt;Control&gt;&gt;<br/>PoldaViews
+            participant Entity as &lt;&lt;Entity&gt;&gt;<br/>Polda
+
+            Superadmin->>Boundary: akses list Polda
+            Boundary->>Control: polda_list(request)
+            Control->>Entity: objects.all()
+            Entity-->>Control: queryset
+            Control-->>Boundary: render list.html
+            Boundary-->>Superadmin: tampilkan data
+
+            alt Tambah Polda
+                Superadmin->>Boundary: isi form & submit
+                Boundary->>Control: polda_create(request)
+                Control->>Entity: save()
+                Control-->>Boundary: redirect polda_list
+                Boundary-->>Superadmin: tampilkan sukses
+            else Edit Polda
+                Superadmin->>Boundary: edit form & submit
+                Boundary->>Control: polda_update(request, pk)
+                Control->>Entity: save()
+                Control-->>Boundary: redirect polda_list
+                Boundary-->>Superadmin: tampilkan sukses
+            else Hapus Polda
+                Superadmin->>Boundary: konfirmasi hapus
+                Boundary->>Control: polda_delete(request, pk)
+                Control->>Entity: delete()
+                Control-->>Boundary: redirect polda_list
+                Boundary-->>Superadmin: tampilkan sukses
+            end
+        </div>
+    </div>
+
+    <h2>4. Sequence Diagram: Kelola Akun Admin</h2>
+    <div class="diagram-box">
+        <div class="mermaid">
+        sequenceDiagram
+            autonumber
+            actor Superadmin
+            participant Boundary as &lt;&lt;Boundary&gt;&gt;<br/>AdminUI
+            participant Control as &lt;&lt;Control&gt;&gt;<br/>AdminViews
+            participant Entity as &lt;&lt;Entity&gt;&gt;<br/>User
+
+            Superadmin->>Boundary: akses list Admin
+            Boundary->>Control: admin_list(request)
+            Control->>Entity: objects.filter(role='admin')
+            Entity-->>Control: queryset
+            Control-->>Boundary: render list.html
+            Boundary-->>Superadmin: tampilkan data
+
+            alt Tambah Admin
+                Superadmin->>Boundary: isi form & submit
+                Boundary->>Control: admin_create(request)
+                Control->>Entity: save()
+                Control-->>Boundary: redirect admin_list
+                Boundary-->>Superadmin: tampilkan sukses
+            else Edit Admin
+                Superadmin->>Boundary: edit form & submit
+                Boundary->>Control: admin_update(request, user_id)
+                Control->>Entity: save()
+                Control-->>Boundary: redirect admin_list
+                Boundary-->>Superadmin: tampilkan sukses
+            else Hapus Admin
+                Superadmin->>Boundary: konfirmasi hapus
+                Boundary->>Control: admin_delete(request, user_id)
+                Control->>Entity: delete()
+                Control-->>Boundary: redirect admin_list
+                Boundary-->>Superadmin: tampilkan sukses
+            end
+        </div>
+    </div>
+
+    <h2>5. Sequence Diagram: Kelola Ruas Jalan</h2>
+    <div class="diagram-box">
+        <div class="mermaid">
+        sequenceDiagram
+            autonumber
+            actor Admin
+            participant Boundary as &lt;&lt;Boundary&gt;&gt;<br/>RuasJalanUI
+            participant Control as &lt;&lt;Control&gt;&gt;<br/>RuasJalanViews
+            participant Entity as &lt;&lt;Entity&gt;&gt;<br/>RuasJalan
+            participant Entity2 as &lt;&lt;Entity&gt;&gt;<br/>SegmenJalan
+
+            Admin->>Boundary: akses list Ruas Jalan
+            Boundary->>Control: ruas_jalan_list(request)
+            Control->>Entity: objects.all()
+            Entity-->>Control: queryset
+            Control-->>Boundary: render list.html
+            Boundary-->>Admin: tampilkan data
+
+            alt Tambah Ruas Jalan
+                Admin->>Boundary: isi form & submit
+                Boundary->>Control: ruas_jalan_create(request)
+                Control->>Entity: save()
+                Control->>Entity: generate_segmen()
+                Entity->>Entity2: objects.create()
+                Control-->>Boundary: redirect ruas_jalan_list
+                Boundary-->>Admin: tampilkan sukses
+            else Edit Ruas Jalan
+                Admin->>Boundary: edit form & submit
+                Boundary->>Control: ruas_jalan_update(request, pk)
+                Control->>Entity: save()
+                Control->>Entity: generate_segmen()
+                Entity->>Entity2: objects.create()
+                Control-->>Boundary: redirect ruas_jalan_list
+                Boundary-->>Admin: tampilkan sukses
+            else Hapus Ruas Jalan
+                Admin->>Boundary: konfirmasi hapus
+                Boundary->>Control: ruas_jalan_delete(request, pk)
+                Control->>Entity: delete()
+                Control-->>Boundary: redirect ruas_jalan_list
+                Boundary-->>Admin: tampilkan sukses
+            end
+        </div>
+    </div>
+
+    <h2>6. Sequence Diagram: Kelola Kecelakaan Preprosesing</h2>
+    <div class="diagram-box">
+        <div class="mermaid">
+        sequenceDiagram
+            autonumber
+            actor Admin
+            participant Boundary as &lt;&lt;Boundary&gt;&gt;<br/>KecelakaanUI
+            participant Control as &lt;&lt;Control&gt;&gt;<br/>KecelakaanViews
+            participant Entity as &lt;&lt;Entity&gt;&gt;<br/>KecelakaanPreprosesing
+
+            Admin->>Boundary: akses list Kecelakaan
+            Boundary->>Control: kecelakaan_list(request)
+            Control->>Entity: objects.all()
+            Entity-->>Control: queryset
+            Control-->>Boundary: render list.html
+            Boundary-->>Admin: tampilkan data
+
+            alt Tambah Data (Upload Excel)
+                Admin->>Boundary: unggah file & submit
+                Boundary->>Control: import_excel_preproses(request)
+                Control->>Entity: objects.create(**data_excel)
+                Entity->>Entity: find_closest_segment()
+                Control-->>Boundary: redirect kecelakaan_list
+                Boundary-->>Admin: tampilkan sukses
+            else Hapus Data
+                Admin->>Boundary: konfirmasi hapus
+                Boundary->>Control: kecelakaan_preprosesing_delete(request, pk)
+                Control->>Entity: delete()
+                Control-->>Boundary: redirect kecelakaan_list
+                Boundary-->>Admin: tampilkan sukses
+            end
+        </div>
+    </div>
+
+    <h2>7. Sequence Diagram: Edit Profile</h2>
+    <div class="diagram-box">
+        <div class="mermaid">
+        sequenceDiagram
+            autonumber
+            actor User
+            participant Boundary as &lt;&lt;Boundary&gt;&gt;<br/>ProfileUI
+            participant Control as &lt;&lt;Control&gt;&gt;<br/>ProfileViews
+            participant Entity as &lt;&lt;Entity&gt;&gt;<br/>Profile
+
+            User->>Boundary: akses profile
+            Boundary->>Control: profile_view(request)
+            
+            alt POST Request (Update Profile)
+                User->>Boundary: edit info & submit
+                Boundary->>Control: profile_view(request)
+                Control->>Entity: save()
+                Control-->>Boundary: redirect profile
+                Boundary-->>User: tampilkan sukses
+            else GET Request
+                Control-->>Boundary: render profile.html
+                Boundary-->>User: tampilkan profil saat ini
+            end
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

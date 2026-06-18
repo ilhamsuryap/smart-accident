@@ -448,6 +448,11 @@ def fitur_view(request):
 def faq_view(request):
     return render(request, 'faq.html')
 
+@login_required(login_url='login')
+def guide_view(request):
+    """Panduan penggunaan aplikasi"""
+    return render(request, 'coreapp/guide/guide.html', {'current': 'guide', 'title': 'Panduan Penggunaan'})
+
 # Dashboard Views
 @login_required(login_url='login')
 def dashboard_view(request):
@@ -1219,6 +1224,17 @@ def api_threshold_data(request):
             t3 = z_min + (3 * interval)
             t4 = z_min + (4 * interval)
             
+            # Calculate mean and stddev
+            stats = RekapSegmen.objects.filter(
+                periode_tahun=tahun,
+                segmen_jalan__in=segments_in_ruas
+            ).aggregate(
+                mean=Avg('jumlah_kecelakaan'),
+                stddev=StdDev('jumlah_kecelakaan')
+            )
+            mean = float(stats['mean'] or 0.0)
+            stddev = float(stats['stddev'] or 0.0)
+
             # Count segments per kategori
             kategori_counts = {
                 'sangat_tinggi': analisis_list.filter(kategori='sangat_tinggi').count(),
@@ -1233,6 +1249,8 @@ def api_threshold_data(request):
                 'has_data': True,
                 'z_max': round(z_max, 3),
                 'z_min': round(z_min, 3),
+                'mean': round(mean, 3),
+                'stddev': round(stddev, 3),
                 'interval': round(interval, 3),
                 't4': round(t4, 3),  # sangat_tinggi threshold
                 't3': round(t3, 3),  # tinggi threshold
@@ -1247,6 +1265,8 @@ def api_threshold_data(request):
                 'has_data': False,
                 'z_max': 0.0,
                 'z_min': 0.0,
+                'mean': 0.0,
+                'stddev': 0.0,
                 'interval': 0.0,
                 't4': 0.0,
                 't3': 0.0,
@@ -2670,8 +2690,15 @@ def kecelakaan_preprosesing_list(request):
     if selected_polda and selected_polda != 'all':
         polres_qs = polres_qs.filter(polda_id=selected_polda)
     
+    total_data = kecelakaan.count()
+    
+    paginator = Paginator(kecelakaan, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
     context = {
-        'kecelakaan': kecelakaan[:100],
+        'kecelakaan': page_obj,
+        'total_data': total_data,
         'is_admin': is_admin(request.user),
         'tahun_options': range(2020, timezone.now().year + 1),
         'title': 'Data Kecelakaan Preprosesing',
@@ -3075,3 +3102,7 @@ def laka_mentah_hapus_duplikat(request):
             
         messages.success(request, f"Berhasil membersihkan {deleted_count} data duplikat berdasarkan Nomor Laporan Polisi.")
     return redirect('laka_mentah_list')
+
+@login_required(login_url='login')
+def guide(request):
+    return render(request, 'coreapp/guide/guide.html')

@@ -9,6 +9,7 @@ urlpatterns = [
     path('keselamatan/', views.keselamatan_view, name='informasikeselamatan'),
     path('fitur/', views.fitur_view, name='fitur'),
     path('faq/', views.faq_view, name='faq'),
+    path('guide/', views.guide_view, name='guide'),
     
     # Authentication
     path('register/', views.register_view, name='register'),
@@ -129,4 +130,10 @@ urlpatterns = [
     # Geoapify API
     path('api/geoapify/routing/', views.api_geoapify_routing, name='api_geoapify_routing'),
     path('api/geoapify/reverse-geocoding/', views.api_geoapify_reverse_geocoding, name='api_geoapify_reverse_geocoding'),
+
+ # ================= Guide =================   
+
+    path('guide/', views.guide, name='guide'),
 ]
+
+
