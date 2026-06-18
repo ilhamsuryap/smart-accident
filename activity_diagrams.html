@@ -533,6 +533,10 @@
                 <span class="menu-item-icon">👤</span>
                 <span>Kelola Akun Admin</span>
             </li>
+            <li class="menu-item" data-target="polda">
+                <span class="menu-item-icon">🏢</span>
+                <span>Kelola Polda</span>
+            </li>
             <li class="menu-item" data-target="polres">
                 <span class="menu-item-icon">🚔</span>
                 <span>Kelola Polres</span>
@@ -866,6 +870,289 @@ flowchart LR
                             <tr>
                                 <td class="actor-cell"><span class="step-num">7</span><span class="idle-indicator">(Daftar diperbarui otomatis)</span></td>
                                 <td class="system-cell"><span class="step-num">8</span>Menampilkan pesan notifikasi berhasil menghapus data akun dan memperbarui list data akun. Selesai.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TABS FOR KELOLA POLDA -->
+            <!-- Tambah Polda -->
+            <div class="tab-content" id="tab-polda-tambah" data-parent="polda">
+                <div class="tech-panel">
+                    <strong>💡 Rincian Arsitektur:</strong>
+                    <p>Proses ini memungkinkan admin untuk mendaftarkan Kepolisian Daerah (Polda) baru ke dalam sistem beserta area wilayahnya.</p>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📝 Activity Diagram - Tambah Polda</span>
+                        <div class="card-controls">
+                            <button class="control-btn btn-zoom-in" data-tooltip="Zoom In">➕</button>
+                            <button class="control-btn btn-zoom-out" data-tooltip="Zoom Out">➖</button>
+                            <button class="control-btn btn-zoom-reset" data-tooltip="Reset Zoom">🔄</button>
+                            <button class="control-btn btn-copy" data-tooltip="Copy Mermaid Code">📋</button>
+                            <button class="control-btn btn-download" data-tooltip="Download SVG">💾</button>
+                        </div>
+                    </div>
+                    <div class="mermaid-container">
+                        <div class="mermaid-wrapper">
+                            <div class="mermaid">
+flowchart LR
+    classDef aktorNode fill:#E3F2FD,stroke:#1565C0,stroke-width:2px,color:#0D47A1,rx:8px,ry:8px;
+    classDef sistemNode fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#4A148C,rx:8px,ry:8px;
+    classDef startEnd fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20,rx:20px,ry:20px;
+    classDef decision fill:#FFF9C4,stroke:#FBC02D,stroke-width:2px,color:#F57F17,rx:8px,ry:8px;
+    classDef database fill:#ECEFF1,stroke:#455A64,stroke-width:2px,color:#263238,rx:5px,ry:5px;
+
+    subgraph Aktor ["Aktor (Admin)"]
+        direction TB
+        A_start([Mulai]):::startEnd
+        A_buka[Membuka Menu Kelola Polda]:::aktorNode
+        A_klik_tambah[Klik Tombol 'Tambah Polda']:::aktorNode
+        A_isi_form[Mengisi Form Data Polda]:::aktorNode
+        A_klik_simpan[Klik Tombol 'Simpan']:::aktorNode
+    end
+
+    subgraph Sistem ["Sistem"]
+        direction TB
+        S_tampil_form[Menampilkan Form Tambah Polda]:::sistemNode
+        S_validasi{Validasi Data}:::decision
+        S_err_msg[Menampilkan Pesan Error]:::sistemNode
+        S_simpan_db[(Simpan ke Database)]:::database
+        S_sukses[Menampilkan Notifikasi Sukses]:::sistemNode
+        S_selesai([Selesai]):::startEnd
+    end
+
+    A_start --> A_buka
+    A_buka --> A_klik_tambah
+    A_klik_tambah --> S_tampil_form
+    S_tampil_form --> A_isi_form
+    A_isi_form --> A_klik_simpan
+    A_klik_simpan --> S_validasi
+    
+    S_validasi -- Tidak Valid --> S_err_msg
+    S_err_msg --> S_tampil_form
+    
+    S_validasi -- Valid --> S_simpan_db
+    S_simpan_db --> S_sukses
+    S_sukses --> S_selesai
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="steps-table-container">
+                    <h3>📋 Alur Aktivitas Berdasarkan Peran</h3>
+                    <table class="steps-table">
+                        <thead>
+                            <tr>
+                                <th>Aktor (Admin)</th>
+                                <th>Sistem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">1</span>Membuka menu kelola Polda dan mengklik "Tambah Polda"</td>
+                                <td class="system-cell"><span class="step-num">2</span>Menampilkan form pendaftaran Polda baru.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">3</span>Mengisi data wilayah dan identitas Polda, lalu klik "Simpan"</td>
+                                <td class="system-cell"><span class="step-num">4</span>Memvalidasi kelengkapan dan keunikan data.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">5</span><span class="idle-indicator">(Menunggu jika data tidak valid)</span></td>
+                                <td class="system-cell"><span class="step-num">6</span>Jika <strong>Valid</strong>, simpan ke database. Jika <strong>Tidak Valid</strong>, tampilkan error.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">7</span><span class="idle-indicator">(Melihat notifikasi)</span></td>
+                                <td class="system-cell"><span class="step-num">8</span>Menampilkan pesan berhasil. Selesai.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Edit Polda -->
+            <div class="tab-content" id="tab-polda-edit" data-parent="polda">
+                <div class="tech-panel">
+                    <strong>💡 Rincian Arsitektur:</strong>
+                    <p>Memperbarui informasi Polda yang sudah terdaftar di sistem. Perubahan akan terefleksikan pada Polres yang berada di bawah wilayah Polda tersebut.</p>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📝 Activity Diagram - Edit Polda</span>
+                        <div class="card-controls">
+                            <button class="control-btn btn-zoom-in" data-tooltip="Zoom In">➕</button>
+                            <button class="control-btn btn-zoom-out" data-tooltip="Zoom Out">➖</button>
+                            <button class="control-btn btn-zoom-reset" data-tooltip="Reset Zoom">🔄</button>
+                            <button class="control-btn btn-copy" data-tooltip="Copy Mermaid Code">📋</button>
+                            <button class="control-btn btn-download" data-tooltip="Download SVG">💾</button>
+                        </div>
+                    </div>
+                    <div class="mermaid-container">
+                        <div class="mermaid-wrapper">
+                            <div class="mermaid">
+flowchart LR
+    classDef aktorNode fill:#E3F2FD,stroke:#1565C0,stroke-width:2px,color:#0D47A1,rx:8px,ry:8px;
+    classDef sistemNode fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#4A148C,rx:8px,ry:8px;
+    classDef startEnd fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20,rx:20px,ry:20px;
+    classDef decision fill:#FFF9C4,stroke:#FBC02D,stroke-width:2px,color:#F57F17,rx:8px,ry:8px;
+    classDef database fill:#ECEFF1,stroke:#455A64,stroke-width:2px,color:#263238,rx:5px,ry:5px;
+
+    subgraph Aktor ["Aktor (Admin)"]
+        direction TB
+        A_start([Mulai]):::startEnd
+        A_buka[Membuka Menu Kelola Polda]:::aktorNode
+        A_pilih[Pilih Data Polda & Klik Edit]:::aktorNode
+        A_ubah_form[Mengubah Data Form]:::aktorNode
+        A_klik_update[Klik Tombol 'Update']:::aktorNode
+    end
+
+    subgraph Sistem ["Sistem"]
+        direction TB
+        S_ambil_data[(Ambil Data Polda)]:::database
+        S_tampil_form[Menampilkan Form Edit]:::sistemNode
+        S_validasi{Validasi Data}:::decision
+        S_err_msg[Menampilkan Pesan Error]:::sistemNode
+        S_update_db[(Update Database)]:::database
+        S_sukses[Menampilkan Notifikasi Sukses]:::sistemNode
+        S_selesai([Selesai]):::startEnd
+    end
+
+    A_start --> A_buka
+    A_buka --> A_pilih
+    A_pilih --> S_ambil_data
+    S_ambil_data --> S_tampil_form
+    S_tampil_form --> A_ubah_form
+    A_ubah_form --> A_klik_update
+    A_klik_update --> S_validasi
+    
+    S_validasi -- Tidak Valid --> S_err_msg
+    S_err_msg --> S_tampil_form
+    
+    S_validasi -- Valid --> S_update_db
+    S_update_db --> S_sukses
+    S_sukses --> S_selesai
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="steps-table-container">
+                    <h3>📋 Alur Aktivitas Berdasarkan Peran</h3>
+                    <table class="steps-table">
+                        <thead>
+                            <tr>
+                                <th>Aktor (Admin)</th>
+                                <th>Sistem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">1</span>Memilih Polda dari daftar dan klik "Edit"</td>
+                                <td class="system-cell"><span class="step-num">2</span>Mengambil data polda dan menampilkan form edit.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">3</span>Mengubah data yang diperlukan dan klik "Update"</td>
+                                <td class="system-cell"><span class="step-num">4</span>Memvalidasi perubahan data.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">5</span><span class="idle-indicator">(Menunggu jika data tidak valid)</span></td>
+                                <td class="system-cell"><span class="step-num">6</span>Jika <strong>Valid</strong>, perbarui database. Jika <strong>Tidak Valid</strong>, tampilkan error.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">7</span><span class="idle-indicator">(Melihat notifikasi)</span></td>
+                                <td class="system-cell"><span class="step-num">8</span>Menampilkan pesan sukses. Selesai.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Hapus Polda -->
+            <div class="tab-content" id="tab-polda-hapus" data-parent="polda">
+                <div class="tech-panel">
+                    <strong>💡 Rincian Arsitektur:</strong>
+                    <p>Menghapus data Polda. Tindakan ini memerlukan konfirmasi karena dapat berdampak pada data Polres di bawah naungan Polda tersebut sesuai dengan pengaturan foreign key relasional.</p>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📝 Activity Diagram - Hapus Polda</span>
+                        <div class="card-controls">
+                            <button class="control-btn btn-zoom-in" data-tooltip="Zoom In">➕</button>
+                            <button class="control-btn btn-zoom-out" data-tooltip="Zoom Out">➖</button>
+                            <button class="control-btn btn-zoom-reset" data-tooltip="Reset Zoom">🔄</button>
+                            <button class="control-btn btn-copy" data-tooltip="Copy Mermaid Code">📋</button>
+                            <button class="control-btn btn-download" data-tooltip="Download SVG">💾</button>
+                        </div>
+                    </div>
+                    <div class="mermaid-container">
+                        <div class="mermaid-wrapper">
+                            <div class="mermaid">
+flowchart LR
+    classDef aktorNode fill:#E3F2FD,stroke:#1565C0,stroke-width:2px,color:#0D47A1,rx:8px,ry:8px;
+    classDef sistemNode fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#4A148C,rx:8px,ry:8px;
+    classDef startEnd fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20,rx:20px,ry:20px;
+    classDef decision fill:#FFF9C4,stroke:#FBC02D,stroke-width:2px,color:#F57F17,rx:8px,ry:8px;
+    classDef database fill:#ECEFF1,stroke:#455A64,stroke-width:2px,color:#263238,rx:5px,ry:5px;
+
+    subgraph Aktor ["Aktor (Admin)"]
+        direction TB
+        A_start([Mulai]):::startEnd
+        A_buka[Membuka Menu Kelola Polda]:::aktorNode
+        A_pilih[Pilih Data Polda & Klik Hapus]:::aktorNode
+        A_konfirmasi[Konfirmasi Penghapusan]:::aktorNode
+    end
+
+    subgraph Sistem ["Sistem"]
+        direction TB
+        S_tampil_konfirm[Menampilkan Modal Konfirmasi]:::sistemNode
+        S_cek_relasi{Cek Relasi Polres}:::decision
+        S_tolak_hapus[Tampilkan Pesan Error: Data Terpakai]:::sistemNode
+        S_hapus_db[(Hapus dari Database)]:::database
+        S_sukses[Menampilkan Notifikasi Sukses]:::sistemNode
+        S_selesai([Selesai]):::startEnd
+    end
+
+    A_start --> A_buka
+    A_buka --> A_pilih
+    A_pilih --> S_tampil_konfirm
+    S_tampil_konfirm --> A_konfirmasi
+    A_konfirmasi --> S_cek_relasi
+    
+    S_cek_relasi -- Ada Relasi --> S_tolak_hapus
+    S_tolak_hapus --> S_selesai
+    
+    S_cek_relasi -- Aman --> S_hapus_db
+    S_hapus_db --> S_sukses
+    S_sukses --> S_selesai
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="steps-table-container">
+                    <h3>📋 Alur Aktivitas Berdasarkan Peran</h3>
+                    <table class="steps-table">
+                        <thead>
+                            <tr>
+                                <th>Aktor (Admin)</th>
+                                <th>Sistem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">1</span>Memilih Polda yang akan dihapus dan mengklik tombol "Hapus"</td>
+                                <td class="system-cell"><span class="step-num">2</span>Menampilkan pop-up peringatan konfirmasi penghapusan.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">3</span>Menyetujui konfirmasi hapus</td>
+                                <td class="system-cell"><span class="step-num">4</span>Memeriksa apakah Polda ini masih memiliki relasi Polres aktif.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">5</span><span class="idle-indicator">(Menunggu jika penghapusan ditolak)</span></td>
+                                <td class="system-cell"><span class="step-num">6</span>Jika <strong>Aman</strong>, menghapus data dari database. Jika <strong>Ada Relasi</strong>, membatalkan dan menampilkan pesan error.</td>
+                            </tr>
+                            <tr>
+                                <td class="actor-cell"><span class="step-num">7</span><span class="idle-indicator">(Melihat notifikasi)</span></td>
+                                <td class="system-cell"><span class="step-num">8</span>Menampilkan pesan berhasil. Selesai.</td>
                             </tr>
                         </tbody>
                     </table>
@@ -2020,6 +2307,15 @@ flowchart LR
                     { id: "tambah", label: "Tambah Akun" },
                     { id: "edit", label: "Edit Akun" },
                     { id: "hapus", label: "Hapus Akun" }
+                ]
+            },
+            polda: {
+                title: "Kelola Polda",
+                desc: "Activity diagram alur registrasi kantor polisi daerah (Polda), pemutakhiran data wilayah/kontak, dan penghapusan record instansi.",
+                tabs: [
+                    { id: "tambah", label: "Tambah Polda" },
+                    { id: "edit", label: "Edit Polda" },
+                    { id: "hapus", label: "Hapus Polda" }
                 ]
             },
             polres: {
