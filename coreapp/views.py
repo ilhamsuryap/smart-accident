@@ -3120,7 +3120,3 @@ def laka_mentah_hapus_duplikat(request):
             
         messages.success(request, f"Berhasil membersihkan {deleted_count} data duplikat berdasarkan Nomor Laporan Polisi.")
     return redirect('laka_mentah_list')
-
-@login_required(login_url='login')
-def guide(request):
-    return render(request, 'coreapp/guide/guide.html')
