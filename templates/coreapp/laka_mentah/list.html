@@ -125,6 +125,7 @@
                     <tr>
                         <th class="px-6 py-4 font-bold text-center">NO</th>
                         <th class="px-6 py-4 font-bold">LAP. POL</th>
+                        <th class="px-6 py-4 font-bold">POLDA</th>
                         <th class="px-6 py-4 font-bold">POLRES</th>
                         <th class="px-6 py-4 font-bold">TAHUN</th>
                         <th class="px-6 py-4 font-bold">TANGGAL</th>
@@ -145,6 +146,9 @@
                             <div class="w-[180px] break-all whitespace-normal" title="{{ data.lap_pol }}">
                                 {{ data.lap_pol|default:"-" }}
                             </div>
+                        </td>
+                        <td class="px-6 py-4 text-gray-800 font-semibold">
+                            {{ data.polres.polda.nama|default:"-" }}
                         </td>
                         <td class="px-6 py-4 text-gray-800 font-semibold">
                             {{ data.polres.nama|default:"-" }}
@@ -186,6 +190,7 @@
                                         data-bb="{{ data.bb|default:'' }}"
                                         data-tahun="{{ data.tahun|default:'' }}"
                                         data-polres="{{ data.polres.nama|default:'-' }}"
+                                        data-polda="{{ data.polres.polda.nama|default:'-' }}"
                                         onclick="showDetailModalFromBtn(this)"
                                         class="text-green-500 hover:text-green-700 transition" title="Lihat Detail Kejadian">
                                     <i class="fas fa-eye"></i>
@@ -268,11 +273,21 @@
             {% csrf_token %}
             
             <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Pilih Polda <span class="text-red-500">*</span></label>
+                <select name="polda" id="importPoldaSelect" onchange="filterImportPolres()" required class="w-full px-3 py-2 border rounded-lg text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">-- Pilih Polda --</option>
+                    {% for pd in polda_list %}
+                        <option value="{{ pd.id }}">{{ pd.nama }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-4">
                 <label class="block text-sm font-semibold text-gray-700 mb-2">Pilih Polres <span class="text-red-500">*</span></label>
-                <select name="polres" id="importPolresSelect" onchange="validateImportForm()" required {% if not polres_list %}disabled{% endif %} class="w-full px-3 py-2 border rounded-lg text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 {% if not polres_list %}bg-gray-100 cursor-not-allowed border-red-300{% endif %}">
-                    <option value="">-- Pilih Polres --</option>
+                <select name="polres" id="importPolresSelect" onchange="validateImportForm()" required class="w-full px-3 py-2 border rounded-lg text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="" data-polda="">-- Pilih Polres --</option>
                     {% for pl in polres_list %}
-                        <option value="{{ pl.id }}">{{ pl.nama }}</option>
+                        <option value="{{ pl.id }}" data-polda="{{ pl.polda.id }}">{{ pl.nama }}</option>
                     {% endfor %}
                 </select>
                 {% if not polres_list %}
@@ -401,11 +416,15 @@
         </div>
         
         <div class="overflow-y-auto flex-1 space-y-5 pr-2">
-            <!-- KET, POLRES, and TAHUN grid -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- KET, POLDA, POLRES, and TAHUN grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="bg-gray-50 p-3 rounded-lg">
                     <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Keterangan Korban (KET)</p>
                     <p class="text-sm font-bold text-blue-700 mt-1" id="detailKet">-</p>
+                </div>
+                <div class="bg-gray-50 p-3 rounded-lg">
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Polda</p>
+                    <p class="text-sm font-bold text-gray-700 mt-1" id="detailPolda">-</p>
                 </div>
                 <div class="bg-gray-50 p-3 rounded-lg">
                     <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Polres</p>
@@ -493,7 +512,7 @@ function lockScroll()   { document.body.style.overflow = 'hidden'; }
 function unlockScroll() { document.body.style.overflow = ''; }
 
 // ─── Detail Modal ──────────────────────────────────────────────────────────
-function showDetailModal(lap_pol, tanggal, tkp, ket, uraian, terlapor, korban, bb, tahun, polres) {
+function showDetailModal(lap_pol, tanggal, tkp, ket, uraian, terlapor, korban, bb, tahun, polres, polda) {
     document.getElementById('detailTitle').innerText = lap_pol || "Laporan Tanpa Nomor";
     document.getElementById('detailTanggal').innerText = tanggal || "-";
     document.getElementById('detailTKP').innerText = tkp || "-";
@@ -504,6 +523,7 @@ function showDetailModal(lap_pol, tanggal, tkp, ket, uraian, terlapor, korban, b
     document.getElementById('detailBB').innerText = bb || "-";
     document.getElementById('detailTahun').innerText = tahun || "-";
     document.getElementById('detailPolres').innerText = polres || "-";
+    document.getElementById('detailPolda').innerText = polda || "-";
     document.getElementById('detailModal').classList.remove('hidden');
     lockScroll();
 }
@@ -524,7 +544,8 @@ function showDetailModalFromBtn(btn) {
         btn.getAttribute('data-korban'),
         btn.getAttribute('data-bb'),
         btn.getAttribute('data-tahun'),
-        btn.getAttribute('data-polres')
+        btn.getAttribute('data-polres'),
+        btn.getAttribute('data-polda')
     );
 }
 
@@ -574,6 +595,43 @@ function openImportModal() {
     document.getElementById('importModal').classList.remove('hidden');
     lockScroll();
 }
+
+// Keep track of all import polres options globally
+let allImportPolresOptions = [];
+document.addEventListener('DOMContentLoaded', function() {
+    const importPolresSelect = document.getElementById('importPolresSelect');
+    if (importPolresSelect) {
+        allImportPolresOptions = Array.from(importPolresSelect.options);
+    }
+});
+
+function filterImportPolres() {
+    const poldaSelect = document.getElementById('importPoldaSelect');
+    const polresSelect = document.getElementById('importPolresSelect');
+    if (!poldaSelect || !polresSelect) return;
+    
+    const selectedPoldaId = poldaSelect.value;
+    
+    // Clear polres select options
+    polresSelect.innerHTML = '';
+    
+    // Add default option
+    const defaultOption = allImportPolresOptions.find(opt => opt.value === '');
+    if (defaultOption) {
+        polresSelect.appendChild(defaultOption);
+    }
+
+    if (selectedPoldaId) {
+        const filteredOptions = allImportPolresOptions.filter(opt => opt.getAttribute('data-polda') === selectedPoldaId);
+        filteredOptions.forEach(opt => polresSelect.appendChild(opt));
+    }
+    
+    polresSelect.disabled = false;
+    
+    polresSelect.value = '';
+    validateImportForm();
+}
+
 function closeImportModal() {
     document.getElementById('importModal').classList.add('hidden');
     const menu = document.getElementById('customImportDropdownMenu');
@@ -584,7 +642,10 @@ function closeImportModal() {
     document.getElementById('customImportDropdownSelected').innerText = '-- Pilih Tahun --';
     document.getElementById('fileInput').value = '';
     document.getElementById('fileNameLabel').innerText = 'Klik untuk memilih file';
-    validateImportForm();
+    
+    const poldaSelect = document.getElementById('importPoldaSelect');
+    if (poldaSelect) poldaSelect.value = '';
+    filterImportPolres();
     
     unlockScroll();
 }
@@ -623,14 +684,17 @@ function selectImportYear(val) {
 
 function validateImportForm() {
     const yearVal = document.getElementById('hiddenImportTahunInput').value;
+    const poldaSelect = document.getElementById('importPoldaSelect');
+    const poldaVal = poldaSelect ? poldaSelect.value : '';
     const polresSelect = document.getElementById('importPolresSelect');
     const polresVal = polresSelect ? polresSelect.value : '';
     const fileInput = document.getElementById('fileInput');
     const submitBtn = document.getElementById('submitImportBtn');
     
+    const hasPolda = poldaSelect && poldaVal;
     const hasPolres = polresSelect && !polresSelect.disabled && polresVal;
     
-    if (yearVal && hasPolres && fileInput.files.length > 0) {
+    if (yearVal && hasPolda && hasPolres && fileInput.files.length > 0) {
         submitBtn.disabled = false;
         submitBtn.classList.remove('bg-gray-300', 'cursor-not-allowed');
         submitBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
