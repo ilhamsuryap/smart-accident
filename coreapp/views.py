@@ -1719,6 +1719,11 @@ def cluster_data_list(request):
     if selected_tahun:
         all_data = all_data.filter(tahun=selected_tahun)
         
+    # Filter Polda
+    selected_polda = request.GET.get('polda')
+    if selected_polda and selected_polda.isdigit():
+        all_data = all_data.filter(polres__polda_id=int(selected_polda))
+
     # Filter Polres
     selected_polres = request.GET.get('polres')
     if selected_polres and selected_polres.isdigit():
@@ -1768,6 +1773,11 @@ def cluster_data_list(request):
     
     selected_tahun_int = int(selected_tahun) if selected_tahun and selected_tahun.isdigit() else None
     selected_polres_int = int(selected_polres) if selected_polres and selected_polres.isdigit() else None
+    selected_polda_int = int(selected_polda) if selected_polda and selected_polda.isdigit() else None
+
+    polres_list = Polres.objects.all()
+    if selected_polda_int:
+        polres_list = polres_list.filter(polda_id=selected_polda_int)
     
     context = {
         'data_list': page_obj,
@@ -1780,7 +1790,9 @@ def cluster_data_list(request):
         'filter_years': filter_years,
         'selected_tahun': selected_tahun_int,
         'selected_polres': selected_polres_int,
-        'polres_list': Polres.objects.all(),
+        'selected_polda': selected_polda_int,
+        'polda_list': Polda.objects.all(),
+        'polres_list': polres_list,
     }
     return render(request, 'coreapp/data_cluster/list.html', context)
 
@@ -1845,6 +1857,7 @@ def cluster_data_tambah(request):
 
     years_list = list(range(2027, 1944, -1))
     polres_list = Polres.objects.all()
+    polda_list = Polda.objects.all()
 
     context = {
         'tkp_choices': get_unique_choices('tkp'),
@@ -1853,6 +1866,7 @@ def cluster_data_tambah(request):
         'tipe_choices': get_unique_choices('tipe_kendaraan'),
         'years_list': years_list,
         'polres_list': polres_list,
+        'polda_list': polda_list,
     }
     return render(request, 'coreapp/data_cluster/tambah.html', context)
 
@@ -1915,6 +1929,7 @@ def cluster_data_edit(request, pk):
 
     years_list = list(range(2027, 1944, -1))
     polres_list = Polres.objects.all()
+    polda_list = Polda.objects.all()
 
     context = {
         'data': data,
@@ -1924,6 +1939,7 @@ def cluster_data_edit(request, pk):
         'tipe_choices': get_unique_choices('tipe_kendaraan'),
         'years_list': years_list,
         'polres_list': polres_list,
+        'polda_list': polda_list,
     }
     return render(request, 'coreapp/data_cluster/edit.html', context)
 
@@ -2891,7 +2907,8 @@ def laka_mentah_tambah(request):
 
     years_list = list(range(2027, 1944, -1))
     polres_list = Polres.objects.all()
-    return render(request, 'coreapp/laka_mentah/tambah.html', {'years_list': years_list, 'polres_list': polres_list})
+    polda_list = Polda.objects.all()
+    return render(request, 'coreapp/laka_mentah/tambah.html', {'years_list': years_list, 'polres_list': polres_list, 'polda_list': polda_list})
 
 
 @login_required(login_url='login')
@@ -2922,7 +2939,8 @@ def laka_mentah_edit(request, pk):
 
     years_list = list(range(2027, 1944, -1))
     polres_list = Polres.objects.all()
-    return render(request, 'coreapp/laka_mentah/edit.html', {'data': data, 'years_list': years_list, 'polres_list': polres_list})
+    polda_list = Polda.objects.all()
+    return render(request, 'coreapp/laka_mentah/edit.html', {'data': data, 'years_list': years_list, 'polres_list': polres_list, 'polda_list': polda_list})
 
 
 @login_required(login_url='login')

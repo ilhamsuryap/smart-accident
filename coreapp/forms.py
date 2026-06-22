@@ -345,6 +345,18 @@ class PoldaForm(forms.ModelForm):
 # ========================
 class PolresForm(forms.ModelForm):
     """Form untuk superadmin mengelola data Polres"""
+    polda = forms.ModelChoiceField(
+        queryset=Polda.objects.filter(is_active=True),
+        required=True,
+        empty_label='-- Pilih Polda --',
+        error_messages={
+            'required': 'Polda tidak boleh kosong.'
+        },
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+            'id': 'id_polda',
+        })
+    )
 
     class Meta:
         model = Polres
@@ -358,10 +370,6 @@ class PolresForm(forms.ModelForm):
             }
         }
         widgets = {
-            'polda': forms.Select(attrs={
-                'class': 'form-control',
-                'id': 'id_polda',
-            }),
             'nama': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Contoh: Polres Madiun',
