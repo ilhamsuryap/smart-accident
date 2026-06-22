@@ -24,7 +24,7 @@
                     {% if request.user.profile.role == 'superadmin' %}
                     👥 Admin, Polda & Polres
                     {% else %}
-                    🛣️ Ruas Jalan
+                    🗺️ Pemetaan
                     {% endif %}
                 </span>
                 <i class="fas fa-chevron-down text-xs text-gray-500 transition-transform duration-200"
@@ -41,19 +41,9 @@
                     <i class="fas fa-check text-xs text-blue-600 hidden active-check"></i>
                 </button>
                 {% endif %}
-                <button onclick="selectCustomOption('ruas')" type="button" data-val="ruas"
+                <button onclick="selectCustomOption('pemetaan')" type="button" data-val="pemetaan"
                     class="dropdown-item w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-between transition cursor-pointer font-medium">
-                    <span>🛣️ Ruas Jalan</span>
-                    <i class="fas fa-check text-xs text-blue-600 hidden active-check"></i>
-                </button>
-                <button onclick="selectCustomOption('upload')" type="button" data-val="upload"
-                    class="dropdown-item w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-between transition cursor-pointer font-medium">
-                    <span>📊 Upload Data</span>
-                    <i class="fas fa-check text-xs text-blue-600 hidden active-check"></i>
-                </button>
-                <button onclick="selectCustomOption('peta')" type="button" data-val="peta"
-                    class="dropdown-item w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-between transition cursor-pointer font-medium">
-                    <span>🗺️ Peta Kerawanan</span>
+                    <span>🗺️ Pemetaan</span>
                     <i class="fas fa-check text-xs text-blue-600 hidden active-check"></i>
                 </button>
                 <button onclick="selectCustomOption('manajemen')" type="button" data-val="manajemen"
@@ -275,324 +265,319 @@
     </div>
     {% endif %}
 
-    <!-- Membuat Ruas Jalan -->
-    <div id="guide-ruas"
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- PANDUAN PEMETAAN (gabungan Ruas Jalan + Upload Data + Peta)    -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div id="guide-pemetaan"
         class="{% if request.user.profile.role == 'superadmin' %}hidden{% endif %} bg-white rounded-xl shadow p-8 mb-6">
 
-        <h2 class="text-2xl font-bold text-blue-600 mb-6 pb-3 border-b border-gray-100">
-            {% if request.user.profile.role == 'superadmin' %}2{% else %}1{% endif %}. Membuat Ruas Jalan
+        <h2 class="text-2xl font-bold text-blue-600 mb-2 pb-3 border-b border-gray-100">
+            {% if request.user.profile.role == 'superadmin' %}2{% else %}1{% endif %}. Pemetaan
         </h2>
+        <p class="text-gray-600 mb-8">
+            Bagian ini mencakup tiga tahap utama proses pemetaan: membuat ruas jalan, mengunggah data kecelakaan,
+            dan melihat hasil peta kerawanan lalu lintas.
+        </p>
 
-        <div class="space-y-10">
+        <div class="space-y-16">
 
+            <!-- ─── BAGIAN 1: RUAS JALAN ─────────────────────────────── -->
             <div>
-                <div class="flex items-center gap-3 mb-2">
-                    <span
-                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">1</span>
-                    <h3 class="font-semibold text-lg text-gray-800">Masuk ke menu Pemetaan</h3>
+                <div class="border-l-4 border-blue-500 pl-4 py-1 bg-blue-50 rounded-r-lg mb-8">
+                    <h3 class="font-bold text-lg text-blue-800">🛣️ Bagian 1: Membuat Ruas Jalan</h3>
+                    <p class="text-sm text-blue-600 mt-1">Langkah menggambar dan menyimpan ruas jalan pada peta interaktif.</p>
                 </div>
 
-                <p class="text-gray-600 mb-4 ml-10">
-                    Pilih menu <b>Pemetaan</b> pada sidebar untuk membuka halaman Kelola Ruas Jalan.
-                </p>
+                <div class="space-y-10 ml-4">
 
-                <div class="ml-10 max-w-xl">
-                    <div
-                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
-                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
-                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
-                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
-                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
-                        </div>
-                        <img src="{% static 'img/RuasJalan_1.png' %}" class="w-full block guide-img cursor-zoom-in"
-                            onclick="openLightbox(this)">
+                  <!-- Langkah 1 -->
+                <div>
+                    <div class="flex items-center gap-3 mb-2">
+                        <span
+                            class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">1</span>
+                        <h4 class="font-semibold text-lg text-gray-800">Membuka halaman Kelola Ruas Jalan</h4>
                     </div>
+
+                    <p class="text-gray-600 mb-4 ml-10">
+                        Pilih menu <b>Pemetaan</b> pada sidebar, kemudian masuk ke halaman 
+                        <b>Kelola Ruas Jalan</b>. Halaman ini menampilkan daftar ruas jalan yang telah tersimpan 
+                        beserta fitur pencarian, penyaringan berdasarkan wilayah, serta tombol 
+                        <b>Tambah Ruas Jalan</b> untuk menambahkan data ruas jalan baru.
+                    </p>
+
+                    <div class="ml-10 max-w-xl">
+                        <div
+                            class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                            <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                                <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                            </div>
+                            <img src="{% static 'img/RuasJalan_tambahdata.png' %}"
+                                class="w-full block guide-img cursor-zoom-in"
+                                onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                                <!-- Langkah 2 -->
+                <div>
+                    <div class="flex items-center gap-3 mb-2">
+                        <span
+                            class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">2</span>
+                        <h4 class="font-semibold text-lg text-gray-800">Menambahkan Ruas Jalan Baru</h4>
+                    </div>
+
+                    <p class="text-gray-600 mb-4 ml-10">
+                        Klik tombol <b>Tambah Ruas Jalan</b> untuk membuka halaman penambahan ruas jalan. 
+                        Pada halaman ini, pengguna dapat menentukan jalur ruas jalan dengan menandai titik-titik 
+                        pada peta sesuai dengan lokasi jalan. Setiap titik yang dibuat akan menjadi batas antar 
+                        segmen jalan.
+                        <br><br>
+                        Setelah jalur selesai dibuat, lengkapi informasi ruas jalan seperti 
+                        <b>nama ruas</b>, <b>jenis jalan</b>, dan <b>wilayah</b>. Sistem akan menghitung 
+                        <b>panjang ruas jalan</b> secara otomatis berdasarkan koordinat yang telah ditentukan. 
+                        Informasi titik dan segmen yang terbentuk juga akan ditampilkan pada bagian bawah halaman. 
+                        Setelah semua data sudah sesuai, klik tombol <b>Simpan</b> untuk menyimpan data ruas jalan.
+                    </p>
+
+                    <div class="ml-10 max-w-xl">
+                        <div
+                            class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                            <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                                <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                            </div>
+                            <img src="{% static 'img/RuasJalan_2.png' %}"
+                                class="w-full block guide-img cursor-zoom-in"
+                                onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                                <!-- Langkah 3 -->
+                <div>
+                    <div class="flex items-center gap-3 mb-2">
+                        <span
+                            class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">3</span>
+                        <h4 class="font-semibold text-lg text-gray-800">Menggambar Jalur Ruas Jalan</h4>
+                    </div>
+
+                    <p class="text-gray-600 mb-4 ml-10">
+                        Tentukan jalur ruas jalan dengan cara mengklik beberapa titik pada peta secara berurutan 
+                        mengikuti kondisi jalan yang sebenarnya. Setiap titik yang ditambahkan akan terhubung 
+                        menjadi sebuah garis yang merepresentasikan jalur ruas jalan dan sekaligus menjadi batas 
+                        antar segmen jalan.
+                        
+                    </p>
+
+                    <div class="ml-10 max-w-xl">
+                        <div
+                            class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                            <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                                <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                            </div>
+                            <img src="{% static 'img/RuasJalan_3.png' %}"
+                                class="w-full block guide-img cursor-zoom-in"
+                                onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                    <!-- Langkah 4 -->
+                    <div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <span
+                                class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">4</span>
+                            <h4 class="font-semibold text-lg text-gray-800">Isi Data Ruas Jalan</h4>
+                        </div>
+                        <p class="text-gray-600 mb-4 ml-10">
+                            Data Ruas Jalan otomatis terisi dan klik simpan.
+                        </p>
+                        <div class="ml-10 max-w-xs">
+                            <div
+                                class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                                <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                                </div>
+                                <img src="{% static 'img/RuasJalan_4.png' %}" class="w-full block guide-img cursor-zoom-in"
+                                    onclick="openLightbox(this)">
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
 
-            <div>
-                <div class="flex items-center gap-3 mb-2">
-                    <span
-                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">2</span>
-                    <h3 class="font-semibold text-lg text-gray-800">Tambah ruas jalan</h3>
+            <!-- ─── BAGIAN 2: UPLOAD DATA ─────────────────────────────── -->
+            <div class="pt-6 border-t border-gray-100">
+                <div class="border-l-4 border-blue-500 pl-4 py-1 bg-blue-50 rounded-r-lg mb-8">
+                    <h3 class="font-bold text-lg text-blue-800">📊 Bagian 2: Mengunggah Data Kecelakaan</h3>
+                    <p class="text-sm text-blue-600 mt-1">Langkah mengimpor data kecelakaan lalu lintas melalui file Excel ke dalam sistem.</p>
                 </div>
 
-                <p class="text-gray-600 mb-4 ml-10">
-                    Klik tombol <b>Tambah Ruas Jalan</b>, kemudian masukkan informasi ruas jalan.
-                </p>
+                <div class="space-y-10 ml-4">
 
-                <div class="ml-10 max-w-xl">
-                    <div
-                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
-                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
-                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
-                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
-                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                    <!-- Langkah 1 -->
+                    <div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <span
+                                class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">1</span>
+                            <h4 class="font-semibold text-lg text-gray-800">Masuk ke menu Pemetaan & klik Upload</h4>
                         </div>
-                        <img src="{% static 'img/RuasJalan_2.png' %}" class="w-full block guide-img cursor-zoom-in"
-                            onclick="openLightbox(this)">
+                        <p class="text-gray-600 mb-4 ml-10">
+                            Pilih menu <b>Pemetaan</b> pada sidebar untuk membuka halaman Kelola Data Pemetaan dan klik upload.
+                        </p>
+                        <div class="ml-10 max-w-xs">
+                            <div
+                                class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                                <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                                </div>
+                                <img src="{% static 'img/DataPemetaan_1.png' %}" class="w-full block guide-img cursor-zoom-in"
+                                    onclick="openLightbox(this)">
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Langkah 2 -->
+                    <div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <span
+                                class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">2</span>
+                            <h4 class="font-semibold text-lg text-gray-800">Download Template & Upload Data</h4>
+                        </div>
+                        <p class="text-gray-600 mb-4 ml-10">
+                            Download Template format excel terlebih dahulu, dan sesuaikan format datanya untuk memudahkan dalam
+                            pengunggahan data kecelakaan, kemudian upload data.
+                        </p>
+                        <div class="ml-10 max-w-xl">
+                            <div
+                                class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                                <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                                </div>
+                                <img src="{% static 'img/DataPemetaan_2.png' %}" class="w-full block guide-img cursor-zoom-in"
+                                    onclick="openLightbox(this)">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Catatan -->
+                <div class="bg-yellow-100 border-l-4 border-yellow-500 rounded-lg p-6 mt-8 ml-4">
+                    <h3 class="font-bold text-yellow-700">⚠️ Catatan Penting</h3>
+                    <ul class="list-disc ml-6 mt-3 text-gray-700 space-y-2">
+                        <li>Jangan mengubah nama kolom pada template Excel.</li>
+                        <li>Pastikan latitude dan longitude menggunakan format desimal (-7.7182, 111.5352).</li>
+                    </ul>
                 </div>
             </div>
 
 
-            <div>
-                <div class="flex items-center gap-3 mb-2">
-                    <span
-                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">3</span>
-                    <h3 class="font-semibold text-lg text-gray-800">Menggambar ruas jalan</h3>
+            <!-- ─── BAGIAN 3: PETA KERAWANAN ──────────────────────────── -->
+            <div class="pt-6 border-t border-gray-100">
+                <div class="border-l-4 border-blue-500 pl-4 py-1 bg-blue-50 rounded-r-lg mb-8">
+                    <h3 class="font-bold text-lg text-blue-800">🗺️ Bagian 3: Melihat Peta Kerawanan Kecelakaan</h3>
+                    <p class="text-sm text-blue-600 mt-1">Langkah membaca dan menginterpretasikan hasil peta kerawanan lalu lintas berdasarkan segmen jalan.</p>
                 </div>
 
-                <p class="text-gray-600 mb-4 ml-10">
-                    Klik titik pada peta mengikuti jalur jalan hingga membentuk garis.
-                    Pastikan koordinat sesuai dengan kondisi jalan sebenarnya.
-                </p>
+                <div class="space-y-10 ml-4">
 
-                <div class="ml-10 max-w-xl">
-                    <div
-                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
-                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
-                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
-                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
-                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                    <!-- Langkah 1 -->
+                    <div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <span
+                                class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">1</span>
+                            <h4 class="font-semibold text-lg text-gray-800">Membuka halaman peta kerawanan</h4>
                         </div>
-                        <img src="{% static 'img/RuasJalan_3.png' %}" class="w-full block guide-img cursor-zoom-in"
-                            onclick="openLightbox(this)">
-                    </div>
-                </div>
-            </div>
-
-            <div>
-                <div class="flex items-center gap-3 mb-2">
-                    <span
-                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">4</span>
-                    <h3 class="font-semibold text-lg text-gray-800">Isi Data Ruas Jalan</h3>
-                </div>
-
-                <p class="text-gray-600 mb-4 ml-10">
-                    Data Ruas Jalan otomatis terisi dan klik simpan.
-                </p>
-
-                <div class="ml-10 max-w-xs">
-                    <div
-                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
-                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
-                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
-                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
-                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        <p class="text-gray-600 mb-4 ml-10">
+                            Buka menu <b>Pemetaan</b> pada sidebar kemudian pilih
+                            tampilan hasil kerawanan untuk melihat segmen jalan berdasarkan tingkat risiko kecelakaan.
+                        </p>
+                        <div class="ml-10 max-w-xl">
+                            <div class="rounded-lg overflow-hidden border shadow">
+                                <img src="{% static 'img/Peta_1.png' %}" class="w-full guide-img cursor-zoom-in"
+                                    onclick="openLightbox(this)">
+                            </div>
                         </div>
-                        <img src="{% static 'img/RuasJalan_4.png' %}" class="w-full block guide-img cursor-zoom-in"
-                            onclick="openLightbox(this)">
                     </div>
+
+                    <!-- Langkah 2 -->
+                    <div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <span
+                                class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">2</span>
+                            <h4 class="font-semibold text-lg text-gray-800">Memahami warna tingkat kerawanan</h4>
+                        </div>
+                        <p class="text-gray-600 ml-10 mb-4">
+                            Setiap warna pada segmen jalan menunjukkan tingkat kerawanan kecelakaan.
+                        </p>
+                        <div class="ml-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            <div class="flex items-center gap-3 bg-red-50 p-3 rounded">
+                                🔴 <span>Rawan Kecelakaan Sangat Tinggi</span>
+                            </div>
+                            <div class="flex items-center gap-3 bg-orange-50 p-3 rounded">
+                                🟠 <span>Rawan Kecelakaan Tinggi</span>
+                            </div>
+                            <div class="flex items-center gap-3 bg-yellow-50 p-3 rounded">
+                                🟡 <span>Rawan Kecelakaan Sedang</span>
+                            </div>
+                            <div class="flex items-center gap-3 bg-green-50 p-3 rounded">
+                                🟢 <span>Rawan Kecelakaan Rendah</span>
+                            </div>
+                            <div class="flex items-center gap-3 bg-emerald-50 p-3 rounded">
+                                🟢 <span>Rawan Kecelakaan Sangat Rendah</span>
+                            </div>
+                            <div class="flex items-center gap-3 bg-blue-50 p-3 rounded">
+                                🔵 <span>Aman (Tidak Ada Kejadian)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Langkah 3 -->
+                    <div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <span
+                                class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">3</span>
+                            <h4 class="font-semibold text-lg text-gray-800">Melihat informasi detail segmen</h4>
+                        </div>
+                        <p class="text-gray-600 mb-4 ml-10">
+                            Klik salah satu ruas atau segmen jalan pada peta.
+                            Sistem akan menampilkan informasi seperti nama ruas jalan,
+                            jumlah kecelakaan, nilai Z-Score, dan tingkat kerawanan.
+                        </p>
+                        <div class="ml-10 max-w-xl">
+                            <div class="rounded-lg overflow-hidden border shadow">
+                                <img src="{% static 'img/Peta_2.png' %}" class="w-full guide-img cursor-zoom-in"
+                                    onclick="openLightbox(this)">
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
         </div>
-
     </div>
 
-
-
-
-    <!-- Upload Data -->
-    <div id="guide-upload" class="hidden bg-white rounded-xl shadow p-8 mb-6">
-
-        <h2 class="text-2xl font-bold text-blue-600 mb-6 pb-3 border-b border-gray-100">
-            {% if request.user.profile.role == 'superadmin' %}3{% else %}2{% endif %}. Mengunggah Data Kecelakaan
-        </h2>
-
-        <div class="space-y-10">
-
-            <div>
-                <div class="flex items-center gap-3 mb-2">
-                    <span
-                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">1</span>
-                    <h3 class="font-semibold text-lg text-gray-800">Masuk ke menu Pemetaan
-
-
-                    </h3>
-                </div>
-
-                <p class="text-gray-600 mb-4 ml-10">
-                    Pilih menu Pemetaan pada sidebar untuk membuka halaman Kelola Data Pemetaan dan klik upload.
-                </p>
-
-                <div class="ml-10 max-w-xs">
-                    <div
-                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
-                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
-                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
-                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
-                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
-                        </div>
-                        <img src="{% static 'img/DataPemetaan_1.png' %}" class="w-full block guide-img cursor-zoom-in"
-                            onclick="openLightbox(this)">
-                    </div>
-                </div>
-            </div>
-
-
-            <div>
-                <div class="flex items-center gap-3 mb-2">
-                    <span
-                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">2</span>
-                    <h3 class="font-semibold text-lg text-gray-800">Download Template</h3>
-                </div>
-
-                <p class="text-gray-600 mb-4 ml-10">
-                    Download Template format excel terlebih dahulu, dan sesuaikan format datanya untuk memudahkan dalam
-                    pengunggahan data kecelakaan, kemudian upload data.
-                </p>
-
-                <div class="ml-10 max-w-xl">
-                    <div
-                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
-                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
-                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
-                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
-                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
-                        </div>
-                        <img src="{% static 'img/DataPemetaan_2.png' %}" class="w-full block guide-img cursor-zoom-in"
-                            onclick="openLightbox(this)">
-                    </div>
-                </div>
-            </div>
-
-
-        </div>
-
-        <!-- Catatan -->
-        <div class="bg-yellow-100 border-l-4 border-yellow-500 rounded-lg p-6 mt-6">
-            <h3 class="font-bold text-yellow-700">⚠️ Catatan Penting</h3>
-            <ul class="list-disc ml-6 mt-3 text-gray-700 space-y-2">
-                <li>Jangan mengubah nama kolom pada template Excel.</li>
-                <li>Pastikan latitude dan longitude menggunakan format desimal (-7.7182, 111.5352).</li>
-            </ul>
-        </div>
-
-    </div>
-
-    <!-- Peta Kerawanan -->
-    <div id="guide-peta" class="hidden bg-white rounded-xl shadow p-8 mb-6">
-
-        <h2 class="text-2xl font-bold text-blue-600 mb-6 pb-3 border-b border-gray-100">
-            {% if request.user.profile.role == 'superadmin' %}4{% else %}3{% endif %}. Melihat Peta Kerawanan Kecelakaan
-        </h2>
-
-
-        <div class="space-y-10">
-
-            <!-- Langkah 1 -->
-            <div>
-                <div class="flex items-center gap-3 mb-2">
-                    <span
-                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center">
-                        1
-                    </span>
-
-                    <h3 class="font-semibold text-lg text-gray-800">
-                        Membuka halaman peta kerawanan
-                    </h3>
-                </div>
-
-                <p class="text-gray-600 mb-4 ml-10">
-                    Buka menu <b>Pemetaan</b> pada sidebar kemudian pilih
-                    tampilan hasil kerawanan untuk melihat segmen jalan berdasarkan tingkat risiko kecelakaan.
-                </p>
-
-                <div class="ml-10 max-w-xl">
-                    <div class="rounded-lg overflow-hidden border shadow">
-                        <img src="{% static 'img/Peta_1.png' %}" class="w-full guide-img cursor-zoom-in"
-                            onclick="openLightbox(this)">
-                    </div>
-                </div>
-            </div>
-
-
-            <!-- Langkah 2 -->
-            <div>
-                <div class="flex items-center gap-3 mb-2">
-                    <span
-                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center">
-                        2
-                    </span>
-
-                    <h3 class="font-semibold text-lg text-gray-800">
-                        Memahami warna tingkat kerawanan
-                    </h3>
-                </div>
-
-                <p class="text-gray-600 ml-10 mb-4">
-                    Setiap warna pada segmen jalan menunjukkan tingkat kerawanan kecelakaan.
-                </p>
-
-                <div class="ml-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-
-                    <div class="flex items-center gap-3 bg-red-50 p-3 rounded">
-                        🔴 <span>Rawan Kecelakaan Sangat Tinggi</span>
-                    </div>
-
-                    <div class="flex items-center gap-3 bg-orange-50 p-3 rounded">
-                        🟠 <span>Rawan Kecelakaan Tinggi</span>
-                    </div>
-
-                    <div class="flex items-center gap-3 bg-yellow-50 p-3 rounded">
-                        🟡 <span>Rawan Kecelakaan Sedang</span>
-                    </div>
-
-                    <div class="flex items-center gap-3 bg-green-50 p-3 rounded">
-                        🟢 <span>Rawan Kecelakaan Rendah</span>
-                    </div>
-
-                    <div class="flex items-center gap-3 bg-emerald-50 p-3 rounded">
-                        🟢 <span>Rawan Kecelakaan Sangat Rendah</span>
-                    </div>
-
-                    <div class="flex items-center gap-3 bg-blue-50 p-3 rounded">
-                        🔵 <span>Aman (Tidak Ada Kejadian)</span>
-                    </div>
-
-                </div>
-            </div>
-
-
-            <!-- Langkah 3 -->
-            <div>
-                <div class="flex items-center gap-3 mb-2">
-                    <span
-                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center">
-                        3
-                    </span>
-
-                    <h3 class="font-semibold text-lg text-gray-800">
-                        Melihat informasi detail segmen
-                    </h3>
-                </div>
-
-                <p class="text-gray-600 mb-4 ml-10">
-                    Klik salah satu ruas atau segmen jalan pada peta.
-                    Sistem akan menampilkan informasi seperti nama ruas jalan,
-                    jumlah kecelakaan, nilai Z-Score, dan tingkat kerawanan.
-                </p>
-
-                <div class="ml-10 max-w-xl">
-                    <div class="rounded-lg overflow-hidden border shadow">
-                        <img src="{% static 'img/Peta_2.png' %}" class="w-full guide-img cursor-zoom-in"
-                            onclick="openLightbox(this)">
-                    </div>
-                </div>
-            </div>
-
-
-        </div>
-
-    </div>
 
     <!-- Manajemen Data -->
     <div id="guide-manajemen" class="hidden bg-white rounded-xl shadow p-8 mb-6">
         <h2 class="text-2xl font-bold text-blue-600 mb-6 pb-3 border-b border-gray-100">
-            {% if request.user.profile.role == 'superadmin' %}5{% else %}4{% endif %}. Mengelola Data Laka &
+            {% if request.user.profile.role == 'superadmin' %}3{% else %}2{% endif %}. Mengelola Data Laka &
             Preprocessing
         </h2>
 
@@ -828,7 +813,7 @@
     <!-- API AI Generate -->
     <div id="guide-token_ai" class="hidden bg-white rounded-xl shadow p-8 mb-6">
         <h2 class="text-2xl font-bold text-blue-600 mb-6 pb-3 border-b border-gray-100">
-            {% if request.user.profile.role == 'superadmin' %}6{% else %}5{% endif %}. API Key AI Generate
+            {% if request.user.profile.role == 'superadmin' %}4{% else %}3{% endif %}. API Key AI Generate
         </h2>
 
         <p class="text-gray-600 mb-8">
@@ -951,7 +936,7 @@
     <!-- Analisis K-Means -->
     <div id="guide-kmeans" class="hidden bg-white rounded-xl shadow p-8 mb-6">
         <h2 class="text-2xl font-bold text-blue-600 mb-6 pb-3 border-b border-gray-100">
-            {% if request.user.profile.role == 'superadmin' %}7{% else %}6{% endif %}. Analisis K-Means (Klasterisasi
+            {% if request.user.profile.role == 'superadmin' %}5{% else %}4{% endif %}. Analisis K-Means (Klasterisasi
             Hotspot Temporal/Waktu)
         </h2>
 
@@ -1109,7 +1094,7 @@
     <!-- Analisis AHC -->
     <div id="guide-ahc" class="hidden bg-white rounded-xl shadow p-8 mb-6">
         <h2 class="text-2xl font-bold text-blue-600 mb-6 pb-3 border-b border-gray-100">
-            {% if request.user.profile.role == 'superadmin' %}7{% else %}6{% endif %}. Analisis AHC (Klasterisasi
+            {% if request.user.profile.role == 'superadmin' %}6{% else %}5{% endif %}. Analisis AHC (Klasterisasi
             Karakteristik & Faktor Risiko)
         </h2>
 
@@ -1255,22 +1240,21 @@
             </div>
         </div>
     </div>
+
 </div>
+
 <script>
     function showGuide(name) {
-        const guides = ['superadmin', 'ruas', 'upload', 'peta', 'manajemen', 'token_ai', 'kmeans', 'ahc'];
+        const guides = ['superadmin', 'pemetaan', 'manajemen', 'token_ai', 'kmeans', 'ahc'];
 
-        // Sembunyikan semua guide
         guides.forEach(item => {
             const targetGuide = document.getElementById('guide-' + item);
             if (targetGuide) targetGuide.classList.add('hidden');
         });
 
-        // Tampilkan guide yang dipilih
         const selectedGuide = document.getElementById('guide-' + name);
         if (selectedGuide) selectedGuide.classList.remove('hidden');
 
-        // Sinkronkan custom dropdown UI
         updateCustomDropdownUI(name);
     }
 
@@ -1289,13 +1273,11 @@
     }
 
     function selectCustomOption(val) {
-        // Hide dropdown menu
         const menu = document.getElementById('custom-dropdown-menu');
         const arrow = document.getElementById('custom-dropdown-arrow');
         if (menu) menu.classList.add('hidden');
         if (arrow) arrow.classList.remove('rotate-180');
 
-        // Show guide
         showGuide(val);
     }
 
@@ -1308,29 +1290,23 @@
             const checkIcon = item.querySelector('.active-check');
 
             if (itemVal === name) {
-                // Apply active styles
                 item.classList.add('bg-blue-50', 'text-blue-600', 'font-semibold');
                 item.classList.remove('text-gray-700', 'font-medium');
                 if (checkIcon) checkIcon.classList.remove('hidden');
-
-                // Get label text (excluding check icon)
                 activeLabel = item.querySelector('span').innerText;
             } else {
-                // Restore inactive styles
                 item.classList.remove('bg-blue-50', 'text-blue-600', 'font-semibold');
                 item.classList.add('text-gray-700', 'font-medium');
                 if (checkIcon) checkIcon.classList.add('hidden');
             }
         });
 
-        // Update trigger button label
         const labelEl = document.getElementById('custom-dropdown-label');
         if (labelEl && activeLabel) {
             labelEl.innerText = activeLabel;
         }
     }
 
-    // Close custom dropdown when clicking outside
     document.addEventListener('click', function (event) {
         const container = document.getElementById('custom-dropdown-container');
         const menu = document.getElementById('custom-dropdown-menu');
@@ -1342,12 +1318,11 @@
         }
     });
 
-    // Initialize active state on load
     document.addEventListener('DOMContentLoaded', function () {
         {% if request.user.profile.role == 'superadmin' %}
         showGuide('superadmin');
         {% else %}
-        showGuide('ruas');
+        showGuide('pemetaan');
         {% endif %}
     });
 </script>
