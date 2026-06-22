@@ -20,7 +20,13 @@
         <div class="relative w-full sm:w-64 self-start sm:self-center" id="custom-dropdown-container">
             <button id="custom-dropdown-trigger" onclick="toggleCustomDropdown()" type="button"
                 class="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg text-sm border border-gray-300 shadow-sm transition outline-none cursor-pointer">
-                <span id="custom-dropdown-label">🛣️ Ruas Jalan</span>
+                <span id="custom-dropdown-label">
+                    {% if request.user.profile.role == 'superadmin' %}
+                    👥 Admin, Polda & Polres
+                    {% else %}
+                    🛣️ Ruas Jalan
+                    {% endif %}
+                </span>
                 <i class="fas fa-chevron-down text-xs text-gray-500 transition-transform duration-200"
                     id="custom-dropdown-arrow"></i>
             </button>
@@ -28,6 +34,13 @@
             <!-- Custom Dropdown Menu -->
             <div id="custom-dropdown-menu"
                 class="hidden absolute right-0 mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-200 z-50 overflow-hidden py-1">
+                {% if request.user.profile.role == 'superadmin' %}
+                <button onclick="selectCustomOption('superadmin')" type="button" data-val="superadmin"
+                    class="dropdown-item w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-between transition cursor-pointer font-medium">
+                    <span>👥 Admin, Polda & Polres</span>
+                    <i class="fas fa-check text-xs text-blue-600 hidden active-check"></i>
+                </button>
+                {% endif %}
                 <button onclick="selectCustomOption('ruas')" type="button" data-val="ruas"
                     class="dropdown-item w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-between transition cursor-pointer font-medium">
                     <span>🛣️ Ruas Jalan</span>
@@ -48,6 +61,11 @@
                     <span>📂 Manajemen Data</span>
                     <i class="fas fa-check text-xs text-blue-600 hidden active-check"></i>
                 </button>
+                <button onclick="selectCustomOption('token_ai')" type="button" data-val="token_ai"
+                    class="dropdown-item w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-between transition cursor-pointer font-medium">
+                    <span>🤖 API Key AI Generate</span>
+                    <i class="fas fa-check text-xs text-blue-600 hidden active-check"></i>
+                </button>
                 <button onclick="selectCustomOption('kmeans')" type="button" data-val="kmeans"
                     class="dropdown-item w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-between transition cursor-pointer font-medium">
                     <span>📈 Analisis K-Means</span>
@@ -63,11 +81,206 @@
     </div>
 
 
+    {% if request.user.profile.role == 'superadmin' %}
+    <!-- Kelola Admin, Polda & Polres -->
+    <div id="guide-superadmin" class="bg-white rounded-xl shadow p-8 mb-6">
+        <h2 class="text-2xl font-bold text-blue-600 mb-6 pb-3 border-b border-gray-100 flex items-center gap-2">
+            1. Kelola Admin, Polda & Polres
+        </h2>
+
+        <p class="text-gray-600 mb-8">
+            Bagian ini menjelaskan langkah-langkah pengelolaan hak akses pengguna (Admin) serta struktur regional
+            Kepolisian (Polda dan Polres) yang hanya dapat dilakukan oleh <strong>Super Admin</strong>.
+        </p>
+
+        <div class="space-y-12">
+            <!-- Bagian 1: Kelola Akun Admin -->
+            <div>
+                <div class="border-l-4 border-blue-500 pl-4 py-1 bg-blue-50 rounded-r-lg mb-6">
+                    <h3 class="font-bold text-lg text-blue-800">👥 Bagian 1: Kelola Akun Admin</h3>
+                    <p class="text-sm text-blue-600 mt-1">Langkah pengelolaan data user admin daerah yang memiliki hak
+                        akses sistem.</p>
+                </div>
+
+                <div class="space-y-8 ml-4">
+                    <div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <span
+                                class="bg-blue-600 text-white text-xs font-semibold rounded-full w-6 h-6 flex items-center justify-center shrink-0">1</span>
+                            <h4 class="font-semibold text-gray-700">Masuk ke menu Kelola Akun Admin</h4>
+                        </div>
+                        <p class="text-gray-600 mb-4 ml-8 text-sm">
+                            Pilih menu <b>Kelola Akun Admin</b> pada sidebar. Halaman ini menampilkan seluruh akun admin
+                            daerah yang berhak mengelola data pemetaan laka lantas.
+                        </p>
+                        <div class="ml-8 max-w-xl">
+                            <div
+                                class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                                <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                                </div>
+                                <img src="{% static 'img/Superadmin_Admin_List.png' %}"
+                                    class="w-full block guide-img cursor-zoom-in" onclick="openLightbox(this)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <span
+                                class="bg-blue-600 text-white text-xs font-semibold rounded-full w-6 h-6 flex items-center justify-center shrink-0">2</span>
+                            <h4 class="font-semibold text-gray-700">Tambah Akun Admin Baru</h4>
+                        </div>
+                        <p class="text-gray-600 mb-4 ml-8 text-sm">
+                            Klik tombol <b>Tambah Akun Admin</b> di sudut kanan atas, isi seluruh formulir data admin
+                            (Email institusi, Nama Lengkap, Password, Polres wilayah tanggung jawabnya, serta status
+                            keaktifan akun).
+                        </p>
+                        <div class="ml-8 max-w-xl">
+                            <div
+                                class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                                <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                                </div>
+                                <img src="{% static 'img/Superadmin_Admin_Input.png' %}"
+                                    class="w-full block guide-img cursor-zoom-in" onclick="openLightbox(this)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bagian 2: Kelola Data Polda -->
+            <div class="pt-6 border-t border-gray-100">
+                <div class="border-l-4 border-blue-500 pl-4 py-1 bg-blue-50 rounded-r-lg mb-6">
+                    <h3 class="font-bold text-lg text-blue-800">🏢 Bagian 2: Kelola Data Polda (Regional)</h3>
+                    <p class="text-sm text-blue-600 mt-1">Langkah pendaftaran dan pengelolaan instansi Kepolisian Daerah
+                        (Polda).</p>
+                </div>
+
+                <div class="space-y-8 ml-4">
+                    <div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <span
+                                class="bg-blue-600 text-white text-xs font-semibold rounded-full w-6 h-6 flex items-center justify-center shrink-0">1</span>
+                            <h4 class="font-semibold text-gray-700">Masuk ke menu Kelola Polda</h4>
+                        </div>
+                        <p class="text-gray-600 mb-4 ml-8 text-sm">
+                            Pilih menu <b>Kelola Polda</b> pada sidebar untuk menampilkan data instansi regional Polda
+                            yang terdaftar.
+                        </p>
+                        <div class="ml-8 max-w-xl">
+                            <div
+                                class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                                <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                                </div>
+                                <img src="{% static 'img/Superadmin_Polda_List.png' %}"
+                                    class="w-full block guide-img cursor-zoom-in" onclick="openLightbox(this)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <span
+                                class="bg-blue-600 text-white text-xs font-semibold rounded-full w-6 h-6 flex items-center justify-center shrink-0">2</span>
+                            <h4 class="font-semibold text-gray-700">Tambah Data Polda</h4>
+                        </div>
+                        <p class="text-gray-600 mb-4 ml-8 text-sm">
+                            Klik tombol <b>Tambah Polda</b> di sudut kanan atas, kemudian lengkapi detail informasi
+                            instansi Polda (Nama Polda, Kode unik Polda, Alamat, Telepon, dan status keaktifan).
+                        </p>
+                        <div class="ml-8 max-w-xl">
+                            <div
+                                class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                                <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                                </div>
+                                <img src="{% static 'img/Superadmin_Polda_Input.png' %}"
+                                    class="w-full block guide-img cursor-zoom-in" onclick="openLightbox(this)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bagian 3: Kelola Data Polres -->
+            <div class="pt-6 border-t border-gray-100">
+                <div class="border-l-4 border-blue-500 pl-4 py-1 bg-blue-50 rounded-r-lg mb-6">
+                    <h3 class="font-bold text-lg text-blue-800">🚓 Bagian 3: Kelola Data Polres (Resort)</h3>
+                    <p class="text-sm text-blue-600 mt-1">Langkah pendaftaran dan pengelolaan instansi Kepolisian Resor
+                        (Polres) di bawah naungan Polda.</p>
+                </div>
+
+                <div class="space-y-8 ml-4">
+                    <div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <span
+                                class="bg-blue-600 text-white text-xs font-semibold rounded-full w-6 h-6 flex items-center justify-center shrink-0">1</span>
+                            <h4 class="font-semibold text-gray-700">Masuk ke menu Kelola Polres</h4>
+                        </div>
+                        <p class="text-gray-600 mb-4 ml-8 text-sm">
+                            Pilih menu <b>Kelola Polres</b> pada sidebar untuk menampilkan daftar Kepolisian Resor di
+                            bawah naungan Polda masing-masing.
+                        </p>
+                        <div class="ml-8 max-w-xl">
+                            <div
+                                class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                                <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                                </div>
+                                <img src="{% static 'img/Superadmin_Polres_List.png' %}"
+                                    class="w-full block guide-img cursor-zoom-in" onclick="openLightbox(this)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <span
+                                class="bg-blue-600 text-white text-xs font-semibold rounded-full w-6 h-6 flex items-center justify-center shrink-0">2</span>
+                            <h4 class="font-semibold text-gray-700">Tambah Data Polres</h4>
+                        </div>
+                        <p class="text-gray-600 mb-4 ml-8 text-sm">
+                            Klik tombol <b>Tambah Polres</b> di sudut kanan atas, pilih Polda Induk yang menaungi Polres
+                            tersebut, isi Nama Polres, Kode unik, Alamat, Telepon, dan status keaktifan.
+                        </p>
+                        <div class="ml-8 max-w-xl">
+                            <div
+                                class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                                <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                                </div>
+                                <img src="{% static 'img/Superadmin_Polres_Input.png' %}"
+                                    class="w-full block guide-img cursor-zoom-in" onclick="openLightbox(this)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Membuat Ruas Jalan -->
-    <div id="guide-ruas" class="bg-white rounded-xl shadow p-8 mb-6">
+    <div id="guide-ruas"
+        class="{% if request.user.profile.role == 'superadmin' %}hidden{% endif %} bg-white rounded-xl shadow p-8 mb-6">
 
         <h2 class="text-2xl font-bold text-blue-600 mb-6 pb-3 border-b border-gray-100">
-            1. Membuat Ruas Jalan
+            {% if request.user.profile.role == 'superadmin' %}2{% else %}1{% endif %}. Membuat Ruas Jalan
         </h2>
 
         <div class="space-y-10">
@@ -186,7 +399,7 @@
     <div id="guide-upload" class="hidden bg-white rounded-xl shadow p-8 mb-6">
 
         <h2 class="text-2xl font-bold text-blue-600 mb-6 pb-3 border-b border-gray-100">
-            2. Mengunggah Data Kecelakaan
+            {% if request.user.profile.role == 'superadmin' %}3{% else %}2{% endif %}. Mengunggah Data Kecelakaan
         </h2>
 
         <div class="space-y-10">
@@ -264,7 +477,7 @@
     <div id="guide-peta" class="hidden bg-white rounded-xl shadow p-8 mb-6">
 
         <h2 class="text-2xl font-bold text-blue-600 mb-6 pb-3 border-b border-gray-100">
-            3. Melihat Peta Kerawanan Kecelakaan
+            {% if request.user.profile.role == 'superadmin' %}4{% else %}3{% endif %}. Melihat Peta Kerawanan Kecelakaan
         </h2>
 
 
@@ -314,7 +527,7 @@
                     Setiap warna pada segmen jalan menunjukkan tingkat kerawanan kecelakaan.
                 </p>
 
-                <div class="ml-10 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="ml-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
 
                     <div class="flex items-center gap-3 bg-red-50 p-3 rounded">
                         🔴 <span>Rawan Kecelakaan Sangat Tinggi</span>
@@ -332,8 +545,12 @@
                         🟢 <span>Rawan Kecelakaan Rendah</span>
                     </div>
 
-                    <div class="flex items-center gap-3 bg-blue-50 p-3 rounded">
+                    <div class="flex items-center gap-3 bg-emerald-50 p-3 rounded">
                         🟢 <span>Rawan Kecelakaan Sangat Rendah</span>
+                    </div>
+
+                    <div class="flex items-center gap-3 bg-blue-50 p-3 rounded">
+                        🔵 <span>Aman (Tidak Ada Kejadian)</span>
                     </div>
 
                 </div>
@@ -375,7 +592,8 @@
     <!-- Manajemen Data -->
     <div id="guide-manajemen" class="hidden bg-white rounded-xl shadow p-8 mb-6">
         <h2 class="text-2xl font-bold text-blue-600 mb-6 pb-3 border-b border-gray-100">
-            4. Mengelola Data Laka & Preprocessing
+            {% if request.user.profile.role == 'superadmin' %}5{% else %}4{% endif %}. Mengelola Data Laka &
+            Preprocessing
         </h2>
 
         <div class="space-y-10">
@@ -603,13 +821,138 @@
                     </div>
                 </div>
             </div>
+
+        </div>
+    </div>
+
+    <!-- API AI Generate -->
+    <div id="guide-token_ai" class="hidden bg-white rounded-xl shadow p-8 mb-6">
+        <h2 class="text-2xl font-bold text-blue-600 mb-6 pb-3 border-b border-gray-100">
+            {% if request.user.profile.role == 'superadmin' %}6{% else %}5{% endif %}. API Key AI Generate
+        </h2>
+
+        <p class="text-gray-600 mb-8">
+            Bagian ini menjelaskan langkah-langkah untuk mendapatkan token API dari Google AI Studio (Gemini API) dan cara mengonfigurasinya di dalam sistem guna mengaktifkan fitur analisis berbasis AI.
+        </p>
+
+        <div class="space-y-10">
+            <!-- Langkah 1 -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">1</span>
+                    <h3 class="font-semibold text-lg text-gray-800">Mengakses Google AI Studio</h3>
+                </div>
+                <p class="text-gray-600 mb-4 ml-10">
+                    Akses situs resmi Google AI Studio melalui tautan berikut: <a href="https://aistudio.google.com/api-keys" target="_blank" class="text-blue-600 hover:underline font-semibold"><i class="fas fa-external-link-alt mr-1"></i>aistudio.google.com/api-keys</a>. Masuk menggunakan akun Google Anda.
+                </p>
+                <div class="ml-10 max-w-xl">
+                    <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/AISTudio_Home.png' %}" class="w-full block guide-img cursor-zoom-in" onclick="openLightbox(this)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Langkah 2 -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">2</span>
+                    <h3 class="font-semibold text-lg text-gray-800">Membuat API Key Baru</h3>
+                </div>
+                <p class="text-gray-600 mb-4 ml-10">
+                    Klik tombol <b>Create API Key</b> yang berada di bagian kanan atas halaman Google AI Studio untuk membuat kunci akses baru. Lalu klik <b>Create Key</b> dengan mengisi Nama dan juga project yang dipilih.
+                </p>
+                <div class="ml-10 max-w-xl">
+                    <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/AISTudio_CreateKey.png' %}" class="w-full block guide-img cursor-zoom-in" onclick="openLightbox(this)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Langkah 3 -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">3</span>
+                    <h3 class="font-semibold text-lg text-gray-800">Menyalin (Copy) API Key</h3>
+                </div>
+                <p class="text-gray-600 mb-4 ml-10">
+                    Setelah API Key berhasil dibuat, klik tombol <b>Copy</b> pada pop-up yang muncul untuk menyalin seluruh karakter API Key unik tersebut ke clipboard Anda.
+                </p>
+                <div class="ml-10 max-w-xl">
+                    <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/AISTudio_CopyKey.png' %}" class="w-full block guide-img cursor-zoom-in" onclick="openLightbox(this)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Langkah 4 -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">4</span>
+                    <h3 class="font-semibold text-lg text-gray-800">Membuka Menu API Key di Kelola Data Preprocessing</h3>
+                </div>
+                <p class="text-gray-600 mb-4 ml-10">
+                    Kembali ke aplikasi pemetaan laka lantas, masuk ke menu <b>📂 Manajemen Data</b> -> <b>Kelola Data Preprocessing</b>. Klik tombol <b><i class="fas fa-key mr-1"></i> API Key</b> yang ada di bagian kanan atas halaman utama untuk memunculkan modal konfigurasi AI.
+                </p>
+                <div class="ml-10 max-w-xl">
+                    <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/ManajemenData_ClusterData_APIKey_Button.png' %}" class="w-full block guide-img cursor-zoom-in" onclick="openLightbox(this)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Langkah 5 -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">5</span>
+                    <h3 class="font-semibold text-lg text-gray-800">Menempel dan Menyimpan API Key</h3>
+                </div>
+                <p class="text-gray-600 mb-4 ml-10">
+                    Pada modal <b>Konfigurasi AI</b> yang terbuka, pilih Tipe Analisis (K-Means atau AHC), kemudian tempelkan (paste) API Key yang sudah didapatkan ke dalam input field <b>Gemini API Key</b>, lalu klik tombol <b>Simpan Konfigurasi</b>.
+                </p>
+                <div class="ml-10 max-w-xl">
+                    <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/ManajemenData_ClusterData_APIKey_Modal.png' %}" class="w-full block guide-img cursor-zoom-in" onclick="openLightbox(this)">
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Analisis K-Means -->
     <div id="guide-kmeans" class="hidden bg-white rounded-xl shadow p-8 mb-6">
         <h2 class="text-2xl font-bold text-blue-600 mb-6 pb-3 border-b border-gray-100">
-            5. Analisis K-Means (Klasterisasi Hotspot Temporal/Waktu)
+            {% if request.user.profile.role == 'superadmin' %}7{% else %}6{% endif %}. Analisis K-Means (Klasterisasi
+            Hotspot Temporal/Waktu)
         </h2>
 
         <div class="space-y-10">
@@ -766,7 +1109,8 @@
     <!-- Analisis AHC -->
     <div id="guide-ahc" class="hidden bg-white rounded-xl shadow p-8 mb-6">
         <h2 class="text-2xl font-bold text-blue-600 mb-6 pb-3 border-b border-gray-100">
-            6. Analisis AHC (Klasterisasi Karakteristik & Faktor Risiko)
+            {% if request.user.profile.role == 'superadmin' %}7{% else %}6{% endif %}. Analisis AHC (Klasterisasi
+            Karakteristik & Faktor Risiko)
         </h2>
 
         <div class="space-y-10">
@@ -911,12 +1255,10 @@
             </div>
         </div>
     </div>
-
-
 </div>
 <script>
     function showGuide(name) {
-        const guides = ['ruas', 'upload', 'peta', 'manajemen', 'kmeans', 'ahc'];
+        const guides = ['superadmin', 'ruas', 'upload', 'peta', 'manajemen', 'token_ai', 'kmeans', 'ahc'];
 
         // Sembunyikan semua guide
         guides.forEach(item => {
@@ -1002,7 +1344,11 @@
 
     // Initialize active state on load
     document.addEventListener('DOMContentLoaded', function () {
-        updateCustomDropdownUI('ruas');
+        {% if request.user.profile.role == 'superadmin' %}
+        showGuide('superadmin');
+        {% else %}
+        showGuide('ruas');
+        {% endif %}
     });
 </script>
 
