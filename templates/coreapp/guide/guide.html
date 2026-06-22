@@ -17,22 +17,49 @@
             </p>
         </div>
 
-        <nav class="flex gap-1 bg-gray-100 rounded-lg p-1 self-start sm:self-center">
-            <button id="tab-ruas" onclick="showGuide('ruas')"
-                class="px-3 py-1.5 rounded-md text-sm font-medium text-white bg-blue-600 transition-colors duration-150 whitespace-nowrap">
-                🛣️ Ruas Jalan
+        <div class="relative w-full sm:w-64 self-start sm:self-center" id="custom-dropdown-container">
+            <button id="custom-dropdown-trigger" onclick="toggleCustomDropdown()" type="button"
+                class="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg text-sm border border-gray-300 shadow-sm transition outline-none cursor-pointer">
+                <span id="custom-dropdown-label">🛣️ Ruas Jalan</span>
+                <i class="fas fa-chevron-down text-xs text-gray-500 transition-transform duration-200"
+                    id="custom-dropdown-arrow"></i>
             </button>
 
-            <button id="tab-upload" onclick="showGuide('upload')"
-                class="px-3 py-1.5 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-200 transition-colors duration-150 whitespace-nowrap">
-                📊 Upload Data
-            </button>
-
-            <button id="tab-peta" onclick="showGuide('peta')"
-                class="px-3 py-1.5 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-200 transition-colors duration-150 whitespace-nowrap">
-                🗺️ Peta Kerawanan
-            </button>
-        </nav>
+            <!-- Custom Dropdown Menu -->
+            <div id="custom-dropdown-menu"
+                class="hidden absolute right-0 mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-200 z-50 overflow-hidden py-1">
+                <button onclick="selectCustomOption('ruas')" type="button" data-val="ruas"
+                    class="dropdown-item w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-between transition cursor-pointer font-medium">
+                    <span>🛣️ Ruas Jalan</span>
+                    <i class="fas fa-check text-xs text-blue-600 hidden active-check"></i>
+                </button>
+                <button onclick="selectCustomOption('upload')" type="button" data-val="upload"
+                    class="dropdown-item w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-between transition cursor-pointer font-medium">
+                    <span>📊 Upload Data</span>
+                    <i class="fas fa-check text-xs text-blue-600 hidden active-check"></i>
+                </button>
+                <button onclick="selectCustomOption('peta')" type="button" data-val="peta"
+                    class="dropdown-item w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-between transition cursor-pointer font-medium">
+                    <span>🗺️ Peta Kerawanan</span>
+                    <i class="fas fa-check text-xs text-blue-600 hidden active-check"></i>
+                </button>
+                <button onclick="selectCustomOption('manajemen')" type="button" data-val="manajemen"
+                    class="dropdown-item w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-between transition cursor-pointer font-medium">
+                    <span>📂 Manajemen Data</span>
+                    <i class="fas fa-check text-xs text-blue-600 hidden active-check"></i>
+                </button>
+                <button onclick="selectCustomOption('kmeans')" type="button" data-val="kmeans"
+                    class="dropdown-item w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-between transition cursor-pointer font-medium">
+                    <span>📈 Analisis K-Means</span>
+                    <i class="fas fa-check text-xs text-blue-600 hidden active-check"></i>
+                </button>
+                <button onclick="selectCustomOption('ahc')" type="button" data-val="ahc"
+                    class="dropdown-item w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-between transition cursor-pointer font-medium">
+                    <span>🧮 Analisis AHC</span>
+                    <i class="fas fa-check text-xs text-blue-600 hidden active-check"></i>
+                </button>
+            </div>
+        </div>
     </div>
 
 
@@ -47,7 +74,8 @@
 
             <div>
                 <div class="flex items-center gap-3 mb-2">
-                    <span class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">1</span>
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">1</span>
                     <h3 class="font-semibold text-lg text-gray-800">Masuk ke menu Pemetaan</h3>
                 </div>
 
@@ -56,13 +84,15 @@
                 </p>
 
                 <div class="ml-10 max-w-xl">
-                    <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                    <div
+                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
                         <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
                             <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
                             <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
                             <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
                         </div>
-                        <img src="{% static 'img/RuasJalan_1.png' %}" class="w-full block">
+                        <img src="{% static 'img/RuasJalan_1.png' %}" class="w-full block guide-img cursor-zoom-in"
+                            onclick="openLightbox(this)">
                     </div>
                 </div>
             </div>
@@ -70,7 +100,8 @@
 
             <div>
                 <div class="flex items-center gap-3 mb-2">
-                    <span class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">2</span>
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">2</span>
                     <h3 class="font-semibold text-lg text-gray-800">Tambah ruas jalan</h3>
                 </div>
 
@@ -79,13 +110,15 @@
                 </p>
 
                 <div class="ml-10 max-w-xl">
-                    <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                    <div
+                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
                         <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
                             <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
                             <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
                             <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
                         </div>
-                        <img src="{% static 'img/RuasJalan_2.png' %}" class="w-full block">
+                        <img src="{% static 'img/RuasJalan_2.png' %}" class="w-full block guide-img cursor-zoom-in"
+                            onclick="openLightbox(this)">
                     </div>
                 </div>
             </div>
@@ -93,7 +126,8 @@
 
             <div>
                 <div class="flex items-center gap-3 mb-2">
-                    <span class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">3</span>
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">3</span>
                     <h3 class="font-semibold text-lg text-gray-800">Menggambar ruas jalan</h3>
                 </div>
 
@@ -103,20 +137,23 @@
                 </p>
 
                 <div class="ml-10 max-w-xl">
-                    <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                    <div
+                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
                         <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
                             <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
                             <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
                             <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
                         </div>
-                        <img src="{% static 'img/RuasJalan_3.png' %}" class="w-full block">
+                        <img src="{% static 'img/RuasJalan_3.png' %}" class="w-full block guide-img cursor-zoom-in"
+                            onclick="openLightbox(this)">
                     </div>
                 </div>
             </div>
 
             <div>
                 <div class="flex items-center gap-3 mb-2">
-                    <span class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">4</span>
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">4</span>
                     <h3 class="font-semibold text-lg text-gray-800">Isi Data Ruas Jalan</h3>
                 </div>
 
@@ -125,13 +162,15 @@
                 </p>
 
                 <div class="ml-10 max-w-xs">
-                    <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                    <div
+                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
                         <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
                             <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
                             <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
                             <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
                         </div>
-                        <img src="{% static 'img/RuasJalan_4.png' %}" class="w-full block">
+                        <img src="{% static 'img/RuasJalan_4.png' %}" class="w-full block guide-img cursor-zoom-in"
+                            onclick="openLightbox(this)">
                     </div>
                 </div>
             </div>
@@ -154,25 +193,28 @@
 
             <div>
                 <div class="flex items-center gap-3 mb-2">
-                    <span class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">1</span>
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">1</span>
                     <h3 class="font-semibold text-lg text-gray-800">Masuk ke menu Pemetaan
 
 
-</h3>
+                    </h3>
                 </div>
 
                 <p class="text-gray-600 mb-4 ml-10">
-                Pilih menu Pemetaan pada sidebar untuk membuka halaman Kelola Data Pemetaan dan klik upload.
+                    Pilih menu Pemetaan pada sidebar untuk membuka halaman Kelola Data Pemetaan dan klik upload.
                 </p>
 
                 <div class="ml-10 max-w-xs">
-                    <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                    <div
+                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
                         <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
                             <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
                             <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
                             <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
                         </div>
-                        <img src="{% static 'img/DataPemetaan_1.png' %}" class="w-full block">
+                        <img src="{% static 'img/DataPemetaan_1.png' %}" class="w-full block guide-img cursor-zoom-in"
+                            onclick="openLightbox(this)">
                     </div>
                 </div>
             </div>
@@ -180,27 +222,40 @@
 
             <div>
                 <div class="flex items-center gap-3 mb-2">
-                    <span class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">2</span>
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">2</span>
                     <h3 class="font-semibold text-lg text-gray-800">Download Template</h3>
                 </div>
 
                 <p class="text-gray-600 mb-4 ml-10">
-                    Download Template format excel terlebih dahulu, dan sesuaikan format datanya untuk memudahkan dalam pengunggahan data kecelakaan, kemudian upload data.
+                    Download Template format excel terlebih dahulu, dan sesuaikan format datanya untuk memudahkan dalam
+                    pengunggahan data kecelakaan, kemudian upload data.
                 </p>
 
                 <div class="ml-10 max-w-xl">
-                    <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                    <div
+                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
                         <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
                             <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
                             <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
                             <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
                         </div>
-                        <img src="{% static 'img/DataPemetaan_2.png' %}" class="w-full block">
+                        <img src="{% static 'img/DataPemetaan_2.png' %}" class="w-full block guide-img cursor-zoom-in"
+                            onclick="openLightbox(this)">
                     </div>
                 </div>
             </div>
 
 
+        </div>
+
+        <!-- Catatan -->
+        <div class="bg-yellow-100 border-l-4 border-yellow-500 rounded-lg p-6 mt-6">
+            <h3 class="font-bold text-yellow-700">⚠️ Catatan Penting</h3>
+            <ul class="list-disc ml-6 mt-3 text-gray-700 space-y-2">
+                <li>Jangan mengubah nama kolom pada template Excel.</li>
+                <li>Pastikan latitude dan longitude menggunakan format desimal (-7.7182, 111.5352).</li>
+            </ul>
         </div>
 
     </div>
@@ -218,7 +273,8 @@
             <!-- Langkah 1 -->
             <div>
                 <div class="flex items-center gap-3 mb-2">
-                    <span class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center">
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center">
                         1
                     </span>
 
@@ -234,7 +290,8 @@
 
                 <div class="ml-10 max-w-xl">
                     <div class="rounded-lg overflow-hidden border shadow">
-                        <img src="{% static 'img/Peta_1.png' %}" class="w-full">
+                        <img src="{% static 'img/Peta_1.png' %}" class="w-full guide-img cursor-zoom-in"
+                            onclick="openLightbox(this)">
                     </div>
                 </div>
             </div>
@@ -243,7 +300,8 @@
             <!-- Langkah 2 -->
             <div>
                 <div class="flex items-center gap-3 mb-2">
-                    <span class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center">
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center">
                         2
                     </span>
 
@@ -285,7 +343,8 @@
             <!-- Langkah 3 -->
             <div>
                 <div class="flex items-center gap-3 mb-2">
-                    <span class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center">
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center">
                         3
                     </span>
 
@@ -302,7 +361,8 @@
 
                 <div class="ml-10 max-w-xl">
                     <div class="rounded-lg overflow-hidden border shadow">
-                        <img src="{% static 'img/Peta_2.png' %}" class="w-full">
+                        <img src="{% static 'img/Peta_2.png' %}" class="w-full guide-img cursor-zoom-in"
+                            onclick="openLightbox(this)">
                     </div>
                 </div>
             </div>
@@ -312,54 +372,736 @@
 
     </div>
 
-    <!-- Catatan -->
-    <div class="bg-yellow-100 border-l-4 border-yellow-500 rounded-lg p-6">
+    <!-- Manajemen Data -->
+    <div id="guide-manajemen" class="hidden bg-white rounded-xl shadow p-8 mb-6">
+        <h2 class="text-2xl font-bold text-blue-600 mb-6 pb-3 border-b border-gray-100">
+            4. Mengelola Data Laka & Preprocessing
+        </h2>
 
-        <h3 class="font-bold text-yellow-700">
-            ⚠️ Catatan Penting
-        </h3>
+        <div class="space-y-10">
+            <!-- Data Laka Mentah Header -->
+            <div class="border-l-4 border-blue-500 pl-4 py-1 bg-blue-50 rounded-r-lg">
+                <h3 class="font-bold text-lg text-blue-800">📂 Bagian 1: Data Laka Mentah (Automatly Report)</h3>
+                <p class="text-sm text-blue-600 mt-1">Langkah pengelolaan laporan kepolisian secara literal atau apa
+                    adanya dari berkas Excel kepolisian.</p>
+            </div>
 
-        <ul class="list-disc ml-6 mt-3 text-gray-700 space-y-2">
-            <li>Jangan mengubah nama kolom pada template Excel.</li>
-            <li>Pastikan latitude dan longitude menggunakan format desimal (-7.7182, 111.5352).</li>
-        </ul>
+            <!-- Laka Mentah Step 1 -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">1</span>
+                    <h4 class="font-semibold text-lg text-gray-800">Halaman Utama Data Laka Mentah (Automatly Report)
+                    </h4>
+                </div>
+                <p class="text-gray-600 mb-4 ml-10">
+                    Halaman ini menampilkan tabel seluruh data laporan kecelakaan mentah (laporan literal/apa adanya
+                    dari kepolisian). Di sini Anda dapat melihat ringkasan data, melakukan pencarian laporan tertentu,
+                    serta mengakses tombol fungsi utama seperti tambah data manual, import Excel, dan hapus data
+                    duplikat.
+                </p>
+                <div class="ml-10 max-w-xl">
+                    <div
+                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/ManajemenData_LakaMentah.png' %}"
+                            class="w-full block guide-img cursor-zoom-in" onclick="openLightbox(this)">
+                    </div>
+                </div>
+            </div>
 
+            <!-- Laka Mentah Step 2 -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">2</span>
+                    <h4 class="font-semibold text-lg text-gray-800">Input Manual Data Laka Mentah</h4>
+                </div>
+                <p class="text-gray-600 mb-4 ml-10">
+                    Klik tombol <b>Tambah Data Automatly Report</b> pada halaman utama. Anda wajib memilih <b>Polres</b>
+                    dan <b>Tahun</b> kejadian, mengisi <b>KET</b> (contoh: "1 LR" untuk 1 luka ringan), serta menuliskan
+                    teks narasi mentah pada kolom <b>No. Laporan</b>, <b>TKP & Koordinat</b>, <b>Kronologi</b>, dan data
+                    korban.
+                </p>
+                <div class="ml-10 max-w-xl">
+                    <div
+                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/ManajemenData_LakaMentah_Input.png' %}"
+                            class="w-full block guide-img cursor-zoom-in" onclick="openLightbox(this)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Laka Mentah Step 3 -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">3</span>
+                    <h4 class="font-semibold text-lg text-gray-800">Import Excel Data Laka Mentah</h4>
+                </div>
+                <p class="text-gray-600 mb-4 ml-10">
+                    Klik tombol <b>Import Excel</b> pada halaman daftar. Pilih file Excel Anda, tentukan Polres dan
+                    Tahun, lalu klik unggah. Parser sistem akan mencari baris header kepolisian secara dinamis untuk
+                    diimpor.
+                </p>
+                <div class="ml-10 max-w-xl">
+                    <div
+                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/ManajemenData_LakaMentah_Import.png' %}"
+                            class="w-full block guide-img cursor-zoom-in" onclick="openLightbox(this)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Laka Mentah Step 4 -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">4</span>
+                    <h4 class="font-semibold text-lg text-gray-800">Pembersihan Duplikat Data Laka Mentah</h4>
+                </div>
+                <p class="text-gray-600 mb-4 ml-10">
+                    Jika terdeteksi adanya data dengan isi kolom utama yang sama persis, gunakan tombol <b>Hapus
+                        Duplikat</b> untuk membersihkan salinan data ganda secara otomatis dari database.
+                </p>
+                <div class="ml-10 max-w-xl">
+                    <div
+                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/ManajemenData_LakaMentah_Duplikat.png' %}"
+                            class="w-full block guide-img cursor-zoom-in" onclick="openLightbox(this)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cluster Data Header -->
+            <div class="border-l-4 border-blue-500 pl-4 py-1 bg-blue-50 rounded-r-lg mt-6">
+                <h3 class="font-bold text-lg text-blue-800">📊 Bagian 2: Manajemen Cluster Data (Kelola Data
+                    Preprocessing)</h3>
+                <p class="text-sm text-blue-600 mt-1">Mengelola data kecelakaan terstruktur yang siap dianalisis
+                    menggunakan algoritma K-Means dan AHC.</p>
+            </div>
+
+            <!-- Cluster Data Step 1 -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">1</span>
+                    <h4 class="font-semibold text-lg text-gray-800">Halaman Utama Cluster Data (Kelola Data
+                        Preprocessing)</h4>
+                </div>
+                <p class="text-gray-600 mb-4 ml-10">
+                    Halaman ini menyajikan tabel berisi seluruh data kecelakaan yang telah terstruktur dan bersih. Anda
+                    dapat memantau parameter-parameter penting (seperti Umur, TKP, Penyebab, Tanggal, Jam, Tipe
+                    Kendaraan, Kerugian Material) yang akan diproses lebih lanjut menggunakan algoritma klasterisasi.
+                </p>
+                <div class="ml-10 max-w-xl">
+                    <div
+                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/ManajemenData_ClusterData.png' %}"
+                            class="w-full block guide-img cursor-zoom-in" onclick="openLightbox(this)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cluster Data Step 2 -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">2</span>
+                    <h4 class="font-semibold text-lg text-gray-800">Input Manual Cluster Data</h4>
+                </div>
+                <p class="text-gray-600 mb-4 ml-10">
+                    Klik tombol <b>Tambah Cluster Data</b> pada halaman utama. Isi parameter terstruktur seperti
+                    <b>Umur</b>, <b>TKP</b>, <b>Penyebab</b>, <b>Tanggal</b> (nama hari otomatis disinkronkan oleh
+                    sistem), <b>Jam</b>, <b>Jenis & Tipe Kendaraan</b>, dan <b>Kerugian Material</b>.
+                </p>
+                <div class="ml-10 max-w-xl">
+                    <div
+                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/ManajemenData_ClusterData_Input.png' %}"
+                            class="w-full block guide-img cursor-zoom-in" onclick="openLightbox(this)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cluster Data Step 3 -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">3</span>
+                    <h4 class="font-semibold text-lg text-gray-800">Import Excel Cluster Data</h4>
+                </div>
+                <p class="text-gray-600 mb-4 ml-10">
+                    Klik tombol <b>Import Excel</b> pada halaman daftar. Unggah file Excel dengan format kolom yang
+                    sesuai. Parser sistem mendukung pembacaan format penanggalan teks bahasa Indonesia (contoh: "1
+                    Januari 2024").
+                </p>
+                <div class="ml-10 max-w-xl">
+                    <div
+                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/ManajemenData_ClusterData_Import.png' %}"
+                            class="w-full block guide-img cursor-zoom-in" onclick="openLightbox(this)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cluster Data Step 4 -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">4</span>
+                    <h4 class="font-semibold text-lg text-gray-800">Pembersihan Duplikat & Persiapan Analisis</h4>
+                </div>
+                <p class="text-gray-600 mb-4 ml-10">
+                    Gunakan tombol <b>Hapus Duplikat</b> pada tabel Cluster Data untuk memastikan kebersihan data dari
+                    redundansi sebelum memulai pemrosesan algoritma K-Means atau AHC.
+                </p>
+                <div class="ml-10 max-w-xl">
+                    <div
+                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/ManajemenData_ClusterData_Duplikat.png' %}"
+                            class="w-full block guide-img cursor-zoom-in" onclick="openLightbox(this)">
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Analisis K-Means -->
+    <div id="guide-kmeans" class="hidden bg-white rounded-xl shadow p-8 mb-6">
+        <h2 class="text-2xl font-bold text-blue-600 mb-6 pb-3 border-b border-gray-100">
+            5. Analisis K-Means (Klasterisasi Hotspot Temporal/Waktu)
+        </h2>
+
+        <div class="space-y-10">
+            <!-- Langkah 1 -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">1</span>
+                    <h3 class="font-semibold text-lg text-gray-800">Unggah Data & Preprocessing K-Means</h3>
+                </div>
+                <div class="text-gray-600 space-y-2 ml-10 mb-4">
+                    <p>
+                        Fitur K-Means digunakan untuk memetakan slot waktu rawan kecelakaan berdasarkan kombinasi Jam
+                        dan Hari kejadian.
+                    </p>
+                    <ul class="list-disc ml-5 space-y-1">
+                        <li><b>Sumber Data:</b> Anda dapat mengunggah file Excel baru yang sesuai dengan mengklik tombol
+                            <b>Download Template Excel</b> terlebih dahulu, atau langsung mengklik tombol <b>Gunakan
+                                Data Database</b> untuk menggunakan seluruh data yang terdaftar di halaman <i>Cluster
+                                Data</i>.
+                        </li>
+                        <li><b>Proses Preprocessing:</b> Klik tombol <b>Mulai Preprocessing</b>. Sistem akan merangkum
+                            seluruh data kejadian kecelakaan menjadi <b>168 slot waktu mingguan</b> (24 Jam x 7 Hari)
+                            dan menghitung akumulasi total kejadian di setiap jam.</li>
+                    </ul>
+                </div>
+                <div class="ml-10 max-w-xl">
+                    <div
+                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/KMeans_Preprocessing.png' %}"
+                            class="w-full block guide-img cursor-zoom-in" onclick="openLightbox(this)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Langkah 2 -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">2</span>
+                    <h3 class="font-semibold text-lg text-gray-800">Menjalankan Clustering</h3>
+                </div>
+                <p class="text-gray-600 mb-4 ml-10">
+                    Setelah data selesai di-preprocess, klik tombol <b>Proses Cluster</b> untuk menjalankan algoritma
+                    clustering. Sistem akan memproses data untuk menemukan cluster-cluster waktu yang memiliki tingkat
+                    kerawanan laka lantas tertinggi.
+                </p>
+                <div class="ml-10 max-w-xl">
+                    <div
+                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/KMeans_Proses.png' %}" class="w-full block guide-img cursor-zoom-in"
+                            onclick="openLightbox(this)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Langkah 3 -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">3</span>
+                    <h3 class="font-semibold text-lg text-gray-800">Membaca Visualisasi Hasil K-Means</h3>
+                </div>
+                <div class="text-gray-600 space-y-3 ml-10 mb-4">
+                    <p>
+                        Klik <b>Lihat Analisis Lengkap</b> untuk membuka visualisasi terpadu:
+                    </p>
+                    <ul class="list-disc ml-5 space-y-1">
+                        <li><b>Keterangan Pembagian Cluster:</b>
+                            <ul class="list-disc ml-5 mt-1 space-y-1">
+                                <li>🔵 <b>Cluster 1 - Rendah:</b> Periode waktu dengan tingkat frekuensi kecelakaan
+                                    terkecil (kondisi lalu lintas relatif aman).</li>
+                                <li>🟢 <b>Cluster 2 - Sedang:</b> Periode waktu dengan tingkat risiko menengah/rata-rata
+                                    (memerlukan perhatian situasional).</li>
+                                <li>🔴 <b>Cluster 3 - Tinggi:</b> Periode waktu paling kritis dengan akumulasi
+                                    kecelakaan tertinggi (prioritas utama penempatan patroli).</li>
+                            </ul>
+                        </li>
+                        <li><b>Grafik Akumulasi Tingkat Kerawanan (Bar Chart):</b> Perbandingan total volume kecelakaan
+                            pada tiap kategori risiko, lengkap dengan interpretasi deskripsi otomatis.</li>
+                        <li><b>Pemetaan Pola Waktu Kejadian (Scatter Plot):</b> Pemetaan koordinat waktu 24 Jam (Sumbu
+                            X) vs Hari Senin-Minggu (Sumbu Y). Titik merah besar merepresentasikan slot waktu di klaster
+                            tinggi yang rawan.</li>
+                        <li><b>Tren Temporal 24 Jam (Line Chart):</b> Grafik fluktuasi kecelakaan per jam dengan garis
+                            bersegmen warna cluster untuk melihat lonjakan risiko pada jam-jam sibuk.</li>
+                        <li><b>Metode Elbow (Elbow Method):</b> Grafik justifikasi ilmiah yang membuktikan bahwa
+                            pembagian ke dalam 3 cluster ($k=3$) adalah pilihan yang paling optimal.</li>
+                    </ul>
+                </div>
+                <div class="ml-10 max-w-xl">
+                    <div
+                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/KMeans_Hasil.png' %}" class="w-full block guide-img cursor-zoom-in"
+                            onclick="openLightbox(this)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Langkah 4 -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">4</span>
+                    <h3 class="font-semibold text-lg text-gray-800">Merumuskan Rencana Patroli Taktis (Halaman
+                        Rekomendasi AI)</h3>
+                </div>
+                <div class="text-gray-600 space-y-2 ml-10 mb-4">
+                    <p>
+                        Di bagian bawah halaman hasil K-Means, klik tombol <b>Rumuskan Langkah Penanganan & Pencegahan
+                            Terpadu</b>. Sistem akan menghubungkan hasil klaster ke AI Gemini untuk merumuskan usulan
+                        strategis:
+                    </p>
+                    <ul class="list-disc ml-5 space-y-1">
+                        <li><b>Jadwal Patroli Taktis:</b> AI akan menyusun jadwal patroli lengkap (Hari, Jam, Fokus
+                            Pengawasan, dan Unit Penanggung Jawab) yang diarahkan tepat ke slot waktu klaster tinggi
+                            (merah).</li>
+                        <li><b>Tindakan Infrastruktur:</b> Usulan perbaikan lampu jalan, marka jalan, atau pemasangan
+                            rambu di area rawan.</li>
+                        <li><b>KPI Target & Program Kerja:</b> Program aksi jangka pendek (1 bulan), menengah (6-12
+                            bulan), serta target persentase pengurangan kecelakaan.</li>
+                    </ul>
+                </div>
+                <div class="ml-10 max-w-xl">
+                    <div
+                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/KMeans_Rekomendasi.png' %}"
+                            class="w-full block guide-img cursor-zoom-in" onclick="openLightbox(this)">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analisis AHC -->
+    <div id="guide-ahc" class="hidden bg-white rounded-xl shadow p-8 mb-6">
+        <h2 class="text-2xl font-bold text-blue-600 mb-6 pb-3 border-b border-gray-100">
+            6. Analisis AHC (Klasterisasi Karakteristik & Faktor Risiko)
+        </h2>
+
+        <div class="space-y-10">
+            <!-- Langkah 1 -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">1</span>
+                    <h3 class="font-semibold text-lg text-gray-800">Unggah Data & Preprocessing AHC</h3>
+                </div>
+                <p class="text-gray-600 mb-4 ml-10">
+                    Sama seperti K-Means, AHC membutuhkan data yang bersih. Unggah file Excel data preprosesing baru
+                    atau klik <b>Gunakan Data Database</b> di menu AHC, lalu tekan tombol <b>Mulai Preprocessing</b>
+                    untuk memuat dan menyusun karakteristik kasus.
+                </p>
+                <div class="ml-10 max-w-xl">
+                    <div
+                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/AHC_Preprocessing.png' %}"
+                            class="w-full block guide-img cursor-zoom-in" onclick="openLightbox(this)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Langkah 2 -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">2</span>
+                    <h3 class="font-semibold text-lg text-gray-800">Menentukan Jumlah Klaster & Menjalankan AHC</h3>
+                </div>
+                <div class="text-gray-600 space-y-2 ml-10 mb-4">
+                    <p>
+                        Fitur AHC (Agglomerative Hierarchical Clustering) digunakan untuk mengelompokkan kecelakaan
+                        berdasarkan karakteristik pelaku (usia), faktor penyebab (kelalaian, pelanggaran, teknis), serta
+                        dimensi waktu & hari.
+                    </p>
+                    <ul class="list-disc ml-5 space-y-1">
+                        <li><b>Menentukan Jumlah Klaster:</b> Masukkan angka jumlah klaster yang diinginkan pada kolom
+                            input (minimal 2, maksimal 10) lalu klik <b>Proses Clustering</b>.</li>
+                    </ul>
+                </div>
+                <div class="ml-10 max-w-xl">
+                    <div
+                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/AHC_Proses.png' %}" class="w-full block guide-img cursor-zoom-in"
+                            onclick="openLightbox(this)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Langkah 3 -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">3</span>
+                    <h3 class="font-semibold text-lg text-gray-800">Membaca Visualisasi Karakteristik & Eksplanasi AI
+                    </h3>
+                </div>
+                <div class="text-gray-600 space-y-3 ml-10 mb-4">
+                    <p>
+                        Klik tombol <b>Lihat Analisis Lengkap</b> setelah pemrosesan selesai untuk membuka halaman
+                        grafik lanjutan:
+                    </p>
+                    <ul class="list-disc ml-5 space-y-1">
+                        <li><b>Tabel Karakteristik Klaster:</b> Merangkum karakteristik utama setiap klaster (populasi
+                            kasus, rata-rata umur korban, faktor penyebab dominan, sesi waktu dominan, dan hari
+                            dominan).</li>
+                        <li><b>Visualisasi Sebaran Klaster (PCA):</b> Proyeksi spasial data 2D yang menunjukkan
+                            kerenggangan atau kedekatan karakteristik antar klaster.</li>
+                        <li><b>Struktur Hierarki Klaster (Dendrogram):</b> Diagram pohon pengelompokan hierarkis dengan
+                            garis cut-off merah sebagai batas pemisah jumlah klaster terpilih.</li>
+                        <li><b>Boxplot Umur per Klaster:</b> Grafik distribusi untuk melihat rentang sebaran usia
+                            pengendara di setiap klaster secara visual.</li>
+                        <li><b>Analisis Faktor Berdasarkan Kelompok Umur:</b> Stacked bar chart yang menghubungkan
+                            kelompok usia pengendara dengan kontribusi faktor penyebab kecelakaan (Kelalaian,
+                            Pelanggaran, Teknis).</li>
+                        <li><b>Eksplanasi AI Otomatis:</b> Sistem otomatis memanggil Gemini AI untuk merumuskan narasi
+                            ilmiah (interpretasi data) untuk kelima grafik di atas. Anda dapat melihat hasil narasinya
+                            di dalam kotak biru berlabel "Generate by AI" di bawah masing-masing chart.</li>
+                    </ul>
+                </div>
+                <div class="ml-10 max-w-xl">
+                    <div
+                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/AHC_Hasil.png' %}" class="w-full block guide-img cursor-zoom-in"
+                            onclick="openLightbox(this)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Langkah 4 -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span
+                        class="bg-blue-600 text-white text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center shrink-0">4</span>
+                    <h3 class="font-semibold text-lg text-gray-800">Merumuskan Strategi Kebijakan Taktis (Halaman
+                        Rekomendasi AHC)</h3>
+                </div>
+                <div class="text-gray-600 space-y-2 ml-10 mb-4">
+                    <p>
+                        Di bagian bawah halaman hasil AHC, klik tombol <b>Rumuskan Langkah Penanganan & Strategi
+                            Terukur</b>. Sistem akan membuka halaman rekomendasi kebijakan AHC khusus yang dirumuskan
+                        oleh AI Gemini:
+                    </p>
+                    <ul class="list-disc ml-5 space-y-1">
+                        <li><b>Sintesis Risiko:</b> AI akan menghubungkan variabel faktor dominan global dengan kelompok
+                            umur pengendara yang paling rentan untuk menyusun ringkasan prioritas penanganan.</li>
+                        <li><b>Matriks Intervensi:</b> Usulan tindakan pengawasan spesifik (seperti edukasi ke
+                            sekolah/kampus untuk target pengendara muda) dan program perbaikan fasilitas jalan.</li>
+                        <li><b>Jadwal Pos Pengawasan & Program Kerja:</b> Jadwal pos penjagaan di jam-jam krusial serta
+                            program aksi jangka pendek dan menengah yang terukur.</li>
+                    </ul>
+                </div>
+                <div class="ml-10 max-w-xl">
+                    <div
+                        class="rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-1.5 bg-gray-100 px-3 py-2 border-b border-gray-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <img src="{% static 'img/AHC_Rekomendasi.png' %}" class="w-full block guide-img cursor-zoom-in"
+                            onclick="openLightbox(this)">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
 </div>
 <script>
-function showGuide(name) {
+    function showGuide(name) {
+        const guides = ['ruas', 'upload', 'peta', 'manajemen', 'kmeans', 'ahc'];
 
-    const guides = ['ruas', 'upload', 'peta'];
+        // Sembunyikan semua guide
+        guides.forEach(item => {
+            const targetGuide = document.getElementById('guide-' + item);
+            if (targetGuide) targetGuide.classList.add('hidden');
+        });
 
-    const activeColors = {
-        ruas: 'bg-blue-600',
-        upload: 'bg-blue-600',
-        peta: 'bg-blue-600'
-    };
+        // Tampilkan guide yang dipilih
+        const selectedGuide = document.getElementById('guide-' + name);
+        if (selectedGuide) selectedGuide.classList.remove('hidden');
 
-    // Sembunyikan semua guide dan reset semua tab ke style inactive
-    guides.forEach(item => {
-        document.getElementById('guide-' + item).classList.add('hidden');
+        // Sinkronkan custom dropdown UI
+        updateCustomDropdownUI(name);
+    }
 
-        const tab = document.getElementById('tab-' + item);
+    function toggleCustomDropdown() {
+        const menu = document.getElementById('custom-dropdown-menu');
+        const arrow = document.getElementById('custom-dropdown-arrow');
+        const isHidden = menu.classList.contains('hidden');
 
-        tab.className =
-            "px-3 py-1.5 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-200 transition-colors duration-150 whitespace-nowrap";
+        if (isHidden) {
+            menu.classList.remove('hidden');
+            arrow.classList.add('rotate-180');
+        } else {
+            menu.classList.add('hidden');
+            arrow.classList.remove('rotate-180');
+        }
+    }
+
+    function selectCustomOption(val) {
+        // Hide dropdown menu
+        const menu = document.getElementById('custom-dropdown-menu');
+        const arrow = document.getElementById('custom-dropdown-arrow');
+        if (menu) menu.classList.add('hidden');
+        if (arrow) arrow.classList.remove('rotate-180');
+
+        // Show guide
+        showGuide(val);
+    }
+
+    function updateCustomDropdownUI(name) {
+        const items = document.querySelectorAll('.dropdown-item');
+        let activeLabel = '';
+
+        items.forEach(item => {
+            const itemVal = item.getAttribute('data-val');
+            const checkIcon = item.querySelector('.active-check');
+
+            if (itemVal === name) {
+                // Apply active styles
+                item.classList.add('bg-blue-50', 'text-blue-600', 'font-semibold');
+                item.classList.remove('text-gray-700', 'font-medium');
+                if (checkIcon) checkIcon.classList.remove('hidden');
+
+                // Get label text (excluding check icon)
+                activeLabel = item.querySelector('span').innerText;
+            } else {
+                // Restore inactive styles
+                item.classList.remove('bg-blue-50', 'text-blue-600', 'font-semibold');
+                item.classList.add('text-gray-700', 'font-medium');
+                if (checkIcon) checkIcon.classList.add('hidden');
+            }
+        });
+
+        // Update trigger button label
+        const labelEl = document.getElementById('custom-dropdown-label');
+        if (labelEl && activeLabel) {
+            labelEl.innerText = activeLabel;
+        }
+    }
+
+    // Close custom dropdown when clicking outside
+    document.addEventListener('click', function (event) {
+        const container = document.getElementById('custom-dropdown-container');
+        const menu = document.getElementById('custom-dropdown-menu');
+        const arrow = document.getElementById('custom-dropdown-arrow');
+
+        if (container && !container.contains(event.target)) {
+            if (menu) menu.classList.add('hidden');
+            if (arrow) arrow.classList.remove('rotate-180');
+        }
     });
 
+    // Initialize active state on load
+    document.addEventListener('DOMContentLoaded', function () {
+        updateCustomDropdownUI('ruas');
+    });
+</script>
 
-    // Tampilkan guide yang dipilih
-    document.getElementById('guide-' + name).classList.remove('hidden');
+<!-- ─── LIGHTBOX FULLSCREEN ─────────────────────────────────────────── -->
+<style>
+    #lightbox-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(30, 30, 40, 0.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.15s ease, visibility 0.15s ease;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+    }
 
+    #lightbox-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
 
-    // Beri warna sesuai tab yang aktif
-    const activeTab = document.getElementById('tab-' + name);
+    #lightbox-img-wrap {
+        max-width: 92vw;
+        max-height: 90vh;
+        transform: scale(0.96);
+        transition: transform 0.15s ease;
+    }
 
-    activeTab.className =
-        "px-3 py-1.5 rounded-md text-sm font-medium text-white " + activeColors[name] +
-        " transition-colors duration-150 whitespace-nowrap";
-}
+    #lightbox-overlay.active #lightbox-img-wrap {
+        transform: scale(1);
+    }
+
+    #lightbox-img {
+        max-width: 92vw;
+        max-height: 88vh;
+        object-fit: contain;
+        border-radius: 10px;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+        display: block;
+    }
+
+    #lightbox-close {
+        position: fixed;
+        top: 16px;
+        right: 20px;
+        width: 36px;
+        height: 36px;
+        background: rgba(255, 255, 255, 0.2);
+        border: 1.5px solid rgba(255, 255, 255, 0.4);
+        border-radius: 50%;
+        color: #fff;
+        font-size: 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.12s, transform 0.12s;
+        z-index: 10000;
+    }
+
+    #lightbox-close:hover {
+        background: rgba(255, 255, 255, 0.35);
+        transform: scale(1.1);
+    }
+
+    .guide-img {
+        transition: opacity 0.12s ease;
+        cursor: zoom-in;
+    }
+
+    .guide-img:hover {
+        opacity: 0.85;
+    }
+</style>
+
+<div id="lightbox-overlay" onclick="closeLightbox()">
+    <button id="lightbox-close" onclick="closeLightbox()" title="Tutup (Esc)">&#10005;</button>
+    <div id="lightbox-img-wrap" onclick="event.stopPropagation()">
+        <img id="lightbox-img" src="" alt="Preview">
+    </div>
+</div>
+
+<script>
+    window.openLightbox = function (imgEl) {
+        document.getElementById('lightbox-img').src = imgEl.src;
+        document.getElementById('lightbox-overlay').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    };
+    window.closeLightbox = function () {
+        document.getElementById('lightbox-overlay').classList.remove('active');
+        document.body.style.overflow = '';
+    };
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeLightbox();
+    });
 </script>
 
 {% endblock %}
