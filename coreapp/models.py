@@ -125,7 +125,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(max_length=10, blank=True, verbose_name='Nama Depan')
     last_name = models.CharField(max_length=10, blank=True, verbose_name='Nama Belakang')
     name = models.CharField(max_length=20, verbose_name='Nama Lengkap')
-    email = models.EmailField(max_length=30, unique=True, verbose_name='Email Institusi')
+    email = models.EmailField(max_length=40, unique=True, verbose_name='Email Institusi')
     password = models.CharField(max_length=255, null=True, blank=True, verbose_name='Password')
     # google_id = models.CharField(max_length=255, null=True, blank=True, unique=True, verbose_name='Google ID')
     role = models.CharField(
