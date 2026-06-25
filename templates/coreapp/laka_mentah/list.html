@@ -13,9 +13,9 @@
                 Kelola data literal Automatly Report dari Laporan Kepolisian
             </p>
         </div>
-        <div class="flex gap-2 w-full md:w-auto">
+        <div class="flex flex-col sm:flex-row flex-wrap gap-2 w-full md:w-auto items-stretch sm:items-center">
             <!-- Search bar -->
-            <form method="GET" action="{% url 'laka_mentah_list' %}" class="flex-1 md:flex-initial flex gap-2">
+            <form method="GET" action="{% url 'laka_mentah_list' %}" class="w-full sm:w-auto flex gap-2">
                 {% if selected_polda %}
                     <input type="hidden" name="polda" value="{{ selected_polda }}">
                 {% endif %}
@@ -25,20 +25,22 @@
                 {% if selected_tahun %}
                     <input type="hidden" name="tahun" value="{{ selected_tahun }}">
                 {% endif %}
-                <input type="text" name="search" value="{{ search_query }}" placeholder="Cari laporan, tanggal, TKP..." class="px-4 py-2 border rounded-lg text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <button type="submit" class="bg-gray-800 hover:bg-black text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                <input type="text" name="search" value="{{ search_query }}" placeholder="Cari laporan, tanggal, TKP..." class="flex-1 sm:w-60 px-4 py-2 border rounded-lg text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button type="submit" class="bg-gray-800 hover:bg-black text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center justify-center">
                     <i class="fas fa-search"></i>
                 </button>
                 {% if search_query or selected_polda or selected_polres or selected_tahun %}
-                <a href="{% url 'laka_mentah_list' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center">Reset</a>
+                <a href="{% url 'laka_mentah_list' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center justify-center">Reset</a>
                 {% endif %}
             </form>
-            <button onclick="document.getElementById('importModal').classList.remove('hidden')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm flex items-center gap-2">
-                <i class="fas fa-file-excel"></i> Import Excel
-            </button>
-            <a href="{% url 'laka_mentah_tambah' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm flex items-center gap-2 whitespace-nowrap">
-                <i class="fas fa-plus"></i> Tambah Data
-            </a>
+            <div class="flex gap-2 w-full sm:w-auto">
+                <button onclick="document.getElementById('importModal').classList.remove('hidden')" class="flex-1 sm:flex-initial bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm flex items-center justify-center gap-2">
+                    <i class="fas fa-file-excel"></i> Import Excel
+                </button>
+                <a href="{% url 'laka_mentah_tambah' %}" class="flex-1 sm:flex-initial bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm flex items-center justify-center gap-2 whitespace-nowrap">
+                    <i class="fas fa-plus"></i> Tambah Data
+                </a>
+            </div>
         </div>
     </div>
 
@@ -261,7 +263,7 @@
 
 <!-- IMPORT MODAL -->
 <div id="importModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
         <div class="flex justify-between items-center mb-6">
             <h3 class="text-xl font-bold text-gray-800">Import Automatly Report</h3>
             <button onclick="document.getElementById('importModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
@@ -304,19 +306,12 @@
 
             <div class="mb-4">
                 <label class="block text-sm font-semibold text-gray-700 mb-2">Pilih Tahun Data <span class="text-red-500">*</span></label>
-                <div class="relative" id="customImportTahunDropdown">
-                    <button type="button" onclick="toggleCustomImportDropdown()" id="customImportDropdownBtn" class="w-full px-3 py-2 border rounded-lg text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-left flex justify-between items-center">
-                        <span id="customImportDropdownSelected">-- Pilih Tahun --</span>
-                        <i class="fas fa-chevron-down text-gray-400"></i>
-                    </button>
-                    <div id="customImportDropdownMenu" class="hidden absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto z-[60] divide-y divide-gray-100">
-                        <div onclick="selectImportYear('')" class="px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 cursor-pointer">-- Pilih Tahun --</div>
-                        {% for yr in years_list %}
-                            <div onclick="selectImportYear('{{ yr }}')" class="px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 cursor-pointer">{{ yr }}</div>
-                        {% endfor %}
-                    </div>
-                    <input type="text" name="tahun" id="hiddenImportTahunInput" required class="absolute opacity-0 pointer-events-none w-0 h-0">
-                </div>
+                <select name="tahun" id="importTahunSelect" onchange="validateImportForm()" required class="w-full px-3 py-2 border rounded-lg text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">-- Pilih Tahun --</option>
+                    {% for yr in years_list %}
+                        <option value="{{ yr }}">{{ yr }}</option>
+                    {% endfor %}
+                </select>
             </div>
 
             <div class="mb-6">
@@ -634,12 +629,10 @@ function filterImportPolres() {
 
 function closeImportModal() {
     document.getElementById('importModal').classList.add('hidden');
-    const menu = document.getElementById('customImportDropdownMenu');
-    if (menu) menu.classList.add('hidden');
     
     // Reset form inputs & validation
-    document.getElementById('hiddenImportTahunInput').value = '';
-    document.getElementById('customImportDropdownSelected').innerText = '-- Pilih Tahun --';
+    const tahunSelect = document.getElementById('importTahunSelect');
+    if (tahunSelect) tahunSelect.value = '';
     document.getElementById('fileInput').value = '';
     document.getElementById('fileNameLabel').innerText = 'Klik untuk memilih file';
     
@@ -669,21 +662,9 @@ function showDuplicateConfirm() {
     );
 }
 
-// ─── Custom Import Dropdown ────────────────────────────────────────────────
-function toggleCustomImportDropdown() {
-    const menu = document.getElementById('customImportDropdownMenu');
-    menu.classList.toggle('hidden');
-}
-
-function selectImportYear(val) {
-    document.getElementById('hiddenImportTahunInput').value = val;
-    document.getElementById('customImportDropdownSelected').innerText = val || '-- Pilih Tahun --';
-    document.getElementById('customImportDropdownMenu').classList.add('hidden');
-    validateImportForm();
-}
-
 function validateImportForm() {
-    const yearVal = document.getElementById('hiddenImportTahunInput').value;
+    const yearSelect = document.getElementById('importTahunSelect');
+    const yearVal = yearSelect ? yearSelect.value : '';
     const poldaSelect = document.getElementById('importPoldaSelect');
     const poldaVal = poldaSelect ? poldaSelect.value : '';
     const polresSelect = document.getElementById('importPolresSelect');
@@ -705,15 +686,6 @@ function validateImportForm() {
     }
 }
 
-// Close custom dropdown when clicking outside
-document.addEventListener('click', function(event) {
-    const container = document.getElementById('customImportTahunDropdown');
-    const menu = document.getElementById('customImportDropdownMenu');
-    if (container && menu && !container.contains(event.target)) {
-        menu.classList.add('hidden');
-    }
-});
-
 // ─── ESC key closes any open modal ────────────────────────────────────────
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
@@ -721,8 +693,6 @@ document.addEventListener('keydown', function(e) {
         closeImportModal();
         closeDuplicateModal();
         closeConfirmModal();
-        const menu = document.getElementById('customImportDropdownMenu');
-        if (menu) menu.classList.add('hidden');
     }
 });
 </script>

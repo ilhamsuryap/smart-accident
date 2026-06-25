@@ -13,14 +13,14 @@
                 Kelola data mentah kecelakaan untuk proses clustering
             </p>
         </div>
-        <div class="flex gap-2">
-            <button onclick="document.getElementById('apiKeyModal').classList.remove('hidden')" class="bg-gray-800 hover:bg-black text-white px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 mr-8">
+        <div class="flex flex-wrap gap-2 w-full md:w-auto">
+            <button onclick="document.getElementById('apiKeyModal').classList.remove('hidden')" class="flex-1 sm:flex-initial bg-gray-800 hover:bg-black text-white px-4 py-2 rounded-lg font-medium transition flex items-center justify-center gap-2">
                 <i class="fas fa-key"></i> API Key
             </button>
-            <button onclick="document.getElementById('importModal').classList.remove('hidden')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition flex items-center gap-2">
+            <button onclick="document.getElementById('importModal').classList.remove('hidden')" class="flex-1 sm:flex-initial bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition flex items-center justify-center gap-2">
                 <i class="fas fa-file-excel"></i> Import Excel
             </button>
-            <a href="{% url 'cluster_data_tambah' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition flex items-center gap-2">
+            <a href="{% url 'cluster_data_tambah' %}" class="flex-1 sm:flex-initial bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition flex items-center justify-center gap-2 whitespace-nowrap">
                 <i class="fas fa-plus"></i> Tambah Data
             </a>
         </div>
@@ -103,7 +103,7 @@
     <!-- TABLE -->
     <div class="bg-white rounded-xl shadow-md overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left border-collapse">
+            <table class="w-full text-sm text-left border-collapse table-auto min-w-[1200px]">
                 <thead class="bg-gray-50 text-gray-700 border-b">
                     <tr>
                         <th class="px-6 py-4 font-bold">No</th>
@@ -201,7 +201,7 @@
 
 <!-- IMPORT MODAL -->
 <div id="importModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
         <div class="flex justify-between items-center mb-6">
             <h3 class="text-xl font-bold text-gray-800">Import Data Excel</h3>
             <button onclick="closeImportModal()" class="text-gray-400 hover:text-gray-600">
@@ -244,19 +244,12 @@
 
             <div class="mb-4">
                 <label class="block text-sm font-semibold text-gray-700 mb-2">Pilih Tahun Data <span class="text-red-500">*</span></label>
-                <div class="relative" id="customImportTahunDropdown">
-                    <button type="button" onclick="toggleCustomImportDropdown()" id="customImportDropdownBtn" class="w-full px-3 py-2 border rounded-lg text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-left flex justify-between items-center">
-                        <span id="customImportDropdownSelected">-- Pilih Tahun --</span>
-                        <i class="fas fa-chevron-down text-gray-400"></i>
-                    </button>
-                    <div id="customImportDropdownMenu" class="hidden absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto z-[60] divide-y divide-gray-100">
-                        <div onclick="selectImportYear('')" class="px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 cursor-pointer">-- Pilih Tahun --</div>
-                        {% for yr in years_list %}
-                            <div onclick="selectImportYear('{{ yr }}')" class="px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 cursor-pointer">{{ yr }}</div>
-                        {% endfor %}
-                    </div>
-                    <input type="text" name="tahun" id="hiddenImportTahunInput" required class="absolute opacity-0 pointer-events-none w-0 h-0">
-                </div>
+                <select name="tahun" id="importTahunSelect" onchange="validateImportForm()" required class="w-full px-3 py-2 border rounded-lg text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">-- Pilih Tahun --</option>
+                    {% for yr in years_list %}
+                        <option value="{{ yr }}">{{ yr }}</option>
+                    {% endfor %}
+                </select>
             </div>
 
             <div class="mb-6">
@@ -277,7 +270,7 @@
 
 <!-- API KEY MODAL -->
 <div id="apiKeyModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 border-t-4 border-gray-800">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 border-t-4 border-gray-800 max-h-[90vh] overflow-y-auto">
         <div class="flex justify-between items-center mb-6">
             <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
                 <i class="fas fa-robot text-blue-500"></i> Konfigurasi AI
@@ -558,12 +551,10 @@ function filterImportPolres() {
 
 function closeImportModal() {
     document.getElementById('importModal').classList.add('hidden');
-    const menu = document.getElementById('customImportDropdownMenu');
-    if (menu) menu.classList.add('hidden');
     
     // Reset form inputs & validation
-    document.getElementById('hiddenImportTahunInput').value = '';
-    document.getElementById('customImportDropdownSelected').innerText = '-- Pilih Tahun --';
+    const tahunSelect = document.getElementById('importTahunSelect');
+    if (tahunSelect) tahunSelect.value = '';
     document.getElementById('fileInput').value = '';
     document.getElementById('fileNameLabel').innerText = 'Klik untuk pilih file';
     
@@ -574,21 +565,9 @@ function closeImportModal() {
     unlockScroll();
 }
 
-// ─── Custom Import Dropdown ────────────────────────────────────────────────
-function toggleCustomImportDropdown() {
-    const menu = document.getElementById('customImportDropdownMenu');
-    menu.classList.toggle('hidden');
-}
-
-function selectImportYear(val) {
-    document.getElementById('hiddenImportTahunInput').value = val;
-    document.getElementById('customImportDropdownSelected').innerText = val || '-- Pilih Tahun --';
-    document.getElementById('customImportDropdownMenu').classList.add('hidden');
-    validateImportForm();
-}
-
 function validateImportForm() {
-    const yearVal = document.getElementById('hiddenImportTahunInput').value;
+    const yearSelect = document.getElementById('importTahunSelect');
+    const yearVal = yearSelect ? yearSelect.value : '';
     const poldaSelect = document.getElementById('importPoldaSelect');
     const poldaVal = poldaSelect ? poldaSelect.value : '';
     const polresSelect = document.getElementById('importPolresSelect');
@@ -610,23 +589,12 @@ function validateImportForm() {
     }
 }
 
-// Close custom dropdown when clicking outside
-document.addEventListener('click', function(event) {
-    const container = document.getElementById('customImportTahunDropdown');
-    const menu = document.getElementById('customImportDropdownMenu');
-    if (container && menu && !container.contains(event.target)) {
-        menu.classList.add('hidden');
-    }
-});
-
 // ESC key closes any open modal
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeImportModal();
         document.getElementById('duplicateModal').classList.add('hidden');
         closeConfirmModal();
-        const menu = document.getElementById('customImportDropdownMenu');
-        if (menu) menu.classList.add('hidden');
         unlockScroll();
     }
 });

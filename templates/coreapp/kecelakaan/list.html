@@ -18,35 +18,31 @@
     </div>
     
     <!-- Filter & Search -->
-    <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="md:col-span-2">
-            <form method="get" class="flex gap-2">
-                <input type="text" name="search" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200" 
-                       placeholder="Cari lokasi kecelakaan..." value="{{ request.GET.search }}">
-                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                    <i class="fas fa-search"></i> Cari
-                </button>
-            </form>
-        </div>
-        <div>
-            <form method="get" class="flex gap-2">
-                <select name="tahun" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600" onchange="this.form.submit()">
-                    <option value="">-- Semua Tahun --</option>
-                    {% for tahun_opt in tahun_options %}
-                        <option value="{{ tahun_opt }}" {% if request.GET.tahun|add:"0" == tahun_opt %}selected{% endif %}>
-                            {{ tahun_opt }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </form>
-        </div>
+    <div class="mb-6">
+        <form method="get" class="w-full flex flex-col md:flex-row flex-wrap gap-3 items-stretch md:items-center">
+            <input type="text" name="search" class="w-full md:w-60 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200" 
+                   placeholder="Cari lokasi kecelakaan..." value="{{ request.GET.search }}">
+            
+            <select name="tahun" onchange="this.form.submit()" class="w-full md:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 bg-white">
+                <option value="">-- Semua Tahun --</option>
+                {% for tahun_opt in tahun_options %}
+                    <option value="{{ tahun_opt }}" {% if request.GET.tahun|add:"0" == tahun_opt %}selected{% endif %}>
+                        {{ tahun_opt }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <button type="submit" class="w-full md:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2">
+                <i class="fas fa-search"></i> Cari
+            </button>
+        </form>
     </div>
     
     <!-- Daftar Kecelakaan -->
     <div class="w-full">
         {% if kecelakaan %}
             <div class="overflow-x-auto bg-white rounded-lg shadow-md">
-                <table class="w-full">
+                <table class="w-full min-w-[800px]">
                     <thead class="bg-gray-100">
                         <tr>
                             <th class="px-4 py-3 text-left font-semibold">No</th>

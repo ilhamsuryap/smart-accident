@@ -104,24 +104,24 @@
     <form method="POST" action="{% url 'tambah_data' %}">
         {% csrf_token %}
 
-        <div class="row g-0">
+        <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-200">
             <!-- INFORMASI WAKTU & KORBAN -->
-            <div class="col-md-6 border-end">
+            <div>
                 <div class="section-header">Informasi Waktu & Korban</div>
                 <div class="section-body">
 
                     <!-- Card Tanggal & Waktu sejajar -->
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="input-card">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <div class="input-card mb-0">
                                 <label>Tanggal Kejadian</label>
-                                <input type="date" name="tanggal" class="form-control">
+                                <input type="date" name="tanggal" class="form-control w-full">
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="input-card">
+                        <div>
+                            <div class="input-card mb-0">
                                 <label>Waktu Kejadian</label>
-                                <input type="time" name="waktu" class="form-control">
+                                <input type="time" name="waktu" class="form-control w-full">
                             </div>
                         </div>
                     </div>
@@ -129,18 +129,18 @@
                     <!-- Korban -->
                     <label>Korban Kejadian</label>
                     <div class="korban-card">
-                        <div class="row g-3">
-                            <div class="col-4 text-center">
-                                <small>Meninggal Dunia (MD)</small>
-                                <input type="number" name="meninggal" class="form-control text-center" value="0">
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="text-center">
+                                <small class="text-[10px] sm:text-xs">Meninggal (MD)</small>
+                                <input type="number" name="meninggal" class="form-control text-center w-full" value="0">
                             </div>
-                            <div class="col-4 text-center">
-                                <small>Luka Berat (LB)</small>
-                                <input type="number" name="luka_berat" class="form-control text-center" value="0">
+                            <div class="text-center">
+                                <small class="text-[10px] sm:text-xs">Luka Berat (LB)</small>
+                                <input type="number" name="luka_berat" class="form-control text-center w-full" value="0">
                             </div>
-                            <div class="col-4 text-center">
-                                <small>Luka Ringan (LR)</small>
-                                <input type="number" name="luka_ringan" class="form-control text-center" value="0">
+                            <div class="text-center">
+                                <small class="text-[10px] sm:text-xs">Luka Ringan (LR)</small>
+                                <input type="number" name="luka_ringan" class="form-control text-center w-full" value="0">
                             </div>
                         </div>
                     </div>
@@ -149,23 +149,23 @@
             </div>
 
             <!-- DETAIL LOKASI & KERUGIAN -->
-            <div class="col-md-6">
+            <div>
                 <div class="section-header">Detail Lokasi & Kerugian</div>
                 <div class="section-body">
 
                     <!-- Kerugian -->
-                    <div class="mb-3">
-                        <label>Kerugian Materi</label>
-                        <input type="number" name="kerugian" class="form-control" placeholder="Rp 0">
+                    <div class="mb-4">
+                        <label class="block mb-2">Kerugian Materi</label>
+                        <input type="number" name="kerugian" class="form-control w-full" placeholder="Rp 0">
                     </div>
 
                     <!-- Kota & Kecamatan -->
-                    <div class="row mb-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                         <!-- Kota/Kabupaten -->
-                        <div class="col-md-6 mb-3">
-                            <div class="input-card">
+                        <div>
+                            <div class="input-card mb-0">
                                 <label>Kota/Kabupaten</label>
-                                <select name="kota" id="id_kota" class="form-select">
+                                <select name="kota" id="id_kota" class="form-select w-full">
                                     <option value="">Pilih Kota</option>
                                     {% for kota in kota_list %}
                                         <option value="{{ kota.id }}">{{ kota.nama }}</option>
@@ -175,10 +175,10 @@
                         </div>
 
                         <!-- Kecamatan -->
-                        <div class="col-md-6 mb-3">
-                            <div class="input-card">
+                        <div>
+                            <div class="input-card mb-0">
                                 <label>Kecamatan</label>
-                                <select name="kecamatan" id="id_kecamatan" class="form-select">
+                                <select name="kecamatan" id="id_kecamatan" class="form-select w-full">
                                     <option value="">Pilih Kecamatan</option>
                                 </select>
                             </div>
@@ -186,16 +186,16 @@
                     </div>
 
                     <!-- Kelurahan/Desa -->
-                    <div class="row mb-3">
-                        <div class="col-md-6 mb-3">
-                            <div class="input-card">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <div class="input-card mb-0">
                                 <label>Kelurahan/Desa</label>
-                                <select name="kelurahan" id="id_kelurahan" class="form-select">
+                                <select name="kelurahan" id="id_kelurahan" class="form-select w-full">
                                     <option value="">Pilih Kelurahan</option>
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-6"></div>
+                        <div></div>
                     </div>
 
                 </div>
@@ -203,9 +203,9 @@
         </div>
 
         <!-- TOMBOL -->
-        <div class="p-4 text-end">
-            <a href="{% url 'cluster_data' %}" class="btn btn-light me-2">Batal</a>
-            <button type="submit" class="btn btn-primary-custom">Simpan Data</button>
+        <div class="p-4 flex flex-col sm:flex-row justify-end gap-3 border-t bg-gray-50">
+            <a href="{% url 'cluster_data' %}" class="w-full sm:w-auto px-6 py-2.5 text-center text-gray-700 font-semibold hover:bg-gray-100 rounded-lg transition border">Batal</a>
+            <button type="submit" class="btn-primary-custom w-full sm:w-auto px-6 py-2.5 font-bold transition flex items-center justify-center gap-2 shadow-md">Simpan Data</button>
         </div>
     </form>
 </div>

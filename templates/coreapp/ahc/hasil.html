@@ -90,7 +90,7 @@
         </div>
 
         <div class="overflow-x-auto rounded-xl border border-gray-100">
-            <table class="min-w-full text-sm">
+            <table class="min-w-[800px] text-sm">
                 <thead class="bg-gray-50 text-gray-700 font-bold uppercase text-[10px] tracking-widest">
                     <tr>
                         <th class="px-6 py-4 border-b text-left">Klaster</th>
@@ -149,7 +149,7 @@
         </div>
 
         <div class="overflow-x-auto rounded-xl border border-gray-100">
-            <table class="min-w-full text-xs" id="detailTable">
+            <table class="min-w-[1000px] text-xs" id="detailTable">
                 <thead class="bg-gray-50 text-gray-700 font-bold uppercase text-[10px] tracking-widest">
                     <tr>
                         <th class="px-4 py-3 border-b text-left">#</th>
@@ -188,8 +188,10 @@
             <h3 class="text-lg font-bold text-gray-800">Visualisasi Sebaran Klaster (PCA)</h3>
         </div>
 
-        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
-            {{ scatter_html|safe }}
+        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 overflow-x-auto w-full">
+            <div class="min-w-[600px] w-full">
+                {{ scatter_html|safe }}
+            </div>
         </div>
 
         <!-- PCA Axis Hint -->
@@ -248,8 +250,10 @@
             <h3 class="text-lg font-bold text-gray-800">Struktur Hierarki Klaster (Dendrogram)</h3>
         </div>
 
-        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 overflow-x-auto">
-            {{ dendrogram_html|safe }}
+        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 overflow-x-auto w-full">
+            <div class="min-w-[800px] w-full">
+                {{ dendrogram_html|safe }}
+            </div>
         </div>
 
         <!-- AI DENDROGRAM -->
@@ -287,7 +291,7 @@
             </div>
             <h3 class="text-lg font-bold text-gray-800">Faktor Penyebab (Global)</h3>
         </div>
-        <div style="height: 350px;">
+        <div class="h-[250px] sm:h-[350px] w-full relative">
             <canvas id="faktorChart"></canvas>
         </div>
         <!-- AI FAKTOR -->
@@ -359,7 +363,7 @@
             </div>
             <h3 class="text-lg font-bold text-gray-800">Analisis Faktor Berdasarkan Kelompok Umur</h3>
         </div>
-        <div style="height: 450px;">
+        <div class="h-[250px] sm:h-[450px] w-full relative">
             <canvas id="umurFaktorChart"></canvas>
         </div>
         <!-- AI UMUR -->
