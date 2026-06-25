@@ -70,14 +70,44 @@
         #sidebar {
             position: fixed;
             top: 64px;
-            left: 0;
+            left: -256px; /* Hide on mobile by default */
             height: calc(100vh - 64px);
             width: 256px;
             background: #ffffff;
             display: flex;
             flex-direction: column;
+            z-index: 45;
+            transition: left 0.3s ease;
+        }
 
+        #sidebar.sidebar-open {
+            left: 0;
+        }
+
+        /* Desktop view overrides */
+        @media (min-width: 768px) {
+            #sidebar {
+                left: 0 !important;
+            }
+        }
+
+        /* ===== SIDEBAR BACKDROP ===== */
+        #sidebarBackdrop {
+            position: fixed;
+            top: 64px;
+            left: 0;
+            width: 100vw;
+            height: calc(100vh - 64px);
+            background: rgba(0, 0, 0, 0.4);
             z-index: 40;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #sidebarBackdrop.show {
+            display: block;
+            opacity: 1;
         }
 
         /* Brand area */
@@ -269,28 +299,22 @@
                 <a href="{% url 'dashboard' %}" class="font-bold text-xl text-white">
                     Smart Accident
                 </a>
-                <button id="navToggle" type="button" class="text-white md:hidden">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <div id="navMenu" class="hidden md:flex items-center gap-6">
-                    <ul class="flex items-center gap-4">
-                        {% if user.is_authenticated %}
-                        <li>
-                            <a href="{% url 'profile' %}"
-                                class="flex items-center gap-2 text-white hover:text-gray-200 transition">
-
-                                <!-- Foto -->
-                                <img src="{% if request.user.profile.foto %}{{ request.user.profile.foto.url }}{% else %}/static/img/default-user.png{% endif %}"
-                                    alt="profile" class="w-8 h-8 rounded-full object-cover border border-white">
-
-                                <!-- Nama -->
-                                <span class="font-medium">
-                                    {{ user.display_name }}
-                                </span>
-                            </a>
-                        </li>
-                        {% endif %}
-                    </ul>
+                <div class="flex items-center gap-4">
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'profile' %}"
+                        class="flex items-center gap-2 text-white hover:text-gray-200 transition">
+                        <!-- Foto -->
+                        <img src="{% if request.user.profile.foto %}{{ request.user.profile.foto.url }}{% else %}/static/img/default-user.png{% endif %}"
+                            alt="profile" class="w-8 h-8 rounded-full object-cover border border-white">
+                        <!-- Nama -->
+                        <span class="font-medium hidden md:inline">
+                            {{ user.display_name }}
+                        </span>
+                    </a>
+                    {% endif %}
+                    <button id="navToggle" type="button" class="text-white md:hidden">
+                        <i class="fas fa-bars"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -299,6 +323,9 @@
     {% if user.is_authenticated %}
     <div class="flex min-h-screen overflow-hidden">
         {% with current=request.resolver_match.url_name %}
+
+        <!-- Sidebar Backdrop -->
+        <div id="sidebarBackdrop"></div>
 
         <!-- Sidebar -->
         <div id="sidebar">
@@ -516,7 +543,7 @@
         </script>
 
         <!-- Main Content -->
-        <div class="flex-1 p-5 md:p-6 bg-gray-100 overflow-x-hidden ml-[256px]">
+        <div class="flex-1 p-5 md:p-6 bg-gray-100 overflow-x-hidden ml-0 md:ml-[256px]">
             {% if messages %}
             <div class="mb-6 space-y-3">
                 {% for message in messages %}
@@ -568,10 +595,23 @@
 
     <!-- Mobile Menu Toggle -->
     <script>
-        document.getElementById('navToggle').addEventListener('click', function () {
-            const navMenu = document.getElementById('navMenu');
-            navMenu.classList.toggle('hidden');
-        });
+        const navToggle = document.getElementById('navToggle');
+        const sidebar = document.getElementById('sidebar');
+        const backdrop = document.getElementById('sidebarBackdrop');
+
+        if (navToggle && sidebar && backdrop) {
+            navToggle.addEventListener('click', function (e) {
+                e.stopPropagation();
+                sidebar.classList.toggle('sidebar-open');
+                backdrop.classList.toggle('show');
+            });
+
+            // Close sidebar when clicking backdrop
+            backdrop.addEventListener('click', function () {
+                sidebar.classList.remove('sidebar-open');
+                backdrop.classList.remove('show');
+            });
+        }
     </script>
 
     {% block extra_js %}{% endblock %}

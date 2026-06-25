@@ -193,31 +193,30 @@
     </div>
 
 </div>
-        <!-- {# Kolom kanan (2/3): Peta #}
-        <div class="lg:col-span-2">
-            <div class="bg-white rounded-lg shadow-md overflow-hidden h-full">
-                <div class="bg-gray-50 px-5 py-3 border-b border-gray-200 flex justify-between items-center">
-                    <h5 class="font-semibold text-sm">
-                        <i class="fas fa-map-marked-alt text-blue-500 mr-1"></i> Visualisasi Jalur &amp; Segmen
-                    </h5>
-                    <div class="flex items-center gap-3 text-xs text-gray-500">
-                        <span class="flex items-center gap-1">
-                            <span class="inline-block w-6 h-1 bg-gray-400 rounded" style="border-top:3px dashed #9ca3af"></span> Ruas Utama
-                        </span>
-                        <span class="flex items-center gap-1">
-                            <span class="inline-block w-6 h-1.5 bg-blue-500 rounded"></span> Segmen
-                        </span>
-                        <span class="flex items-center gap-1">
-                            <span class="inline-block w-3 h-3 rounded-full bg-red-500 border-2 border-white"></span> Awal
-                        </span>
-                        <span class="flex items-center gap-1">
-                            <span class="inline-block w-3 h-3 rounded-full bg-blue-500 border-2 border-white"></span> Akhir
-                        </span>
-                    </div>
-                </div>
-                <div id="mapDetail" style="height:430px; border-radius:0; position: relative; z-index: 1;"></div>
+
+    <!-- Visualisasi Peta (Full Width & Responsif) -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+        <div class="bg-gray-50 px-5 py-3 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <h5 class="font-semibold text-sm">
+                <i class="fas fa-map-marked-alt text-blue-500 mr-1"></i> Visualisasi Jalur &amp; Segmen
+            </h5>
+            <div class="flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                <span class="flex items-center gap-1">
+                    <span class="inline-block w-6 h-1 bg-gray-400 rounded" style="border-top:3px dashed #9ca3af"></span> Ruas Utama
+                </span>
+                <span class="flex items-center gap-1">
+                    <span class="inline-block w-6 h-1.5 bg-blue-500 rounded"></span> Segmen
+                </span>
+                <span class="flex items-center gap-1">
+                    <span class="inline-block w-3 h-3 rounded-full bg-red-500 border-2 border-white"></span> Awal
+                </span>
+                <span class="flex items-center gap-1">
+                    <span class="inline-block w-3 h-3 rounded-full bg-blue-500 border-2 border-white"></span> Akhir
+                </span>
             </div>
-        </div> -->
+        </div>
+        <div id="mapDetail" class="h-[300px] sm:h-[450px] w-full relative z-10"></div>
+    </div>
   
 
     {# ── Daftar Segmen ─────────────────────────────────────────────────── #}
@@ -240,7 +239,7 @@
         <div class="p-0">
             {% if segmen %}
             <div class="overflow-x-auto">
-                <table class="w-full text-sm" id="segmen-table">
+                <table class="w-full text-sm min-w-[800px]" id="segmen-table">
                     <thead class="bg-gray-100 border-b border-gray-200 text-xs uppercase tracking-wide text-gray-600">
                         <tr>
                             <th class="px-4 py-3 text-left w-8">#</th>

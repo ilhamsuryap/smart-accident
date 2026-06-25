@@ -178,6 +178,9 @@ h1, h2, h3, h4, h5, h6 {
 .form-control,
 .form-select,
 textarea {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     border: 1px solid var(--border-color);
     border-radius: 6px;
     padding: 10px 14px;
