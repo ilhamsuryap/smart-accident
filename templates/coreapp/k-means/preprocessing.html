@@ -217,17 +217,17 @@
                     {% for key, value in row.items %}
                         <td class="px-4 py-2 border whitespace-nowrap {% if key == 'Cluster' %}sticky right-0 bg-gray-50 z-10 border-l-2 border-gray-300 shadow-[-4px_0_10px_rgba(0,0,0,0.1)]{% endif %}">
                             {% if key == "Cluster" %}
-                                {% if value == 1 %}
-                                    <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-semibold">
-                                        Cluster 1
-                                    </span>
-                                {% elif value == 2 %}
-                                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full font-semibold">
-                                        Cluster 2
-                                    </span>
-                                {% elif value == 3 %}
+                                {% if row.Kategori|lower == 'tinggi' %}
                                     <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full font-semibold">
-                                        Cluster 3
+                                        Cluster {{ value }}
+                                    </span>
+                                {% elif row.Kategori|lower == 'sedang' %}
+                                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full font-semibold">
+                                        Cluster {{ value }}
+                                    </span>
+                                {% else %}
+                                    <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-semibold">
+                                        Cluster {{ value }}
                                     </span>
                                 {% endif %}
                             {% else %}

@@ -33,38 +33,21 @@
         <h3 class="text-lg font-bold text-gray-800 mb-4">Keterangan Cluster Hasil Analisis K-Means</h3>
         
         <div class="space-y-4">
-            <!-- Cluster 1 - Rendah -->
-            <div class="pb-4 border-b border-gray-200">
-                <div class="flex items-start">
-                    <span class="inline-block w-4 h-4 bg-blue-500 rounded-full mr-3 mt-1 flex-shrink-0"></span>
-                    <div>
-                        <h4 class="font-semibold text-blue-900 text-base">Cluster 1 - Rendah (Biru)</h4>
-                        <p class="text-gray-700 text-sm mt-1 text-justify">Cluster ini mengelompokkan periode waktu dengan tingkat frekuensi kecelakaan yang paling rendah. Slot waktu dalam kategori ini mencerminkan kondisi lalu lintas yang relatif lebih aman dibandingkan periode lainnya. Data ini dapat digunakan sebagai referensi waktu dengan risiko minimal bagi pengguna jalan.</p>
+            {% if cluster_info_list %}
+                {% for item in cluster_info_list %}
+                <div class="{% if not forloop.last %}pb-4 border-b border-gray-200{% endif %}">
+                    <div class="flex items-start">
+                        <span class="inline-block w-4 h-4 {{ item.bg_dot }} rounded-full mr-3 mt-1 flex-shrink-0"></span>
+                        <div>
+                            <h4 class="font-semibold {{ item.text_color }} text-base">
+                                Cluster {{ item.id }} - {{ item.kategori }}{% if item.kategori|lower == 'tinggi' %} / Paling Rawan{% endif %} ({{ item.color_name }})
+                            </h4>
+                            <p class="text-gray-700 text-sm mt-1 text-justify">{{ item.desc }}</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Cluster 2 - Sedang -->
-            <div class="pb-4 border-b border-gray-200">
-                <div class="flex items-start">
-                    <span class="inline-block w-4 h-4 bg-green-500 rounded-full mr-3 mt-1 flex-shrink-0"></span>
-                    <div>
-                        <h4 class="font-semibold text-green-900 text-base">Cluster 2 - Sedang (Hijau)</h4>
-                        <p class="text-gray-700 text-sm mt-1 text-justify">Cluster ini mencakup periode waktu dengan tingkat risiko menengah atau rata-rata. Intensitas kejadian pada kelompok ini menunjukkan adanya peningkatan aktivitas lalu lintas yang mulai berkontribusi pada frekuensi kecelakaan. Periode ini memerlukan perhatian situasional dan pengawasan lalu lintas yang rutin.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Cluster 3 - Tinggi -->
-            <div>
-                <div class="flex items-start">
-                    <span class="inline-block w-4 h-4 bg-red-500 rounded-full mr-3 mt-1 flex-shrink-0"></span>
-                    <div>
-                        <h4 class="font-semibold text-red-900 text-base">Cluster 3 - Tinggi (Merah)</h4>
-                        <p class="text-gray-700 text-sm mt-1 text-justify">Cluster ini merepresentasikan periode waktu yang paling rawan dengan akumulasi jumlah kecelakaan tertinggi. Konsentrasi kejadian yang besar pada kelompok ini menandakan adanya faktor risiko yang signifikan. Periode ini harus menjadi prioritas utama dalam penempatan personel patroli, penegakan aturan, dan langkah preventif keselamatan jalan.</p>
-                    </div>
-                </div>
-            </div>
+                {% endfor %}
+            {% endif %}
         </div>
     </div>
 
@@ -312,8 +295,8 @@ if (ctxBar) {
                 const c = item['Cluster'] || 0;
                 const nilai = parseFloat(item['Jumlah_Kejadian'] || 0);
                 if (c === 1) jmlRendah += nilai;
-                else if (c === 2) jmlSedang += nilai;
-                else if (c === 3) jmlTinggi += nilai;
+                else if (c === 2) jmlTinggi += nilai;
+                else if (c === 3) jmlSedang += nilai;
             });
         }
     } catch(e) { console.warn('Bar chart error:', e); }
@@ -523,45 +506,47 @@ function createUnifiedChart() {
     const ctx = document.getElementById('unifiedScatterChart');
     if (!ctx) return;
     const rawScatter = JSON.parse('{{ chart_data|escapejs }}');
-    const c1 = [], c2 = [], c3 = [];
     const hariLabel = ['', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
 
+    const clusterGroups = {};
     rawScatter.forEach(pt => {
-        const kat = (pt.kategori || '').toLowerCase();
+        const cid = pt.cluster || 1;
+        if (!clusterGroups[cid]) {
+            clusterGroups[cid] = {
+                id: cid,
+                kategori: pt.kategori || 'Sedang',
+                data: []
+            };
+        }
         const r = Math.min(5 + (pt.jumlah || 1) * 1.5, 18);
-        const dp = { x: pt.x, y: pt.y, jumlah: pt.jumlah, r: r };
-        if (kat === 'rendah') c1.push(dp);
-        else if (kat === 'sedang') c2.push(dp);
-        else if (kat === 'tinggi') c3.push(dp);
+        clusterGroups[cid].data.push({ x: pt.x, y: pt.y, jumlah: pt.jumlah, r: r });
+    });
+
+    const datasets = [];
+    Object.keys(clusterGroups).sort((a,b) => Number(a) - Number(b)).forEach(cid => {
+        const grp = clusterGroups[cid];
+        const kat = (grp.kategori || '').toLowerCase();
+        let color = 'rgba(59,130,246,0.60)';
+        let labelSuffix = '';
+        if (kat === 'tinggi') {
+            color = 'rgba(239,68,68,0.60)';
+            labelSuffix = ' / Paling Rawan';
+        } else if (kat === 'sedang') {
+            color = 'rgba(34, 197, 94, 0.70)';
+        }
+
+        datasets.push({
+            label: `Cluster ${cid} (${grp.kategori}${labelSuffix})`,
+            data: grp.data,
+            backgroundColor: color,
+            pointRadius: grp.data.map(d => d.r),
+            clip: false
+        });
     });
 
     new Chart(ctx, {
         type: 'scatter',
-        data: {
-            datasets: [
-                { 
-                    label: 'Cluster 1 (Rendah)', 
-                    data: c1, 
-                    backgroundColor: 'rgba(59,130,246,0.60)', 
-                    pointRadius: c1.map(d => d.r),
-                    clip: false // Mencegah titik terpotong di tepi
-                },
-                { 
-                    label: 'Cluster 2 (Sedang)', 
-                    data: c2, 
-                    backgroundColor: 'rgba(34, 197, 94, 0.70)', 
-                    pointRadius: c2.map(d => d.r),
-                    clip: false
-                },
-                { 
-                    label: 'Cluster 3 (Tinggi)', 
-                    data: c3, 
-                    backgroundColor: 'rgba(239,68,68,0.60)', 
-                    pointRadius: c3.map(d => d.r),
-                    clip: false
-                }
-            ]
-        },
+        data: { datasets: datasets },
         options: {
             responsive: true, maintainAspectRatio: false,
             plugins: {
