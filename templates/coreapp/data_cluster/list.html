@@ -35,7 +35,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
                             <p class="text-sm text-gray-500 font-semibold mb-2">Pilih Polda</p>
-                            <select name="polda" onchange="this.form.submit()" class="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <select name="polda" onchange="const polresSelect = this.form.querySelector('select[name=polres]'); if (polresSelect) polresSelect.value = ''; this.form.submit();" class="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <option value="">Semua Polda</option>
                                 {% for pld in polda_list %}
                                     <option value="{{ pld.id }}" {% if selected_polda == pld.id %}selected{% endif %}>{{ pld.nama }}</option>
