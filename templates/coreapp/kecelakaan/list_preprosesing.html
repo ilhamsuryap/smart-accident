@@ -37,7 +37,7 @@
             <input type="text" name="search" placeholder="Cari nomor kecelakaan..." 
                    value="{{ request.GET.search }}" class="w-full md:w-60 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
             
-            <select name="polda" onchange="this.form.submit()" class="w-full md:w-auto px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-white">
+            <select name="polda" onchange="const polresSelect = this.form.querySelector('select[name=polres]'); if (polresSelect) polresSelect.value = ''; this.form.submit();" class="w-full md:w-auto px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-white">
                 <option value="">Semua Polda</option>
                 {% for pld in polda_choices %}
                     <option value="{{ pld.id }}" {% if selected_polda|stringformat:"s" == pld.id|stringformat:"s" %}selected{% endif %}>{{ pld.nama }}</option>
