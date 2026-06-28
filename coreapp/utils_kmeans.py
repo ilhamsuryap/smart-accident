@@ -340,22 +340,21 @@ def proses_cluster(request):
         return redirect('preprocessing')
 
     # ─────────────────────────────────────────────────────
-    # LABELING: berdasarkan rata-rata Jumlah_Kejadian per cluster
+    # LABELING: berdasarkan rata-rata Jumlah_Kejadian per cluster (Dinamis Data-Driven)
     # ─────────────────────────────────────────────────────
     if 'Jumlah_Kejadian' in df.columns:
         sorted_clusters = df.groupby('Cluster')['Jumlah_Kejadian'].mean().sort_values()
     else:
         sorted_clusters = df.groupby('Cluster').size().sort_values()
 
-    # Urutkan ID Cluster secara fisik agar Cluster 1 = Rendah, Cluster 2 = Sedang, Cluster 3 = Tinggi
-    # Ini memastikan kecocokan 100% dengan warna badge dan keterangan di UI / template
-    cluster_mapping = {cluster_id: i + 1 for i, cluster_id in enumerate(sorted_clusters.index)}
-    df['Cluster'] = df['Cluster'].map(cluster_mapping)
+    # Petakan kategori secara dinamis: lowest -> Rendah, medium -> Sedang, highest -> Tinggi
+    kategori_list = ['Rendah', 'Sedang', 'Tinggi']
+    if len(sorted_clusters) == 3:
+        kat_map = {cluster_id: kategori_list[i] for i, cluster_id in enumerate(sorted_clusters.index)}
+    else:
+        kat_map = {cluster_id: 'Sedang' for cluster_id in sorted_clusters.index}
 
-    kategori = ['Rendah', 'Sedang', 'Tinggi']
-    label_map = {i + 1: kategori[i] for i in range(len(kategori))}
-
-    df['Kategori'] = df['Cluster'].map(label_map)
+    df['Kategori'] = df['Cluster'].map(kat_map).fillna('Sedang')
 
     # ─────────────────────────────────────────────────────
     # BERSIHKAN KOLOM UNTUK DISPLAY
@@ -446,6 +445,38 @@ def hasil(request):
     hasil_cluster_list = df.to_dict(orient='records')
     show_all           = request.GET.get('show_all') == '1'
 
+    # Construct dynamic cluster info list for UI template
+    cluster_info_list = []
+    if 'Cluster' in df.columns and 'Kategori' in df.columns:
+        for cid in sorted(df['Cluster'].unique()):
+            sub = df[df['Cluster'] == cid]
+            kat = str(sub['Kategori'].iloc[0]) if not sub.empty else 'Sedang'
+            
+            if kat.lower() == 'tinggi':
+                bg_dot = 'bg-red-500'
+                text_color = 'text-red-900'
+                color_name = 'Merah'
+                desc = "Cluster ini merepresentasikan periode waktu yang paling rawan dengan akumulasi jumlah kecelakaan tertinggi. Konsentrasi kejadian yang besar pada kelompok ini menandakan adanya faktor risiko yang signifikan. Periode ini harus menjadi prioritas utama dalam penempatan personel patroli, penegakan aturan, dan langkah preventif keselamatan jalan."
+            elif kat.lower() == 'sedang':
+                bg_dot = 'bg-green-500'
+                text_color = 'text-green-900'
+                color_name = 'Hijau'
+                desc = "Cluster ini mencakup periode waktu dengan tingkat risiko menengah atau rata-rata. Intensitas kejadian pada kelompok ini menunjukkan adanya peningkatan aktivitas lalu lintas yang mulai berkontribusi pada frekuensi kecelakaan. Periode ini memerlukan perhatian situasional dan pengawasan lalu lintas yang rutin."
+            else:
+                bg_dot = 'bg-blue-500'
+                text_color = 'text-blue-900'
+                color_name = 'Biru'
+                desc = "Cluster ini mengelompokkan periode waktu dengan tingkat frekuensi kecelakaan yang paling rendah. Slot waktu dalam kategori ini mencerminkan kondisi lalu lintas yang relatif lebih aman dibandingkan periode lainnya. Data ini dapat digunakan sebagai referensi waktu dengan risiko minimal bagi pengguna jalan."
+
+            cluster_info_list.append({
+                'id': int(cid),
+                'kategori': kat,
+                'color_name': color_name,
+                'bg_dot': bg_dot,
+                'text_color': text_color,
+                'desc': desc
+            })
+
     context = {
         "hasil_cluster":      hasil_cluster_list if show_all else hasil_cluster_list[:10],
         "is_full_preview":    show_all,
@@ -462,6 +493,7 @@ def hasil(request):
         "jumlah_data_awal":    jumlah_data_awal,
         "jumlah_data_bersih":  jumlah_data_bersih,
         "elbow_data_json":     json.dumps(request.session.get('elbow_data', [])),
+        "cluster_info_list":   cluster_info_list,
     }
 
     return render(request, "coreapp/k-means/hasil.html", context)
