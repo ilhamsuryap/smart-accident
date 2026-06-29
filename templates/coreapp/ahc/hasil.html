@@ -165,11 +165,37 @@
                     <tr class="hover:bg-blue-50/30 transition-colors {% if forloop.counter > 10 %}hidden extra-row{% endif %}">
                         <td class="px-4 py-3 border-b font-bold text-blue-600">{{ forloop.counter }}</td>
                         {% for key, value in row.items %}
-                            {% if key == 'Cluster' or key == 'Kluster' or key == 'cluster' or key == 'kluster' %}
-                            <td class="px-4 py-3 border-b font-bold text-purple-700 bg-purple-50">{{ value }}</td>
-                            {% else %}
-                            <td class="px-4 py-3 border-b">{{ value }}</td>
-                            {% endif %}
+                            <td class="px-4 py-3 border-b whitespace-nowrap">
+                                {% if key == 'Cluster' or key == 'Kluster' or key == 'cluster' or key == 'kluster' %}
+                                    {% if value == 1 or value == "1" or value == "Cluster 1" or value == "Klaster 1" %}
+                                        <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-semibold inline-block">
+                                            Cluster 1
+                                        </span>
+                                    {% elif value == 2 or value == "2" or value == "Cluster 2" or value == "Klaster 2" %}
+                                        <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full font-semibold inline-block">
+                                            Cluster 2
+                                        </span>
+                                    {% elif value == 3 or value == "3" or value == "Cluster 3" or value == "Klaster 3" %}
+                                        <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full font-semibold inline-block">
+                                            Cluster 3
+                                        </span>
+                                    {% elif value == 4 or value == "4" or value == "Cluster 4" or value == "Klaster 4" %}
+                                        <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full font-semibold inline-block">
+                                            Cluster 4
+                                        </span>
+                                    {% elif value == 5 or value == "5" or value == "Cluster 5" or value == "Klaster 5" %}
+                                        <span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full font-semibold inline-block">
+                                            Cluster 5
+                                        </span>
+                                    {% else %}
+                                        <span class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full font-semibold inline-block">
+                                            Cluster {{ value }}
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    {{ value }}
+                                {% endif %}
+                            </td>
                         {% endfor %}
                     </tr>
                     {% endfor %}

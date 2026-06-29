@@ -51,7 +51,7 @@ def ahc_proses(request):
     context = {}
     summary_df = request.session.get('summary_df')
     jumlah_data_asli = request.session.get('jumlah_data_asli')
-    hasil_cluster = request.session.get('hasil_cluster')
+    hasil_cluster = request.session.get('hasil_cluster_display') or request.session.get('hasil_cluster')
     summary_cluster = request.session.get('summary_cluster')
     jumlah_cluster = request.session.get('jumlah_cluster')
 
@@ -182,8 +182,14 @@ def preprocessing_data(request):
             scaler = StandardScaler()
             X_scaled = scaler.fit_transform(fitur_clustering)
 
+            internal_cols = {'kerugian_numeric', 'Penyebab_clean', 'faktor_kelalaian', 'faktor_pelanggaran', 'faktor_teknis', 'sesi_waktu_enc', 'jenis_hari', 'jenis_kendaraan_enc', 'Tanggal_dt'}
+            preview_cols = [c for c in df.columns if c not in internal_cols]
+            df_preview = df[preview_cols].copy()
+            df_full_save = df.drop(columns=['Tanggal_dt'], errors='ignore')
+
             # Simpan ke session - Gunakan to_json lalu loads agar aman dari tipe data Timestamp/Numpy
-            request.session['summary_df'] = json.loads(df.head(100).to_json(orient='records'))
+            request.session['summary_df'] = json.loads(df_preview.to_json(orient='records'))
+            request.session['full_df'] = json.loads(df_full_save.to_json(orient='records'))
             request.session['X_scaled'] = X_scaled.tolist()
             request.session['jumlah_data'] = len(df)
             request.session['full_features'] = json.loads(fitur_clustering.to_json(orient='records'))
@@ -212,7 +218,13 @@ def proses_ahc(request):
     if not X_scaled or not full_features: return render(request, 'coreapp/ahc/proses.html', 
                                                         {"error": "Silakan lakukan preprocessing terlebih dahulu."})
 
-    X_scaled, df = np.array(X_scaled), pd.DataFrame(full_features)
+    full_df = request.session.get('full_df') or request.session.get('summary_df')
+    X_scaled = np.array(X_scaled)
+    if full_df:
+        df = pd.DataFrame(full_df)
+    else:
+        df = pd.DataFrame(full_features)
+
     n_cluster_req = request.GET.get('cluster')
     n_cluster = int(n_cluster_req) if n_cluster_req and n_cluster_req.isdigit() else find_best_cluster(X_scaled, max_k=5)
 
@@ -264,10 +276,16 @@ def proses_ahc(request):
             "waktu_dominan": waktu_map.get(c_df['sesi_waktu_enc'].mode()[0], "N/A"), "hari_dominan": "Weekend" if c_df['jenis_hari'].mode()[0] == 1 else "Weekday"
         })
 
+    internal_cols = {'kerugian_numeric', 'Penyebab_clean', 'faktor_kelalaian', 'faktor_pelanggaran', 'faktor_teknis', 'sesi_waktu_enc', 'jenis_hari', 'jenis_kendaraan_enc', 'Tanggal_dt', 'PC1', 'PC2'}
+    display_cols = [c for c in df.columns if c not in internal_cols and c != 'Cluster'] + ['Cluster']
+    df_display = df[display_cols].copy()
+
     # Pastikan data serializable
     hasil_cluster_serializable = json.loads(df.to_json(orient='records'))
+    hasil_cluster_display_serializable = json.loads(df_display.to_json(orient='records'))
     request.session.update({
         'hasil_cluster': hasil_cluster_serializable, 
+        'hasil_cluster_display': hasil_cluster_display_serializable,
         'summary_cluster': summary, 
         'jumlah_cluster': n_cluster, 
         'silhouette_score': sil_score, 
@@ -287,7 +305,7 @@ def proses_ahc(request):
     request.session.modified = True
     request.session.save() # Pastikan tersimpan sebelum redirect
     
-    return redirect('ahc_hasil')
+    return redirect('ahc_proses')
 
 # ================================
 # HASIL AHC
@@ -466,8 +484,9 @@ def ahc_hasil(request):
     request.session.modified = True
     request.session.save()
 
+    hasil_cluster_display = request.session.get('hasil_cluster_display') or hasil_cluster
     return render(request, 'coreapp/ahc/hasil.html', {
-        "hasil_cluster": hasil_cluster, "summary_cluster": summary_cluster, "jumlah_cluster": jumlah_cluster, 
+        "hasil_cluster": hasil_cluster_display, "summary_cluster": summary_cluster, "jumlah_cluster": jumlah_cluster, 
         "jumlah_data": jumlah_data, "total_kejadian": jumlah_data, "silhouette_score": silhouette,
         "scatter_html": scatter_html, "dendrogram_html": dendrogram_html, "boxplot_html": boxplot_html, 
         "faktor_labels": faktor_labels, "faktor_values": faktor_values, "umur_labels": umur_labels,
@@ -1019,4 +1038,3 @@ def ahc_rekomendasi(request):
         "today": timezone.now().strftime("%d %B %Y")
     }
     return render(request, "coreapp/ahc/rekomendasi.html", context)
-
