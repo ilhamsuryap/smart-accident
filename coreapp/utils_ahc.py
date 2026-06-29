@@ -276,9 +276,32 @@ def proses_ahc(request):
             "waktu_dominan": waktu_map.get(c_df['sesi_waktu_enc'].mode()[0], "N/A"), "hari_dominan": "Weekend" if c_df['jenis_hari'].mode()[0] == 1 else "Weekday"
         })
 
-    internal_cols = {'kerugian_numeric', 'Penyebab_clean', 'faktor_kelalaian', 'faktor_pelanggaran', 'faktor_teknis', 'sesi_waktu_enc', 'jenis_hari', 'jenis_kendaraan_enc', 'Tanggal_dt', 'PC1', 'PC2'}
-    display_cols = [c for c in df.columns if c not in internal_cols and c != 'Cluster'] + ['Cluster']
-    df_display = df[display_cols].copy()
+    # Penataan kolom display:  Umur, Hari, Jumlah Kejadian, Faktor Penyebab (Teks), lalu kolom encoding
+    df_display_source = df.copy()
+    # if 'Jumlah Kejadian' not in df_display_source.columns and 'jumlah_kejadian' not in df_display_source.columns:
+    #     df_display_source['Jumlah Kejadian'] = 1
+
+    if 'Faktor Penyebab' not in df_display_source.columns:
+        for col_name in ['Penyebab', 'penyebab', 'Faktor_Penyebab']:
+            if col_name in df_display_source.columns:
+                df_display_source['Faktor Penyebab'] = df_display_source[col_name]
+                break
+
+    target_cols = [
+        'Umur', 'Hari', 'Faktor Penyebab',
+        'faktor_kelalaian', 'faktor_pelanggaran', 'faktor_teknis', 
+        'sesi_waktu_enc', 'jenis_hari', 'jenis_kendaraan_enc', 'Cluster'
+    ]
+
+    col_map = {c.lower(): c for c in df_display_source.columns}
+    final_display_cols = []
+    for tc in target_cols:
+        if tc in df_display_source.columns:
+            final_display_cols.append(tc)
+        elif tc.lower() in col_map:
+            final_display_cols.append(col_map[tc.lower()])
+
+    df_display = df_display_source[final_display_cols].copy()
 
     # Pastikan data serializable
     hasil_cluster_serializable = json.loads(df.to_json(orient='records'))
