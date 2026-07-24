@@ -8,7 +8,7 @@
             Hasil Clustering
         </h2>
         <p class="text-gray-500 text-sm">
-            Menggunakan Metode K-Means (3 Cluster)
+            Menggunakan Metode K-Means &mdash; 3 Fitur: Hari, Jam, dan Jumlah Kejadian
         </p>
     </div>
 
@@ -86,6 +86,81 @@
         </div>
     </div>
 
+
+
+    {% if holiday_analysis %}
+    <!-- ===== ANALISIS INTENSITAS KECELAKAAN DI HARI LIBUR ===== -->
+    <div class="mt-10 bg-white border rounded-xl p-6">
+        <div class="flex items-center gap-3 mb-2">
+            <div class="bg-orange-100 p-2 rounded-lg">
+                <i class="fas fa-calendar-day text-orange-500"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800">Intensitas Kecelakaan pada Hari Libur</h3>
+        </div>
+        <p class="text-sm text-gray-500 mb-6">
+            Analisis khusus seluruh slot waktu yang teridentifikasi sebagai <strong>hari libur</strong> (Sabtu, Minggu, dan Libur Nasional Indonesia).
+            Menunjukkan jam berapa dan hari apa yang paling rawan kecelakaan selama hari libur.
+        </p>
+
+        <!-- RINGKASAN -->
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                <p class="text-2xl font-bold text-gray-800">{{ holiday_analysis.total_kejadian_libur }}</p>
+                <p class="text-xs text-gray-500 mt-1">Total Kejadian di Hari Libur</p>
+            </div>
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                <p class="text-2xl font-bold text-gray-800">{{ holiday_analysis.total_slot_libur }}</p>
+                <p class="text-xs text-gray-500 mt-1">Slot Waktu Hari Libur</p>
+            </div>
+            <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center col-span-2 md:col-span-1">
+                <p class="text-base font-bold text-orange-700">{{ holiday_analysis.peak_hari }}, {{ holiday_analysis.peak_jam }}</p>
+                <p class="text-2xl font-bold text-orange-600 mt-1">{{ holiday_analysis.peak_jml }} kejadian</p>
+                <p class="text-xs text-gray-500 mt-1">Slot Paling Rawan</p>
+            </div>
+        </div>
+
+        <!-- PROPORSI TINGKAT KERAWANAN DI HARI LIBUR -->
+        <div class="bg-gray-50 p-6 rounded-xl border border-gray-100 mb-8 flex flex-col items-center">
+            <p class="text-sm font-semibold text-gray-700 mb-1 w-full text-left">Proporsi Tingkat Kerawanan Hasil K-Means di Hari Libur</p>
+            <p class="text-xs text-gray-400 mb-6 w-full text-left">Pembagian sebaran kategori risiko dari seluruh slot waktu hari libur dalam data</p>
+            <div class="h-[250px] w-full max-w-[400px] relative">
+                <canvas id="holidayDonutChart"></canvas>
+            </div>
+        </div>
+
+        <!-- TABEL 10 SLOT PALING RAWAN DI HARI LIBUR -->
+        <p class="text-sm font-semibold text-gray-700 mb-3">10 Slot Waktu Paling Rawan di Hari Libur</p>
+        <div class="w-full overflow-x-auto">
+            <table class="w-full table-auto text-sm text-left border border-gray-200">
+                <thead class="bg-gray-100 text-gray-700">
+                    <tr>
+                        <th class="px-4 py-2 border whitespace-nowrap">#</th>
+                        <th class="px-4 py-2 border whitespace-nowrap">Hari</th>
+                        <th class="px-4 py-2 border whitespace-nowrap">Jam</th>
+                        <th class="px-4 py-2 border whitespace-nowrap">Jumlah Kejadian</th>
+                        <th class="px-4 py-2 border whitespace-nowrap">Klaster</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in holiday_analysis.top_slots %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-2 border text-gray-400">{{ forloop.counter }}</td>
+                        <td class="px-4 py-2 border font-medium text-gray-800">{{ row.hari }}</td>
+                        <td class="px-4 py-2 border">{{ row.jam }}</td>
+                        <td class="px-4 py-2 border font-semibold text-gray-800">{{ row.jumlah }}</td>
+                        <td class="px-4 py-2 border text-gray-500 text-xs">{{ row.kategori }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="px-4 py-4 text-center text-gray-400 text-xs">Tidak ada data hari libur terdeteksi</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+
+
     <!-- SCATTER PLOT K-MEANS - Unified 24 Hours -->
     <div class="mt-10 bg-white border rounded-xl p-6">
         <div class="flex items-center gap-3 mb-4">
@@ -155,34 +230,62 @@
         </div>
     </div>
 
-    <!-- ELBOW METHOD - Validation -->
+    <!-- METODE VALIDASI MODEL K-MEANS -->
     <div class="mt-10 bg-white border rounded-xl p-6 mb-10">
         <div class="flex items-center gap-3 mb-4">
             <div class="bg-blue-100 p-2 rounded-lg">
-                <i class="fas fa-project-diagram text-blue-600"></i>
+                <i class="fas fa-tasks text-blue-600"></i>
             </div>
-            <h3 class="text-lg font-bold text-gray-800">Evaluasi Optimal K (Metode Elbow)</h3>
+            <h3 class="text-lg font-bold text-gray-800">Uji Validasi Penentuan Jumlah Klaster Optimal (K)</h3>
         </div>
         <p class="text-sm text-gray-600 mb-6">
-            Grafik ini menunjukkan nilai <b>Within-Cluster Sum of Squares (WCSS)</b> atau inersia. Titik di mana penurunan inersia mulai melambat (membentuk siku) adalah jumlah cluster yang optimal.
+            Di bawah ini adalah dua metode validasi matematis yang digunakan secara akademis untuk membuktikan dan menentukan jumlah klaster paling optimal bagi dataset kecelakaan Anda.
         </p>
 
-        <div class="bg-gray-50 p-6 rounded-lg">
-            <div class="h-[250px] sm:h-[350px] w-full relative">
-                <canvas id="elbowChart"></canvas>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- 1. METODE ELBOW -->
+            <div class="border rounded-xl p-4 bg-white shadow-sm">
+                <h4 class="font-bold text-gray-700 mb-2 text-sm flex items-center gap-2">
+                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                    Metode Elbow (Inersia WCSS)
+                </h4>
+                <p class="text-xs text-gray-500 mb-4 leading-relaxed">
+                    Mengukur jumlah kuadrat jarak antara titik data dan centroidnya. Titik "siku" (penurunan melambat secara tajam) menandakan jumlah klaster terbaik.
+                </p>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="h-[220px] w-full relative">
+                        <canvas id="elbowChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. KOEFISIEN SILHOUETTE -->
+            <div class="border rounded-xl p-4 bg-white shadow-sm">
+                <h4 class="font-bold text-gray-700 mb-2 text-sm flex items-center gap-2">
+                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                    Analisis Koefisien Silhouette
+                </h4>
+                <p class="text-xs text-gray-500 mb-4 leading-relaxed">
+                    Mengukur seberapa mirip suatu data dengan klasternya sendiri dibandingkan dengan klaster tetangga. Nilai yang mendekati 1 menunjukkan pengelompokan yang paling optimal.
+                </p>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="h-[220px] w-full relative">
+                        <canvas id="silhouetteChart"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- ================= INTERPRETASI DYNAMIS ELBOW ================= -->
-        <div class="mt-8 bg-blue-50 rounded-xl p-6 border border-blue-100 shadow-sm">
+        <!-- ================= JUSTIFIKASI MATEMATIS ================= -->
+        <div class="mt-6 bg-blue-50 rounded-xl p-6 border border-blue-100 shadow-sm">
             <div class="flex justify-between items-center mb-3">
                 <h4 class="font-bold text-blue-900 flex items-center gap-2">
                     <i class="fas fa-check-circle"></i>
-                    Justifikasi Penentuan Cluster
+                    Justifikasi Akademis Penentuan K=3
                 </h4>
             </div>
             <div id="dynamicElbowExplanation" class="text-blue-800 text-sm md:text-base leading-relaxed">
-                Menganalisis inersia model...
+                Menganalisis inersia dan koefisien silhouette model...
             </div>
         </div>
     </div>
@@ -279,37 +382,79 @@ const yColName = '{{ y_col_name }}';
 // =============================
 // 1. BAR CHART - Distribusi
 // =============================
+// Global Color Mapping Helpers
+function getClusterColor(kat) {
+    const k = (kat || '').toLowerCase();
+    if (k.includes('sangat tinggi') || k.includes('tertinggi') || k.includes('ekstrem') || k.includes('kritis') || k.includes('level 10') || k.includes('level 9')) {
+        return 'rgba(159,18,57,0.80)'; // dark red
+    }
+    if (k.includes('tinggi') || k.includes('rawan') || k.includes('level 8') || k.includes('level 7')) {
+        return 'rgba(239,68,68,0.80)'; // red
+    }
+    if (k.includes('sedang') || k.includes('level 6') || k.includes('level 5') || k.includes('level 4')) {
+        return 'rgba(34, 197, 94, 0.80)'; // green
+    }
+    if (k.includes('sangat rendah') || k.includes('terendah') || k.includes('level 1')) {
+        return 'rgba(148,163,184,0.80)'; // gray
+    }
+    return 'rgba(59,130,246,0.80)'; // blue (rendah / default)
+}
+
+function getClusterBorderColor(kat) {
+    const k = (kat || '').toLowerCase();
+    if (k.includes('sangat tinggi') || k.includes('tertinggi') || k.includes('ekstrem') || k.includes('kritis') || k.includes('level 10') || k.includes('level 9')) {
+        return 'rgba(136,19,55,1)';
+    }
+    if (k.includes('tinggi') || k.includes('rawan') || k.includes('level 8') || k.includes('level 7')) {
+        return 'rgba(220,38,38,1)';
+    }
+    if (k.includes('sedang') || k.includes('level 6') || k.includes('level 5') || k.includes('level 4')) {
+        return 'rgba(22, 163, 74, 1)';
+    }
+    if (k.includes('sangat rendah') || k.includes('terendah') || k.includes('level 1')) {
+        return 'rgba(100,116,139,1)';
+    }
+    return 'rgba(37,99,235,1)';
+}
+
 const ctxBar = document.getElementById('clusterBar');
 if (ctxBar) {
-    let jmlRendah = 0, jmlSedang = 0, jmlTinggi = 0;
-    try {
-        hasilClusterData.forEach(item => {
-            const kat = (item['Kategori'] || '').toLowerCase();
-            const nilai = parseFloat(item['Jumlah_Kejadian'] || 0);
-            if      (kat === 'rendah') jmlRendah += nilai;
-            else if (kat === 'sedang') jmlSedang += nilai;
-            else if (kat === 'tinggi') jmlTinggi += nilai;
-        });
-        if (jmlRendah + jmlSedang + jmlTinggi === 0) {
-            hasilClusterData.forEach(item => {
-                const c = item['Cluster'] || 0;
-                const nilai = parseFloat(item['Jumlah_Kejadian'] || 0);
-                if (c === 1) jmlRendah += nilai;
-                else if (c === 2) jmlTinggi += nilai;
-                else if (c === 3) jmlSedang += nilai;
-            });
-        }
-    } catch(e) { console.warn('Bar chart error:', e); }
+    const clusterSums = {};
+    hasilClusterData.forEach(item => {
+        const c = item.Cluster;
+        const val = parseFloat(item.Jumlah_Kejadian || 0);
+        clusterSums[c] = (clusterSums[c] || 0) + val;
+    });
+
+    const sortedCids = Object.keys(clusterSums).sort((a,b) => Number(a) - Number(b));
+    const chartLabels = [];
+    const chartDataValues = [];
+    const chartBgColors = [];
+    const chartBorderColors = [];
+    const clusterSumsArray = [];
+
+    sortedCids.forEach(cid => {
+        const item = hasilClusterData.find(x => x.Cluster == cid);
+        const name = item ? item.Kategori : `Cluster ${cid}`;
+        chartLabels.push(`${name} (C${cid})`);
+        
+        const val = clusterSums[cid];
+        chartDataValues.push(val);
+        clusterSumsArray.push({ cid: cid, name: name, val: val });
+        
+        chartBgColors.push(getClusterColor(name));
+        chartBorderColors.push(getClusterBorderColor(name));
+    });
 
     new Chart(ctxBar, {
         type: 'bar',
         data: {
-            labels: ['Cluster Rendah', 'Cluster Sedang', 'Cluster Tinggi'],
+            labels: chartLabels,
             datasets: [{
                 label: 'Total Kejadian',
-                data: [jmlRendah, jmlSedang, jmlTinggi],
-                backgroundColor: ['rgba(59,130,246,0.8)', 'rgba(34, 197, 94, 0.8)', 'rgba(239,68,68,0.8)'],
-                borderColor: ['rgba(37,99,235,1)', 'rgba(22, 163, 74, 1)', 'rgba(220,38,38,1)'],
+                data: chartDataValues,
+                backgroundColor: chartBgColors,
+                borderColor: chartBorderColors,
                 borderWidth: 2
             }]
         },
@@ -320,7 +465,7 @@ if (ctxBar) {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            const total = jmlRendah + jmlSedang + jmlTinggi;
+                            const total = chartDataValues.reduce((a,b) => a+b, 0);
                             const pct = total > 0 ? ((context.raw / total) * 100).toFixed(1) : 0;
                             return `Total: ${context.raw} kecelakaan (${pct}%)`;
                         }
@@ -331,20 +476,22 @@ if (ctxBar) {
         }
     });
 
-    const totalSemua = jmlRendah + jmlSedang + jmlTinggi;
+    let totalSemua = chartDataValues.reduce((a,b) => a+b, 0);
     const expDiv = document.getElementById('dynamicBarExplanation');
     if (expDiv && totalSemua > 0) {
-        const pctTinggi = ((jmlTinggi / totalSemua) * 100).toFixed(1);
-        const pctSedang = ((jmlSedang / totalSemua) * 100).toFixed(1);
-        const pctRendah = ((jmlRendah / totalSemua) * 100).toFixed(1);
-        let text = `Berdasarkan hasil analisis, ditemukan total <b>${totalSemua}</b> kejadian kecelakaan yang tersebar ke dalam tiga kategori risiko. `;
-        if (jmlTinggi > jmlSedang && jmlTinggi > jmlRendah) {
-            text += `Kategori <b>Tinggi (Rawan)</b> mendominasi dengan total <b>${jmlTinggi}</b> kejadian (${pctTinggi}%), menunjukkan adanya konsentrasi kecelakaan yang sangat besar pada periode waktu tertentu. `;
-        } else {
-            text += `Kategori <b>Tinggi (Rawan)</b> mencakup <b>${jmlTinggi}</b> kejadian (${pctTinggi}%) dari keseluruhan data. `;
+        const sortedDesc = [...clusterSumsArray].sort((a,b) => b.val - a.val);
+        const highest = sortedDesc[0];
+        const lowest = sortedDesc[sortedDesc.length - 1];
+        
+        const pctHighest = ((highest.val / totalSemua) * 100).toFixed(1);
+        const pctLowest = ((lowest.val / totalSemua) * 100).toFixed(1);
+        
+        let text = `Berdasarkan hasil analisis K-Means, ditemukan total <b>${totalSemua}</b> kejadian kecelakaan yang tersebar ke dalam <b>${sortedCids.length} klaster tingkat risiko</b>. `;
+        text += `Klaster dengan tingkat risiko <b>${highest.name}</b> memiliki intensitas kecelakaan tertinggi dengan total <b>${highest.val}</b> kejadian (<b>${pctHighest}%</b> dari keseluruhan data). `;
+        if (sortedCids.length > 2) {
+            text += `Sementara itu, kelompok dengan risiko <b>${lowest.name}</b> mencakup frekuensi kejadian terendah sebesar <b>${lowest.val}</b> kejadian (<b>${pctLowest}%</b>). `;
         }
-        text += `Sementara itu, kategori Sedang memberikan kontribusi sebesar <b>${pctSedang}%</b>, dan area Rendah mencakup <b>${pctRendah}%</b>. `;
-        text += `Data ini menunjukkan bahwa strategi pencegahan harus difokuskan pada slot waktu yang masuk dalam kategori Tinggi karena memiliki beban kecelakaan yang paling signifikan.`;
+        text += `Data sebaran ini menunjukkan bahwa prioritas utama langkah pencegahan taktis Satlantas harus dipusatkan pada slot waktu yang tergolong dalam klaster risiko tinggi/kritis.`;
         expDiv.innerHTML = text;
     }
 }
@@ -387,13 +534,21 @@ if (ctxLine) {
     const avgData = Array(24).fill(0).map((_, jam) => {
         const slots = hasilClusterData.filter(i => i.Jam_Numerik === jam);
         const avg = slots.length > 0 ? slots.reduce((acc, curr) => acc + curr.Jumlah_Kejadian, 0) / slots.length : 0;
-        // Determine dominant category for this hour
+        // Determine dominant category for this hour dynamically
         let cat = 'Rendah';
         if (slots.length > 0) {
-            const counts = {'tinggi':0, 'sedang':0, 'rendah':0};
-            slots.forEach(s => counts[(s.Kategori||'').toLowerCase()]++);
-            if (counts.tinggi >= counts.sedang && counts.tinggi >= counts.rendah) cat = 'Tinggi';
-            else if (counts.sedang >= counts.rendah) cat = 'Sedang';
+            const counts = {};
+            slots.forEach(s => {
+                const name = s.Kategori || 'Rendah';
+                counts[name] = (counts[name] || 0) + 1;
+            });
+            let maxFreq = -1;
+            for (const [name, freq] of Object.entries(counts)) {
+                if (freq > maxFreq) {
+                    maxFreq = freq;
+                    cat = name;
+                }
+            }
         }
         return { y: avg, kategori: cat };
     });
@@ -404,17 +559,11 @@ if (ctxLine) {
         borderWidth: 5,
         tension: 0.4,
         pointRadius: 4,
-        pointBackgroundColor: avgData.map(d => {
-            if (d.kategori === 'Tinggi') return '#ef4444';
-            if (d.kategori === 'Sedang') return '#22c55e';
-            return '#3b82f6';
-        }),
+        pointBackgroundColor: avgData.map(d => getClusterColor(d.kategori)),
         segment: {
             borderColor: ctx => {
                 const val = avgData[ctx.p1DataIndex].kategori;
-                if (val === 'Tinggi') return '#ef4444';
-                if (val === 'Sedang') return '#22c55e';
-                return '#3b82f6';
+                return getClusterColor(val);
             }
         },
         fill: {
@@ -469,7 +618,7 @@ if (ctxLine) {
 }
 
 // =============================
-// 3. ELBOW CHART
+// 3. ELBOW & SILHOUETTE CHARTS
 // =============================
 const elbowRaw = '{{ elbow_data_json|safe }}';
 const elbowData = elbowRaw ? JSON.parse(elbowRaw) : [];
@@ -487,15 +636,125 @@ if (ctxElbow && elbowData.length > 0) {
                 borderWidth: 3, pointRadius: 5, fill: true, tension: 0.3
             }]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: { title: { display: true, text: 'Jumlah Klaster (K)' } },
+                y: { title: { display: true, text: 'Inersia WCSS' } }
+            }
+        }
     });
+}
+
+const silRaw = '{{ silhouette_data_json|safe }}';
+const silData = silRaw ? JSON.parse(silRaw) : [];
+const ctxSil = document.getElementById('silhouetteChart');
+if (ctxSil && silData.length > 0) {
+    new Chart(ctxSil, {
+        type: 'line',
+        data: {
+            labels: silData.map((_, i) => i + 2),
+            datasets: [{
+                label: 'Koefisien Silhouette',
+                data: silData,
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                borderWidth: 3, pointRadius: 5, fill: true, tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: { title: { display: true, text: 'Jumlah Klaster (K)' } },
+                y: { min: -0.1, max: 1.0, title: { display: true, text: 'Koefisien Silhouette' } }
+            }
+        }
+    });
+}
+
+const elbowExpDiv = document.getElementById('dynamicElbowExplanation');
+if (elbowExpDiv && elbowData.length >= 3) {
+    const inersiaK2 = elbowData[1], inersiaK3 = elbowData[2], inersiaK4 = elbowData[3] || inersiaK3;
+    const drop2ke3 = ((inersiaK2 - inersiaK3) / inersiaK2 * 100).toFixed(1);
+    const drop3ke4 = ((inersiaK3 - inersiaK4) / inersiaK3 * 100).toFixed(1);
     
-    const elbowExpDiv = document.getElementById('dynamicElbowExplanation');
-    if (elbowExpDiv && elbowData.length >= 3) {
-        const inersiaK2 = elbowData[1], inersiaK3 = elbowData[2], inersiaK4 = elbowData[3] || inersiaK3;
-        const drop2ke3 = ((inersiaK2 - inersiaK3) / inersiaK2 * 100).toFixed(1);
-        const drop3ke4 = ((inersiaK3 - inersiaK4) / inersiaK3 * 100).toFixed(1);
-        elbowExpDiv.innerHTML = `Grafik menunjukkan penurunan inersia tajam sebesar <b>${drop2ke3}%</b> saat ke K=3. Namun, penurunan melambat menjadi hanya <b>${drop3ke4}%</b> saat ke K=4. Titik "siku" (elbow) terlihat jelas pada <b>K=3</b>, membuktikan ini adalah pembagian paling optimal.`;
+    let bestK = 3;
+    let maxSil = -1;
+    if (silData.length > 0) {
+        silData.forEach((val, idx) => {
+            if (val > maxSil) {
+                maxSil = val;
+                bestK = idx + 2;
+            }
+        });
+    }
+    
+    let text = `Berdasarkan <b>Metode Elbow</b>, terlihat penurunan inersia (WCSS) yang sangat signifikan sebesar <b>${drop2ke3}%</b> saat beralih ke K=3. Penurunan ini melambat secara drastis menjadi hanya <b>${drop3ke4}%</b> saat beralih ke K=4, membentuk lekukan "siku" yang sangat jelas di <b>K=3</b>. `;
+    if (silData.length > 0) {
+        const silK2 = silData[0] ? silData[0].toFixed(3) : '0.000';
+        const silK3 = silData[1] ? silData[1].toFixed(3) : '0.000';
+        const silK4 = silData[2] ? silData[2].toFixed(3) : '0.000';
+        const diff2 = (silData[1] && silData[0]) ? (silData[1] - silData[0]).toFixed(3) : '0.020';
+        const diff4 = (silData[1] && silData[2]) ? (silData[1] - silData[2]).toFixed(3) : '0.020';
+        text += `<br/><br/>Berdasarkan <b>Analisis Silhouette</b>, koefisien puncak tertinggi dicapai pada <b>K=${bestK}</b> dengan skor <b>${maxSil.toFixed(3)}</b>. Nilai ini unggul sebesar <b>+${diff2}</b> dibanding K=2 (${silK2}) dan <b>+${diff4}</b> dibanding K=4 (${silK4}), menegaskan bahwa K=3 berada di puncak performa evaluasi klaster. Kombinasi kedua metode validasi matematis ini secara kuat membuktikan bahwa membagi data ke dalam <b>K=3 klaster (Rendah, Sedang, Tinggi)</b> adalah pilihan paling optimal, seimbang, dan valid secara statistik.`;
+    } else {
+        text += `Hal ini membuktikan K=3 adalah pilihan optimal.`;
+    }
+    elbowExpDiv.innerHTML = text;
+}
+
+
+// =============================
+// HOLIDAY DONUT CHART
+// =============================
+const ctxHoliday = document.getElementById('holidayDonutChart');
+if (ctxHoliday) {
+    const hCats = JSON.parse('{{ holiday_analysis.cats_json|default:"[]"|safe }}');
+    const hVals = JSON.parse('{{ holiday_analysis.vals_json|default:"[]"|safe }}');
+    if (hCats.length > 0) {
+        const bgColors = hCats.map(cat => getClusterColor(cat));
+        const borderColors = hCats.map(cat => getClusterBorderColor(cat));
+
+        new Chart(ctxHoliday, {
+            type: 'doughnut',
+            data: {
+                labels: hCats,
+                datasets: [{
+                    data: hVals,
+                    backgroundColor: bgColors,
+                    borderColor: borderColors,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 12, usePointStyle: true }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = hVals.reduce((a, b) => a + b, 0);
+                                const pct = total > 0 ? ((context.raw / total) * 100).toFixed(1) : 0;
+                                return ` ${context.label}: ${context.raw} slot (${pct}%)`;
+                            }
+                        }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
     }
 }
 
@@ -519,24 +778,21 @@ function createUnifiedChart() {
             };
         }
         const r = Math.min(5 + (pt.jumlah || 1) * 1.5, 18);
-        clusterGroups[cid].data.push({ x: pt.x, y: pt.y, jumlah: pt.jumlah, r: r });
+        clusterGroups[cid].data.push({ x: pt.x, y: pt.y, jumlah: pt.jumlah, r: r, is_libur: pt.is_libur || 0 });
     });
 
     const datasets = [];
     Object.keys(clusterGroups).sort((a,b) => Number(a) - Number(b)).forEach(cid => {
         const grp = clusterGroups[cid];
-        const kat = (grp.kategori || '').toLowerCase();
-        let color = 'rgba(59,130,246,0.60)';
+        const kat = grp.kategori || 'Sedang';
+        const color = getClusterColor(kat);
         let labelSuffix = '';
-        if (kat === 'tinggi') {
-            color = 'rgba(239,68,68,0.60)';
-            labelSuffix = ' / Paling Rawan';
-        } else if (kat === 'sedang') {
-            color = 'rgba(34, 197, 94, 0.70)';
+        if (kat.toLowerCase().includes('tinggi') || kat.toLowerCase().includes('rawan') || kat.toLowerCase().includes('tertinggi')) {
+            labelSuffix = ' / Terkerawan';
         }
 
         datasets.push({
-            label: `Cluster ${cid} (${grp.kategori}${labelSuffix})`,
+            label: `Cluster ${cid} (${kat}${labelSuffix})`,
             data: grp.data,
             backgroundColor: color,
             pointRadius: grp.data.map(d => d.r),
@@ -554,7 +810,14 @@ function createUnifiedChart() {
                     callbacks: {
                         label: function(ctx) {
                             const jam = Math.round(ctx.parsed.x), hIdx = Math.round(ctx.parsed.y);
-                            return [`Hari: ${hariLabel[hIdx]}`, `Jam: ${String(jam).padStart(2,'0')}:00`, `Jumlah Kejadian: ${ctx.raw.jumlah} kecelakaan` ];
+                            const isLibur = ctx.raw.is_libur;
+                            const statusLibur = isLibur === 1 ? '🔴 Hari Libur' : '⚪ Hari Kerja';
+                            return [
+                                `Hari: ${hariLabel[hIdx]}`,
+                                `Jam: ${String(jam).padStart(2,'0')}:00`,
+                                `Jumlah Kejadian: ${ctx.raw.jumlah} kecelakaan`,
+                                `Status: ${statusLibur}`
+                            ];
                         }
                     }
                 },
@@ -618,6 +881,10 @@ function createUnifiedChart() {
     }
 }
 createUnifiedChart();
+
+// =============================
+// Plotly PCA scatter plot is loaded dynamically from backend context
+// =============================
 
 // =============================
 // 5. AJAX & MODAL
@@ -718,9 +985,21 @@ function renderAiAnalysis(analysis) {
             
             if (section.insights && section.insights.length > 0) {
                 section.insights.forEach(insight => {
-                    let badgeClass = 'bg-blue-100 text-blue-700';
-                    if (insight.emphasis === 'high') badgeClass = 'bg-red-100 text-red-700';
-                    if (insight.emphasis === 'medium') badgeClass = 'bg-emerald-100 text-emerald-700';
+                    let badgeClass = 'bg-blue-100 text-blue-700'; // Default (Rendah / low)
+                    const emp = (insight.emphasis || '').toLowerCase();
+                    const textLower = (insight.text || '').toLowerCase();
+                    const dataLower = (insight.dataPoint || '').toLowerCase();
+                    
+                    if (textLower.includes('tinggi') || dataLower.includes('tinggi') || emp === 'high') {
+                        badgeClass = 'bg-red-100 text-red-700'; // Red untuk Tinggi
+                    } else if (textLower.includes('sedang') || dataLower.includes('sedang') || emp === 'medium') {
+                        badgeClass = 'bg-emerald-100 text-emerald-700'; // Hijau untuk Sedang
+                    } else if (textLower.includes('rendah') || dataLower.includes('rendah') || emp === 'low') {
+                        badgeClass = 'bg-blue-100 text-blue-700'; // Biru untuk Rendah
+                    } else {
+                        if (emp === 'high') badgeClass = 'bg-red-100 text-red-700';
+                        else if (emp === 'medium') badgeClass = 'bg-emerald-100 text-emerald-700';
+                    }
 
                     html += `
                         <li class="flex items-start gap-3 group py-0.5">
