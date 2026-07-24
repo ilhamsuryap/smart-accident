@@ -153,6 +153,51 @@
     </div>
     {% endif %}
 
+    {% if holidays_found %}
+    <!-- TABEL HARI LIBUR - senada dengan Preview Hasil Preprocessing -->
+    <div class="bg-white rounded-xl shadow-md p-6 w-full mb-8">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="font-semibold text-gray-800">
+                Daftar Hari Libur yang Ditemukan dalam Data
+            </h2>
+            <span class="text-sm text-gray-500">{{ holidays_found|length }} tanggal terdeteksi</span>
+        </div>
+
+        <p class="text-sm text-gray-500 mb-4">
+            Fitur <code class="bg-gray-100 px-1 py-0.5 rounded text-gray-700 font-mono text-xs">Is_Hari_Libur</code>
+            diekstrak otomatis dari kolom <strong>Tanggal</strong>. Nilai <strong>1</strong> = Hari Libur, Nilai <strong>0</strong> = Hari Kerja.
+            Fitur ini digunakan sebagai dimensi ke-4 dalam K-Means.
+        </p>
+
+        <div class="w-full overflow-x-auto">
+            <table class="w-full table-auto text-sm text-left border border-gray-200">
+                <thead class="bg-gray-100 text-gray-700">
+                    <tr>
+                        <th class="px-4 py-2 border whitespace-nowrap">#</th>
+                        <th class="px-4 py-2 border whitespace-nowrap">Tanggal</th>
+                        <th class="px-4 py-2 border whitespace-nowrap">Nama Hari Libur</th>
+                        <th class="px-4 py-2 border whitespace-nowrap">Jenis</th>
+                        <th class="px-4 py-2 border whitespace-nowrap">Is_Hari_Libur</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for h in holidays_found %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-2 border text-gray-500">{{ forloop.counter }}</td>
+                        <td class="px-4 py-2 border whitespace-nowrap font-medium text-gray-800">{{ h.tanggal }}</td>
+                        <td class="px-4 py-2 border text-gray-700">{{ h.nama }}</td>
+                        <td class="px-4 py-2 border whitespace-nowrap text-gray-600">
+                            {% if h.is_weekend %}Akhir Pekan{% else %}Libur Nasional{% endif %}
+                        </td>
+                        <td class="px-4 py-2 border text-center font-semibold text-gray-800">1</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
 
 <!-- FORM PROSES CLUSTERING -->
 {% if preview %}
@@ -161,14 +206,22 @@
         Proses K-Means Clustering
     </h2>
 
-    <form method="get" action="{% url 'proses_cluster' %}" class="flex flex-col md:flex-row gap-4 items-stretch md:items-center w-full">
-        <!-- Hidden input k=3 -->
-        <input type="hidden" name="k" value="3">
+    <form method="get" action="{% url 'proses_cluster' %}" class="flex flex-col md:flex-row gap-6 items-stretch md:items-center w-full">
+        <div class="flex items-center gap-3 w-full md:w-auto">
+            <label class="text-sm font-semibold text-gray-700 whitespace-nowrap">
+                Jumlah Klaster (K):
+            </label>
+            <div class="bg-gray-100 border border-gray-300 text-gray-800 text-sm rounded-lg px-4 py-2.5 font-bold flex items-center gap-2 cursor-not-allowed">
+                <i class="fas fa-lock text-gray-500 text-xs"></i>
+                <span>3 Klaster (Tetap)</span>
+            </div>
+            <input type="hidden" name="k" value="3">
+        </div>
         
-        <div class="bg-blue-50 border border-blue-100 rounded-lg px-4 py-2 flex items-center gap-3 w-full md:w-auto">
+        <div class="bg-blue-50 border border-blue-100 rounded-lg px-4 py-2 flex items-center gap-3 w-full md:w-auto flex-1">
             <i class="fas fa-info-circle text-blue-500 flex-shrink-0"></i>
-            <p class="text-sm text-blue-700">
-                Clustering akan diproses dengan <strong>3 Cluster</strong> (Rendah, Sedang, Tinggi)
+            <p class="text-xs text-blue-700">
+                Jumlah klaster (K) telah ditetapkan secara permanen sebanyak <b>3 Klaster</b> (Rendah, Sedang, Tinggi) sesuai standar model analisis kerawanan kecelakaan.
             </p>
         </div>
 
@@ -205,9 +258,11 @@
             <thead class="bg-gray-100 text-gray-700">
                 <tr>
                     {% for key in hasil_cluster.0.keys %}
+                        {% if key != "Bg_Class" and key != "Dot_Class" and key != "Text_Color_Class" and key != "Color_Name" %}
                         <th class="px-4 py-3 border whitespace-nowrap {% if key == 'Cluster' %}sticky right-0 bg-gray-200 z-20 border-l-2 border-gray-300 shadow-[-4px_0_10px_rgba(0,0,0,0.1)]{% endif %}">
                             {{ key }}
                         </th>
+                        {% endif %}
                     {% endfor %}
                 </tr>
             </thead>
@@ -215,25 +270,17 @@
                 {% for row in hasil_cluster %}
                 <tr class="hover:bg-gray-50 border-b">
                     {% for key, value in row.items %}
+                        {% if key != "Bg_Class" and key != "Dot_Class" and key != "Text_Color_Class" and key != "Color_Name" %}
                         <td class="px-4 py-2 border whitespace-nowrap {% if key == 'Cluster' %}sticky right-0 bg-gray-50 z-10 border-l-2 border-gray-300 shadow-[-4px_0_10px_rgba(0,0,0,0.1)]{% endif %}">
                             {% if key == "Cluster" %}
-                                {% if row.Kategori|lower == 'tinggi' %}
-                                    <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full font-semibold">
-                                        Cluster {{ value }}
-                                    </span>
-                                {% elif row.Kategori|lower == 'sedang' %}
-                                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full font-semibold">
-                                        Cluster {{ value }}
-                                    </span>
-                                {% else %}
-                                    <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-semibold">
-                                        Cluster {{ value }}
-                                    </span>
-                                {% endif %}
+                                <span class="px-3 py-1 {{ row.Bg_Class }} rounded-full font-semibold border shadow-sm">
+                                    Cluster {{ value }}
+                                </span>
                             {% else %}
                                 {{ value }}
                             {% endif %}
                         </td>
+                        {% endif %}
                     {% endfor %}
                 </tr>
                 {% endfor %}
